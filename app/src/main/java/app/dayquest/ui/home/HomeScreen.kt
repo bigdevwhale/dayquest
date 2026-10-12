@@ -54,21 +54,27 @@ import app.dayquest.container
 import app.dayquest.data.Hero
 import app.dayquest.game.Decor
 import app.dayquest.game.DecorType
+import app.dayquest.game.HomeArea
 import app.dayquest.game.HomeCatalog
+import app.dayquest.game.SceneKind
 import app.dayquest.game.Spot
 import app.dayquest.pixel.RoomRenderer
 import app.dayquest.pixel.RoomState
+import app.dayquest.pixel.SceneState
 import app.dayquest.pixel.Sprites
 import app.dayquest.ui.LocalFeedback
 import app.dayquest.ui.components.DCard
 import app.dayquest.ui.components.Gap
 import app.dayquest.ui.components.PriceButton
 import app.dayquest.ui.components.SectionTitle
+import app.dayquest.ui.components.Segmented
 import app.dayquest.ui.components.SoftButton
 import app.dayquest.ui.components.TopBar
 import app.dayquest.ui.goldText
 import app.dayquest.ui.look
 import app.dayquest.ui.pixel.PixelImage
+import app.dayquest.ui.pixel.SceneView
+import app.dayquest.ui.rememberSeason
 import app.dayquest.ui.theme.D
 import app.dayquest.ui.theme.DType
 import kotlinx.coroutines.Dispatchers
@@ -113,16 +119,38 @@ fun RoomView(state: RoomState, modifier: Modifier = Modifier, virtualHeight: Int
 }
 
 fun roomState(hero: Hero, grown: Boolean) = RoomState(
-    hero.look(), hero.pet, grown, HomeCatalog.placement(hero.home), hero.wallpaper, hero.floor,
+    hero.look(), hero.pet, grown, HomeCatalog.placement(hero.home).filterKeys { it.area == HomeArea.ROOM }, hero.wallpaper, hero.floor,
 )
+
+private const val ATTIC_WALLPAPER = "wp_wood"
+private const val ATTIC_FLOOR = "fl_planks"
+
+/** The attic is drawn by the room renderer: its spots stand in for the room's. */
+fun atticState(hero: Hero, grown: Boolean): RoomState {
+    val p = HomeCatalog.placement(hero.home)
+    return RoomState(
+        hero.look(), hero.pet, grown, p.entries.mapNotNull { (k, v) -> k.roomTwin?.let { it to v } }.toMap(),
+        p[Spot.A_WALLPAPER] ?: ATTIC_WALLPAPER, p[Spot.A_FLOOR] ?: ATTIC_FLOOR, attic = true,
+    )
+}
+
+private fun HomeArea.types() = when (this) {
+    HomeArea.GARDEN -> listOf(DecorType.GARDEN_BIG, DecorType.GARDEN_SMALL, DecorType.FENCE, DecorType.PATH)
+    else -> listOf(DecorType.WALL, DecorType.BIG, DecorType.SMALL, DecorType.RUG)
+}
 
 @Composable
 fun HomeScreen(hero: Hero, onBack: () -> Unit) {
     val c = LocalContext.current.container
+    val fb = LocalFeedback.current
     val grown by remember(hero.pet) { c.db.game().observePets().map { l -> (l.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100 } }
         .collectAsStateWithLifecycle(initialValue = false)
     var picking by remember { mutableStateOf<Pair<DecorType, Spot?>?>(null) }
+    var area by remember { mutableStateOf(HomeArea.ROOM) }
     val placement = HomeCatalog.placement(hero.home)
+    val season = rememberSeason()
+    val open = area.price <= 0.0 || hero.ownsDecor(area.ownedKey)
+    val poor = stringResource(R.string.not_enough_gold)
 
     Column(Modifier.fillMaxSize().background(D.c.bg).statusBarsPadding()) {
         TopBar(stringResource(R.string.home), onBack) {
@@ -132,25 +160,59 @@ fun HomeScreen(hero: Hero, onBack: () -> Unit) {
             Spacer(Modifier.width(16.dp))
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            RoomView(roomState(hero, grown))
+            when (area) {
+                HomeArea.ROOM -> RoomView(roomState(hero, grown))
+                HomeArea.ATTIC -> RoomView(atticState(hero, grown))
+                HomeArea.GARDEN -> SceneView(
+                    SceneState(SceneKind.MEADOW, 12f, hero.look(), hero.pet, grown, season = season, garden = placement.filterKeys { it.area == HomeArea.GARDEN }),
+                    virtualHeight = 84, ground = 30,
+                )
+            }
             Column(Modifier.padding(horizontal = 16.dp).navigationBarsPadding()) {
                 Gap(10)
-                Text(stringResource(R.string.home_text), style = DType.Sub)
-                listOf(DecorType.WALL, DecorType.BIG, DecorType.SMALL, DecorType.RUG).forEach { type ->
-                    SectionTitle(stringResource(type.label))
-                    DCard(padding = androidx.compose.foundation.layout.PaddingValues(4.dp)) {
-                        val spots = Spot.entries.filter { it.type == type }
-                        spots.forEachIndexed { i, spot ->
-                            SpotRow(spotLabel(spot), placement[spot]?.let(HomeCatalog::item)) { picking = type to spot }
-                            if (i < spots.size - 1) HorizontalDivider(color = D.c.line)
+                Segmented(HomeArea.entries.toList(), area, { stringResource(it.label) }, { area = it }, Modifier.fillMaxWidth())
+                Gap(10)
+                val text = when (area) {
+                    HomeArea.ROOM -> R.string.home_text
+                    HomeArea.GARDEN -> R.string.area_text_garden
+                    HomeArea.ATTIC -> R.string.area_text_attic
+                }
+                if (!open) {
+                    DCard {
+                        Text(stringResource(text), style = DType.Sub)
+                        Gap(12)
+                        if (hero.level < area.level) Text(stringResource(R.string.area_locked, area.level), style = DType.Small)
+                        else PriceButton(area.price, hero.gold >= area.price, {
+                            c.scope.launch {
+                                val ok = c.game.buyArea(area)
+                                withContext(Dispatchers.Main) { if (ok) fb.tap() else fb.show(poor) }
+                            }
+                        })
+                    }
+                } else {
+                    Text(stringResource(text), style = DType.Sub)
+                    area.types().forEach { type ->
+                        SectionTitle(stringResource(type.label))
+                        DCard(padding = androidx.compose.foundation.layout.PaddingValues(4.dp)) {
+                            val spots = Spot.entries.filter { it.type == type && it.area == area }
+                            spots.forEachIndexed { i, spot ->
+                                SpotRow(spotLabel(spot, spots.size), placement[spot]?.let(HomeCatalog::item)) { picking = type to spot }
+                                if (i < spots.size - 1) HorizontalDivider(color = D.c.line)
+                            }
                         }
                     }
-                }
-                SectionTitle(stringResource(R.string.decor_wallpaper) + " · " + stringResource(R.string.decor_floor))
-                DCard(padding = androidx.compose.foundation.layout.PaddingValues(4.dp)) {
-                    SpotRow(stringResource(R.string.decor_wallpaper), HomeCatalog.item(hero.wallpaper)) { picking = DecorType.WALLPAPER to null }
-                    HorizontalDivider(color = D.c.line)
-                    SpotRow(stringResource(R.string.decor_floor), HomeCatalog.item(hero.floor)) { picking = DecorType.FLOOR to null }
+                    if (area != HomeArea.GARDEN) {
+                        // The room keeps its wallpaper and floor on the hero; the attic's live among its spots.
+                        val attic = area == HomeArea.ATTIC
+                        val wp = if (attic) placement[Spot.A_WALLPAPER] ?: ATTIC_WALLPAPER else hero.wallpaper
+                        val fl = if (attic) placement[Spot.A_FLOOR] ?: ATTIC_FLOOR else hero.floor
+                        SectionTitle(stringResource(R.string.decor_wallpaper) + " · " + stringResource(R.string.decor_floor))
+                        DCard(padding = androidx.compose.foundation.layout.PaddingValues(4.dp)) {
+                            SpotRow(stringResource(R.string.decor_wallpaper), HomeCatalog.item(wp)) { picking = DecorType.WALLPAPER to if (attic) Spot.A_WALLPAPER else null }
+                            HorizontalDivider(color = D.c.line)
+                            SpotRow(stringResource(R.string.decor_floor), HomeCatalog.item(fl)) { picking = DecorType.FLOOR to if (attic) Spot.A_FLOOR else null }
+                        }
+                    }
                 }
                 Gap(24)
             }
@@ -161,10 +223,11 @@ fun HomeScreen(hero: Hero, onBack: () -> Unit) {
 }
 
 @Composable
-private fun spotLabel(spot: Spot): String {
-    val side = when (spot) {
-        Spot.WALL_L, Spot.BIG_L, Spot.SMALL_L -> R.string.spot_left
-        Spot.WALL_R, Spot.BIG_R, Spot.SMALL_R -> R.string.spot_right
+private fun spotLabel(spot: Spot, ofType: Int): String {
+    if (ofType == 1) return stringResource(spot.type.label)
+    val side = when {
+        spot.name.endsWith("_L") -> R.string.spot_left
+        spot.name.endsWith("_R") -> R.string.spot_right
         else -> R.string.spot_center
     }
     return stringResource(spot.type.label) + " · " + stringResource(side)
@@ -224,9 +287,9 @@ private fun DecorPicker(hero: Hero, type: DecorType, spot: Spot?, onDismiss: () 
                 HomeCatalog.items.filter { it.type == type }.forEach { d ->
                     val owned = hero.ownsDecor(d.key)
                     val locked = hero.level < d.level
-                    val here = when (type) {
-                        DecorType.WALLPAPER -> hero.wallpaper == d.key
-                        DecorType.FLOOR -> hero.floor == d.key
+                    val here = when {
+                        spot == null && type == DecorType.WALLPAPER -> hero.wallpaper == d.key
+                        spot == null && type == DecorType.FLOOR -> hero.floor == d.key
                         else -> spot != null && placement[spot] == d.key
                     }
                     Row(
@@ -251,7 +314,7 @@ private fun DecorPicker(hero: Hero, type: DecorType, spot: Spot?, onDismiss: () 
                         }
                     }
                 }
-                if (spot != null && placement[spot] != null) {
+                if (spot != null && placement[spot] != null && type != DecorType.WALLPAPER && type != DecorType.FLOOR) {
                     Gap(8)
                     SoftButton(stringResource(R.string.take_away), { c.launch { c.game.place(spot, null) }; onDismiss() }, Modifier.fillMaxWidth())
                 }

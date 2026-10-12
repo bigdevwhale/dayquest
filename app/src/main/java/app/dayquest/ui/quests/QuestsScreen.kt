@@ -119,12 +119,9 @@ fun QuestsScreen(hero: Hero) {
                     BossCard(b, hero, active != null, stringResource(R.string.once_week), onStart = { start(b) })
                 }
             }
-            o.seasonal?.takeIf { it.record != active?.record }?.let { b ->
-                item(key = "seasonal") {
-                    SectionTitle(stringResource(R.string.season_boss, stringResource(o.season.label)))
-                    BossCard(b, hero, active != null, stringResource(R.string.once_season), onStart = { start(b) })
-                }
-            }
+            val seasonal = o.seasonal.filter { it.record != active?.record }
+            if (seasonal.isNotEmpty()) item(key = "seasonal") { SectionTitle(stringResource(R.string.season_boss, stringResource(o.season.label))) }
+            items(seasonal, key = { it.record }) { b -> BossCard(b, hero, active != null, stringResource(R.string.once_season), onStart = { start(b) }) }
             item(key = "main") { SectionTitle(stringResource(R.string.main_bosses)) }
             items(o.main, key = { it.record }) { b -> BossCard(b, hero, active != null, null, onStart = { start(b) }) }
         }

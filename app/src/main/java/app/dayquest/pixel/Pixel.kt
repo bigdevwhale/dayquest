@@ -211,12 +211,56 @@ class PixelCanvas(val w: Int, val h: Int) {
         for (k in ink.indices) if (ink[k] === from) ink[k] = to
     }
 
+    /**
+     * A height field for shading: each pixel's distance to the edge of its own material (chamfer,
+     * capped), bent into a dome profile so edges round off quickly and wide areas stay calm.
+     */
+    private fun domes(cap: Float = 4f): FloatArray {
+        val d = FloatArray(w * h)
+        val big = 1e6f
+        for (k in d.indices) d[k] = if (ink[k] is Mat) big else 0f
+        // Painted details (eyes, stripes) sit on the surface: they don't cut a shape into pieces.
+        fun same(k: Int, x: Int, y: Int) = x in 0 until w && y in 0 until h && ink[y * w + x].let { it === ink[k] || (it != null && it !is Mat) }
+        fun relax(k: Int, x: Int, y: Int, dx: Int, dy: Int, cost: Float) {
+            val nx = x + dx
+            val ny = y + dy
+            val v = if (same(k, nx, ny)) d[ny * w + nx] + cost else cost
+            if (v < d[k]) d[k] = v
+        }
+        for (y in 0 until h) for (x in 0 until w) {
+            val k = y * w + x
+            if (d[k] == 0f) continue
+            relax(k, x, y, -1, 0, 1f); relax(k, x, y, 0, -1, 1f); relax(k, x, y, -1, -1, 1.4f); relax(k, x, y, 1, -1, 1.4f)
+        }
+        for (y in h - 1 downTo 0) for (x in w - 1 downTo 0) {
+            val k = y * w + x
+            if (d[k] == 0f) continue
+            relax(k, x, y, 1, 0, 1f); relax(k, x, y, 0, 1, 1f); relax(k, x, y, 1, 1, 1.4f); relax(k, x, y, -1, 1, 1.4f)
+        }
+        for (k in d.indices) if (d[k] > 0f) {
+            val t = (d[k].coerceAtMost(cap) / cap)
+            d[k] = cap * kotlin.math.sqrt(1f - (1f - t) * (1f - t))
+        }
+        return d
+    }
+
     /** Shades, outlines and pads by one pixel on every side (room for the outline). */
     fun render(outline: Boolean = true): Sprite {
         val W = w + 2
         val H = h + 2
         val out = IntArray(W * H)
         fun opaque(x: Int, y: Int) = this[x, y] != null
+        val height = domes()
+        // Tiny sprites (pets, icons) keep crisp hand-drawn faces; big ones (bosses, furniture) get full volume.
+        val domeGain = ((min(w, h) - 12) / 14f).coerceIn(0.3f, 1f)
+        fun hAt(x: Int, y: Int, m: Ink, fx: Int, fy: Int): Float {
+            val n = this[x, y]
+            return when {
+                n === m -> height[y * w + x]
+                n != null && n !is Mat -> height[fy * w + fx]
+                else -> 0f
+            }
+        }
         for (y in 0 until h) for (x in 0 until w) {
             val i = this[x, y] ?: continue
             out[(y + 1) * W + x + 1] = when (i) {
@@ -234,9 +278,17 @@ class PixelCanvas(val w: Int, val h: Int) {
                     if (leftT) light += 0.5f
                     if (downT) light -= 1f
                     if (rightT) light -= 0.5f
+                    // Volume: every part of a material is a soft dome lit from the top-left, so blobs
+                    // read as round things instead of flat cut-outs.
+                    val gx = hAt(x + 1, y, i, x, y) - hAt(x - 1, y, i, x, y)
+                    val gy = hAt(x, y + 1, i, x, y) - hAt(x, y - 1, i, x, y)
+                    val nz = 2f
+                    val len = kotlin.math.sqrt(gx * gx + gy * gy + nz * nz)
+                    val dome = ((-gx * -0.55f + -gy * -0.75f + nz * 0.37f) / len - 0.37f) * 2.6f * domeGain
+                    light = light * 0.55f + dome
                     if (occluded) light -= 1f
-                    var t = 2 + light.roundToInt()
-                    if (t >= 4 && !(upT && leftT)) t = 3
+                    var t = (2 + light).roundToInt()
+                    if (t >= 4 && !(upT && leftT) && dome < 0.9f) t = 3
                     i.ramp[t.coerceIn(1, 4)]
                 }
             }
@@ -245,11 +297,15 @@ class PixelCanvas(val w: Int, val h: Int) {
             for (y in -1..h) for (x in -1..w) {
                 if (opaque(x, y)) continue
                 // Prefer the material below or to the right: the outline then reads as that shape's edge.
-                val n = listOf(this[x, y + 1], this[x + 1, y], this[x - 1, y], this[x, y - 1]).firstOrNull {
+                val below = this[x, y + 1]
+                val right = this[x + 1, y]
+                val n = listOf(below, right, this[x - 1, y], this[x, y - 1]).firstOrNull {
                     it != null && (it !is Mat || it.outlined)
                 } ?: continue
+                // Selective outline: where light hits (above and left of a shape), the line softens.
+                val lit = (n === below || n === right) && this[x - 1, y] == null && this[x, y - 1] == null
                 out[(y + 1) * W + x + 1] = when (n) {
-                    is Mat -> n.ramp[0]
+                    is Mat -> if (lit) Color.mix(n.ramp[0], n.ramp[1], 0.45f) else n.ramp[0]
                     is Tone -> n.ramp[0]
                     is Flat -> Color.darken(n.color, 0.35f)
                 }

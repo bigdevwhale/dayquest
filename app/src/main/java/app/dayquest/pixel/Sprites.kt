@@ -170,6 +170,36 @@ object Sprites {
             ".....GGGGGGGGGG.....",
             ".....GGGGGGGGGG.....",
         )),
+        GearShape.HOOD to (2 to listOf(
+            ".......gggggg.......",
+            "......gggggggg......",
+            ".....gggggggggg.....",
+            ".....gggggggggg.....",
+            ".....gG......Gg.....",
+            ".....g........g.....",
+            ".....g........g.....",
+            ".....g........g.....",
+            ".....gg......gg.....",
+            "....ggg......ggg....",
+        )),
+        GearShape.BANDANA to (5 to listOf(
+            ".....gggggggggg.....",
+            ".....GgGgGgGgGggg...",
+            "...............g.g..",
+            "................g...",
+        )),
+        GearShape.CIRCLET to (5 to listOf(
+            ".........GG.........",
+            ".....gggggGggggg....",
+        )),
+        GearShape.FEATHER to (1 to listOf(
+            "...............GG...",
+            "..............GGG...",
+            "........gggggGG.....",
+            "......gggggggGg.....",
+            ".....ggggggggggg....",
+            "....GGgggggggggggg..",
+        )),
         GearShape.CROWN to (2 to listOf(
             "......g..gg..g......",
             "......gggggggg......",
@@ -191,7 +221,116 @@ object Sprites {
         )),
     )
 
+    /** A cape hangs behind the body; the cloak's clasp sits at the collar. */
+    private val CAPE = listOf(
+        "....aaaaaaaaaaaa....",
+        "...aaa........aaa...",
+        "...aa..........aa...",
+        "...aa..........aa...",
+        "...aaa........aaa...",
+        "...aaa........aaa...",
+        "...aaaa......aaaa...",
+        "....aaa......aaa....",
+    )
+
     private val WEAPONS = mapOf(
+        GearShape.DAGGER to (11 to listOf(
+            "................w...",
+            "................ww..",
+            "................ww..",
+            "................ww..",
+            "................ww..",
+            "...............WWWW.",
+            "................W...",
+        )),
+        GearShape.SPEAR to (0 to listOf(
+            "................w...",
+            "...............www..",
+            "...............www..",
+            "...............www..",
+            "................w...",
+            "...............WWW..",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+        )),
+        GearShape.HAMMER to (4 to listOf(
+            "..............wwwww.",
+            ".............wwwwwww",
+            ".............wwwwwww",
+            ".............wwwwwww",
+            "..............wwwww.",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+        )),
+        GearShape.BOW to (6 to listOf(
+            "...............Ww...",
+            "...............W.w..",
+            "...............W..w.",
+            "...............W..w.",
+            "...............W...w",
+            "...............W...w",
+            "...............W...w",
+            "...............W...w",
+            "...............W...w",
+            "...............W..w.",
+            "...............W..w.",
+            "...............W.w..",
+            "...............Ww...",
+        )),
+        GearShape.SCYTHE to (0 to listOf(
+            "..........wwwwwwW...",
+            "........www..wwwW...",
+            "........w.......W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+        )),
+        GearShape.WAND to (11 to listOf(
+            "...............w.w..",
+            "................w...",
+            "...............w.w..",
+            "................W...",
+            "................W...",
+            "................W...",
+            "................W...",
+        )),
         GearShape.SWORD to (7 to listOf(
             "................w...",
             "................ww..",
@@ -261,6 +400,30 @@ object Sprites {
             "..zZz...............",
             "...z................",
         )),
+        GearShape.TOWER to (12 to listOf(
+            "zzzzzz..............",
+            "zZzzZz..............",
+            "zzZZzz..............",
+            "zzZZzz..............",
+            "zZzzZz..............",
+            "zzzzzz..............",
+            "zzzzzz..............",
+            ".zzzz...............",
+        )),
+        GearShape.LANTERN to (16 to listOf(
+            "..z.................",
+            ".zzz................",
+            ".ZZZ................",
+            ".ZZZ................",
+            ".zzz................",
+        )),
+        GearShape.ORB to (14 to listOf(
+            "..ZZ................",
+            ".ZZZZ...............",
+            ".ZZZZ...............",
+            "..ZZ................",
+            ".zzzz...............",
+        )),
         GearShape.BOOK to (15 to listOf(
             ".zzzzz..............",
             ".zzZzz..............",
@@ -280,6 +443,7 @@ object Sprites {
         val shield = Catalog.gear(look.shield)
         val skinInk = mat(skin)
 
+        if (armor.shape == GearShape.CLOAK) c.grid(CAPE, mapOf('a' to mat(armor.secondary)), dy = 14)
         weapon?.let { g ->
             val (dy, rows) = WEAPONS[g.shape] ?: return@let
             c.grid(rows, mapOf('w' to mat(g.primary, g.glow), 'W' to mat(g.secondary)), dy = dy)
@@ -294,6 +458,10 @@ object Sprites {
                 'd' to mat(0xFF4A4262.toInt()), 'b' to mat(0xFF6B4630.toInt()),
             ),
         )
+        if (armor.shape == GearShape.CLOAK) {
+            // Collar and a golden clasp
+            c.rect(6, 14, 13, 14, mat(armor.secondary)); c.set(9, 14, mat(0xFFF2C14E.toInt())); c.set(10, 14, mat(0xFFF2C14E.toInt()))
+        }
         ARMOR_GEAR[armor.shape]?.let { (dy, rows) ->
             c.grid(rows, mapOf('a' to (c[8, 15] ?: mat(armor.primary)), 'A' to mat(armor.secondary)), dy = dy)
         }
@@ -949,6 +1117,7 @@ object Sprites {
                 rect(9, 12, 21, 13, glow)
                 listOf(10, 14, 18).forEach { x -> set(x, 12, pumpkin); set(x + 2, 13, pumpkin) }
             }.render()
+            else -> MoreBosses.draw(shape, primary, secondary, frame)
         }
     }
 
@@ -969,7 +1138,7 @@ object Sprites {
 
     // ---- Home decor ----------------------------------------------------------------------
 
-    private val animated = setOf("clock", "fireplace", "aquarium", "candles")
+    private val animated = setOf("clock", "fireplace", "aquarium", "candles") + MoreDecor.animated
 
     fun decor(key: String, frame: Int = 0): Sprite = cached("decor:$key:${if (key in animated) frame else 0}") {
         val wood = mat(0xFF9A6334.toInt())
@@ -1144,8 +1313,8 @@ object Sprites {
                 ellipse(22f, 5f, 17f, 3.6f, Flat(0xFF4FC07A.toInt()))
                 ellipse(22f, 5f, 10f, 2f, Flat(0xFFF6EBDD.toInt()))
             }
-            else -> PixelCanvas(4, 4)
-        }.render(outline = !key.startsWith("rug"))
+            else -> MoreDecor.canvas(key, frame) ?: PixelCanvas(4, 4)
+        }.render(outline = !key.startsWith("rug") && !key.startsWith("path") && key != "pond")
     }
 
     // ---- Scenery -------------------------------------------------------------------------

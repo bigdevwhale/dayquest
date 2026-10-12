@@ -40,6 +40,13 @@ class LongGameTest {
         assertEquals("week:2026:42", weekly.record)
         val seasonal = Catalog.seasonalBoss(Season.WINTER, 2026, 15)
         assertEquals(seasonal, Catalog.boss(seasonal.key))
+        assertEquals("season:winter:2026", seasonal.record)
+        Season.entries.forEach { s ->
+            val all = Catalog.seasonalBosses(s, 2026, 15)
+            assertEquals(Catalog.SEASONAL_PER_SEASON, all.size)
+            all.forEach { assertEquals(it, Catalog.boss(it.key)) }
+            assertEquals(all.size, all.map { it.record }.distinct().size)
+        }
         // Rewards never list the same item twice.
         Catalog.bosses.forEach { b -> (1..5).forEach { r -> val k = Catalog.ranked(b, r).rewards.map { it.first }; assertEquals(k.distinct(), k) } }
     }

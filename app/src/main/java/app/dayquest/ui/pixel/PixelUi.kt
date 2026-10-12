@@ -91,6 +91,8 @@ fun SceneView(
     state: SceneState,
     modifier: Modifier = Modifier,
     virtualHeight: Int = 72,
+    /** Rows of ground below the horizon; the garden wants a deep one. */
+    ground: Int = 14,
     bursts: Flow<Burst>? = null,
     floaters: Flow<Floater>? = null,
 ) {
@@ -98,7 +100,7 @@ fun SceneView(
         val widthPx = constraints.maxWidth
         val scale = max(2, widthPx / 172)
         val vw = ceil(widthPx / scale.toFloat()).toInt()
-        val renderer = remember(vw, virtualHeight) { SceneRenderer(vw, virtualHeight) }
+        val renderer = remember(vw, virtualHeight, ground) { SceneRenderer(vw, virtualHeight, ground) }
         val bitmap = remember(vw, virtualHeight) { Bitmap.createBitmap(vw, virtualHeight, Bitmap.Config.ARGB_8888) }
         val image = remember(bitmap) { bitmap.asImageBitmap() }
         var frame by remember { mutableLongStateOf(0L) }

@@ -38,7 +38,7 @@ In Dayquest your habits, dailies and to-dos power a pixel hero. Finish things an
 | | Feature | How it works |
 |---|---|---|
 | 🗡️ | **Habits, dailies, to-dos** | + / − habits, dailies on chosen weekdays or every N days, to-dos with due dates. Checklists open right in the list. Task colour shifts from red (neglected) to blue (mastered), and neglected tasks pay more. |
-| 🌅 | **A living scene** | Your hero, pet and current boss stand in a pixel landscape with a dithered sky: dawn, noon, sunset, stars and fireflies at night. Six places to unlock, from a sunny meadow to a crystal cave. |
+| 🌅 | **A living scene** | Your hero, pet and current boss stand in a pixel landscape with a dithered sky: dawn, noon, sunset, stars and fireflies at night. Ten places to unlock, from a sunny meadow and a cherry grove to castle ruins, a smoking volcano and islands floating in the sky. Mountains catch the light, the sea mirrors the sun, birds cross the sky and sunbeams slant through the pines. |
 | ⚔️ | **Boss fights** | Every task you finish hits the boss, sometimes with a critical hit; every daily you miss lets it hit back. Damage numbers, sparks and coins fly in the scene. |
 | 🐾 | **88 pets** | 8 species × 11 hatching potions. Pick an egg and a potion in one card and see who hatches. Feed them their favourite food until they are fully grown and wear a tiny crown. |
 | 🛡️ | **Gear you can see** | Every helmet, robe, sword and shield changes both your stats and your sprite. The shop shows your hero *wearing* an item before you buy it. |
@@ -54,11 +54,11 @@ Most habit games run out of things to unlock within a couple of months. Dayquest
 
 | | | |
 |---|---|---|
-| 🍂 | **Real seasons** | Blossom in spring, falling leaves in autumn, snow in winter, in every scene. Each season brings its own hatching potion (32 seasonal pets), a hat sold only then and a seasonal boss you can fight once per season. A switch flips seasons for the southern hemisphere. |
+| 🍂 | **Real seasons** | Blossom in spring, falling leaves in autumn, snow in winter, in every scene. Each season brings its own hatching potion (32 seasonal pets), a hat, a weapon and a cloak sold only then, and three seasonal bosses (from a queen bee to a snowman) you can each fight once per season. A switch flips seasons for the southern hemisphere. |
 | 🔨 | **The endless forge** | From level 20, every 5 levels a new tier of gear appears, from rare to epic to legendary. Items are generated from their tier, so the forge never runs dry, and the prices keep gold meaningful. |
-| 💀 | **Bosses that come back** | Beaten bosses return as Elite, Ancient and Mythic versions: recoloured, tougher, with richer loot. A new generated *boss of the week* wanders in every Monday. |
+| 💀 | **Bosses that come back** | Beaten bosses return as Elite, Ancient and Mythic versions: recoloured, tougher, with richer loot. Twelve main bosses lead from the Slime King to the Hydra of Overcommitment, and a new generated *boss of the week* wanders in every Monday, drawn from 24 kinds of foe. |
 | 🏅 | **Achievements that need time** | 47 achievements, from a 7-day streak to *five years together*, each with a gold reward. They measure real days, not grinding. |
-| 🏠 | **A home** | 27 pieces of furniture plus wallpapers and floors for the hero's room. The fireplace, lamp and candles glow at night, the window shows the real sky, and the pet sleeps in its bed. |
+| 🏠 | **A home** | A room, an attic under the roof with a round window and a garden outside the cottage, with over 60 pieces to place, plus wallpapers, floors, fences and paths. The fireplace, lamp posts and candles glow at night, windows show the real sky, the garden follows the seasons, and the pet sleeps in its bed. |
 
 ## Screenshots
 

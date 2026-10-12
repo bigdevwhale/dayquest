@@ -15,6 +15,8 @@ data class RoomState(
     val wallpaper: String = "wp_plain",
     val floor: String = "fl_planks",
     val hour: Float = 12f,
+    /** Under the roof: slanted beams, a round window, wall spots moved inward. */
+    val attic: Boolean = false,
 )
 
 /** The hero's room, side view: wallpaper, floor, furniture in fixed spots, warm lights at night. */
@@ -23,15 +25,16 @@ class RoomRenderer(val w: Int, val h: Int) {
     val floorY = (h * 0.6f).toInt()
 
     /** Where each spot's sprite is anchored: centre x and bottom y. */
-    fun anchor(spot: Spot): Pair<Int, Int> = when (spot) {
-        Spot.WALL_L -> (w * 0.2f).roundToInt() to (floorY * 0.68f).roundToInt()
+    fun anchor(spot: Spot, attic: Boolean = false): Pair<Int, Int> = when (spot) {
+        Spot.WALL_L -> (w * if (attic) 0.31f else 0.2f).roundToInt() to (floorY * if (attic) 0.8f else 0.68f).roundToInt()
+        Spot.WALL_R -> (w * if (attic) 0.69f else 0.8f).roundToInt() to (floorY * if (attic) 0.8f else 0.68f).roundToInt()
         Spot.WALL_C -> (w * 0.5f).roundToInt() to (floorY * 0.62f).roundToInt()
-        Spot.WALL_R -> (w * 0.8f).roundToInt() to (floorY * 0.68f).roundToInt()
         Spot.BIG_L -> (w * 0.13f).roundToInt() to floorY + 8
         Spot.BIG_R -> (w * 0.87f).roundToInt() to floorY + 8
         Spot.SMALL_L -> (w * 0.31f).roundToInt() to floorY + 11
         Spot.SMALL_R -> (w * 0.69f).roundToInt() to floorY + 11
         Spot.RUG -> (w * 0.5f).roundToInt() to h - 4
+        else -> spot.roomTwin?.let { anchor(it, attic) } ?: (w / 2 to floorY)
     }
 
     private fun nightness(hour: Float) = when {
@@ -46,6 +49,7 @@ class RoomRenderer(val w: Int, val h: Int) {
         val night = nightness(s.hour)
         drawWall(s.wallpaper, now)
         drawFloor(s.floor)
+        if (s.attic) drawAttic(s.hour, now)
         // Baseboard
         for (x in 0 until w) {
             b.px[(floorY - 2) * w + x] = 0xFF7A5034.toInt()
@@ -57,9 +61,10 @@ class RoomRenderer(val w: Int, val h: Int) {
 
         // Wall items, the window with the real sky behind its glass.
         for (spot in listOf(Spot.WALL_L, Spot.WALL_C, Spot.WALL_R)) {
+            if (s.attic && spot == Spot.WALL_C) continue
             val key = s.placement[spot] ?: continue
             val spr = Sprites.decor(key, frame)
-            val (cx, by) = anchor(spot)
+            val (cx, by) = anchor(spot, s.attic)
             val x = cx - spr.w / 2
             val y = by - spr.h
             if (key == "window") drawSky(x + 3, y + 3, spr.w - 6, spr.h - 6, s.hour, now)
@@ -81,13 +86,16 @@ class RoomRenderer(val w: Int, val h: Int) {
                 "fireplace" -> lights += Triple(cx, y + spr.h - 6, 34)
                 "lamp" -> lights += Triple(cx, y + 3, 26)
                 "candles" -> lights += Triple(cx, y + 2, 18)
+                "cauldron", "crystal_ball" -> lights += Triple(cx, y + 3, 14)
+                "alchemy_table" -> lights += Triple(cx, y + 6, 18)
                 "aquarium" -> lights += Triple(cx, y + 6, 14)
             }
         }
-        for (spot in listOf(Spot.WALL_L, Spot.WALL_C, Spot.WALL_R)) if (s.placement[spot] == "window" && night < 0.5f) {
-            val (cx, by) = anchor(spot)
+        for (spot in listOf(Spot.WALL_L, Spot.WALL_C, Spot.WALL_R)) if (s.placement[spot] == "window" && night < 0.5f && !(s.attic && spot == Spot.WALL_C)) {
+            val (cx, by) = anchor(spot, s.attic)
             lights += Triple(cx, by - 9, 30)
         }
+        if (s.attic && night < 0.5f) lights += Triple(w / 2, 12, 26)
 
         // Hero and pet in the middle of the room.
         val bob = if ((now / 520) % 2 == 1L) 1 else 0
@@ -131,6 +139,15 @@ class RoomRenderer(val w: Int, val h: Int) {
                     val off = if (row % 2 == 0) 0 else 5
                     if (y % 5 == 4 || (x + off) % 10 == 0) 0xFFB89A88.toInt() else if ((x + off) / 10 % 3 == 0) 0xFFC2614A.toInt() else 0xFFB5563F.toInt()
                 }
+                "wp_leaves" -> {
+                    val leaf = (x * 5 + y * 3) % 13 == 0 || ((x + 6) * 5 + (y + 4) * 3) % 17 == 0
+                    if (leaf) 0xFF6DAE6A.toInt() else if ((x + y) % 13 == 1 && y % 2 == 0) 0xFF8CC489.toInt() else 0xFFCFE6C4.toInt()
+                }
+                "wp_castle" -> {
+                    val row = y / 6
+                    val off = if (row % 2 == 0) 0 else 6
+                    if (y % 6 == 5 || (x + off) % 12 == 0) 0xFF6E7488.toInt() else if (y % 6 == 0) 0xFFB4B8C8.toInt() else if (((x + off) / 12 + row) % 3 == 0) 0xFF9AA0B5.toInt() else 0xFFA4AABE.toInt()
+                }
                 "wp_wood" -> if (x % 7 == 0) 0xFF7A5034.toInt() else if ((x / 7) % 2 == 0) 0xFFA8754A.toInt() else 0xFF9E6C42.toInt()
                 "wp_stars" -> {
                     val star = ((x * 73 + y * 151) % 97 == 0)
@@ -154,6 +171,16 @@ class RoomRenderer(val w: Int, val h: Int) {
                     if (x % 7 == 0 || ry % 5 == 0) 0xFF6E7488.toInt() else intArrayOf(0xFF9AA0B5.toInt(), 0xFF8E94A8.toInt(), 0xFFA6ACC0.toInt(), 0xFF949AAE.toInt())[cell]
                 }
                 "fl_carpet" -> Bayer.gradient(intArrayOf(0xFF6A3F7A.toInt(), 0xFF5A3368.toInt()), ry / (h - floorY).toFloat(), x, y)
+                "fl_parquet" -> {
+                    // Basket-weave blocks: planks run across in one block, along in the next.
+                    val across = (x / 8 + ry / 4) % 2 == 0
+                    val seam = if (across) ry % 2 == 0 else x % 2 == 0
+                    if (x % 8 == 0 || ry % 4 == 0) 0xFF6B4630.toInt() else if (seam) 0xFF9E6C42.toInt() else if (across) 0xFFC08A55.toInt() else 0xFFB07A48.toInt()
+                }
+                "fl_marble" -> {
+                    val vein = kotlin.math.abs(sin(x * 0.21 + ry * 0.9 + sin(x * 0.07) * 2)) < 0.06
+                    if (x % 12 == 0 || ry % 6 == 0) 0xFFC9C4D6.toInt() else if (vein) 0xFFB8B2C8.toInt() else if ((x / 12 + ry / 6) % 2 == 0) 0xFFF4F1F8.toInt() else 0xFFE9E4F0.toInt()
+                }
                 "fl_checker" -> if ((x / 6 + ry / 4) % 2 == 0) 0xFF2E2433.toInt() else 0xFFE9E3D3.toInt()
                 else -> {
                     val row = ry / 4
@@ -162,6 +189,42 @@ class RoomRenderer(val w: Int, val h: Int) {
                 }
             }
             b.px[y * w + x] = c
+        }
+    }
+
+    /** Roof slopes in the top corners, rafters, and a round window in the gable. */
+    private fun drawAttic(hour: Float, now: Long) {
+        val b = buffer
+        val slope = (w * 0.24f)
+        val wood = Ramps.of(0xFF8A5A36.toInt())
+        for (y in 0 until floorY - 2) {
+            val reach = (slope * (1f - y / (floorY * 0.75f))).toInt()
+            if (reach <= 0) continue
+            for (x in 0 until reach) {
+                val edge = reach - x <= 2
+                val c = if (edge) wood[3] else if ((x + y) % 7 == 0) wood[1] else wood[2]
+                b.px[y * w + x] = c
+                b.px[y * w + (w - 1 - x)] = if (edge) wood[1] else if ((x + y) % 7 == 0) wood[1] else Color.mix(wood[2], wood[1], 0.4f)
+            }
+        }
+        // Rafters across the top
+        for (x in 0 until w) { b.px[x] = wood[1]; b.px[w + x] = wood[2]; b.px[2 * w + x] = wood[1] }
+        // Round window with the real sky behind it
+        val cx = w / 2
+        val cy = 13
+        val r = 8
+        val behind = b.px.copyOf()
+        drawSky(cx - r, cy - r, 2 * r + 1, 2 * r + 1, hour, now)
+        for (y in cy - r - 1..cy + r + 1) for (x in cx - r - 1..cx + r + 1) {
+            if (x !in 0 until w || y !in 0 until h) continue
+            val d = sqrt(((x - cx) * (x - cx) + (y - cy) * (y - cy)).toFloat())
+            val i = y * w + x
+            when {
+                d > r + 1 -> b.px[i] = behind[i]
+                d > r -> b.px[i] = wood[0]
+                d > r - 2 -> b.px[i] = if (x + y < cx + cy) wood[3] else wood[1]
+                x == cx || y == cy -> b.px[i] = wood[2]
+            }
         }
     }
 

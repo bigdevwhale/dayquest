@@ -34,7 +34,7 @@ data class Outcome(
 )
 
 /** The day that just ended: what was missed, and what it cost. */
-data class Offers(val main: List<Boss>, val seasonal: Boss?, val weekly: Boss?, val season: Season)
+data class Offers(val main: List<Boss>, val seasonal: List<Boss>, val weekly: Boss?, val season: Season)
 
 data class DayReport(
     val day: Long,
@@ -395,7 +395,7 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
         val (wy, wk) = Catalog.weekOf(date)
         return Offers(
             main = Catalog.bosses.map { Catalog.nextFight(it, h.wins(it.key)) },
-            seasonal = Catalog.seasonalBoss(s, Season.year(date, southern), h.level).takeUnless { h.defeated(it.record) },
+            seasonal = Catalog.seasonalBosses(s, Season.year(date, southern), h.level).filterNot { h.defeated(it.record) },
             weekly = Catalog.weekly(wy, wk, h.level).takeUnless { h.defeated(it.record) },
             season = s,
         )
@@ -419,13 +419,23 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
         true
     }
 
+    /** Opens a new part of the home: the garden or the attic. */
+    suspend fun buyArea(a: HomeArea): Boolean = mutex.withLock {
+        val h = hero()
+        if (a.price <= 0.0 || h.ownsDecor(a.ownedKey)) return true
+        if (h.level < a.level || h.gold + 1e-9 < a.price) return false
+        db.saveHero(h.copy(gold = h.gold - a.price, ownedDecor = h.ownedDecor + "," + a.ownedKey))
+        db.insertLog(LogEntry(day = today(), kind = LogKind.BUY, gold = -a.price))
+        true
+    }
+
     /** Puts an owned item in a spot (or clears it with null), or applies a wallpaper / floor. */
     suspend fun place(spot: Spot?, d: Decor?) = mutex.withLock {
         val h = hero()
         if (d != null && !h.ownsDecor(d.key)) return
         when {
-            d?.type == DecorType.WALLPAPER -> db.saveHero(h.copy(wallpaper = d.key))
-            d?.type == DecorType.FLOOR -> db.saveHero(h.copy(floor = d.key))
+            spot == null && d?.type == DecorType.WALLPAPER -> db.saveHero(h.copy(wallpaper = d.key))
+            spot == null && d?.type == DecorType.FLOOR -> db.saveHero(h.copy(floor = d.key))
             spot != null -> {
                 // One item lives in one spot: moving it clears the old one.
                 val m = HomeCatalog.placement(h.home).filterValues { it != d?.key }.toMutableMap()
