@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from a 16x16 pixel grid: a sword and a spark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#1E1838" android:pathData="M78,26h8v4h-8zM74,30h4v4h-4zM82,30h4v4h-4zM70,34h4v4h-4zM82,34h4v4h-4zM66,38h4v4h-4zM78,38h4v4h-4zM62,42h4v4h-4zM74,42h4v4h-4zM58,46h4v4h-4zM70,46h4v4h-4zM54,50h4v4h-4zM66,50h4v4h-4zM34,54h8v4h-8zM50,54h4v4h-4zM62,54h4v4h-4zM30,58h4v4h-4zM42,58h8v4h-8zM58,58h4v4h-4zM34,62h4v4h-4zM54,62h4v4h-4zM38,66h4v4h-4zM50,66h4v4h-4zM34,70h4v4h-4zM42,70h4v4h-4zM54,70h4v4h-4zM30,74h4v4h-4zM38,74h4v4h-4zM46,74h4v4h-4zM58,74h4v4h-4zM26,78h4v4h-4zM34,78h4v4h-4zM50,78h8v4h-8zM26,82h8v4h-8z" />
+    <path android:fillColor="#EEF3FB" android:pathData="M78,30h4v4h-4zM74,34h4v4h-4zM70,38h4v4h-4zM66,42h4v4h-4zM62,46h4v4h-4zM58,50h4v4h-4zM54,54h4v4h-4zM50,58h4v4h-4zM46,62h4v4h-4z" />
+    <path android:fillColor="#9FAACB" android:pathData="M78,34h4v4h-4zM74,38h4v4h-4zM70,42h4v4h-4zM66,46h4v4h-4zM62,50h4v4h-4zM58,54h4v4h-4zM54,58h4v4h-4zM50,62h4v4h-4z" />
+    <path android:fillColor="#F7C64E" android:pathData="M34,58h8v4h-8zM38,62h8v4h-8zM42,66h8v4h-8zM46,70h8v4h-8zM50,74h8v4h-8z" />
+    <path android:fillColor="#C8892E" android:pathData="M30,78h4v4h-4z" />
+    <path android:fillColor="#8A5A36" android:pathData="M38,70h4v4h-4zM34,74h4v4h-4z" />
+    <path android:fillColor="#FFE89A" android:pathData="M34,30h4v4h-4zM30,34h4v4h-4zM38,34h4v4h-4zM34,38h4v4h-4z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M34,34h4v4h-4z" />
+</vector>

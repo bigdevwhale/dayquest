@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dayquest</string>
+
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="add">Add</string>
+    <string name="undo">Undo</string>
+    <string name="next">Continue</string>
+    <string name="settings">Settings</string>
+
+    <!-- Navigation -->
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_shop">Shop</string>
+    <string name="nav_stable">Stable</string>
+    <string name="nav_quests">Quests</string>
+    <string name="nav_hero">Hero</string>
+
+    <string name="tab_habits">Habits</string>
+    <string name="tab_dailies">Dailies</string>
+    <string name="tab_todos">To-dos</string>
+
+    <string name="add_habit_hint">Add a habit…</string>
+    <string name="add_daily_hint">Add a daily…</string>
+    <string name="add_todo_hint">Add a to-do…</string>
+    <string name="add_reward_hint">Add a reward…</string>
+
+    <string name="empty_habits">Habits are things you do, or avoid, any number of times. Tap + after a good one and − after a slip.</string>
+    <string name="empty_dailies">Dailies repeat on a schedule. Each one you miss costs a little health when the new day starts.</string>
+    <string name="empty_todos">To-dos are one-off tasks. The longer one waits, the more it pays when you finally do it.</string>
+    <string name="empty_rewards">Spend your gold on real treats: a coffee, an episode, a lazy morning.</string>
+
+    <string name="not_due">Not due today</string>
+    <string name="completed">Completed</string>
+    <string name="due_on">Due %s</string>
+    <string name="overdue">Overdue · %s</string>
+    <string name="dailies_progress">%1$d of %2$d done today</string>
+
+    <!-- Hero stats -->
+    <string name="gold">Gold</string>
+    <string name="lv">LV %d</string>
+
+    <!-- Task editor -->
+    <string name="new_habit">New habit</string>
+    <string name="new_daily">New daily</string>
+    <string name="new_todo">New to-do</string>
+    <string name="new_reward">New reward</string>
+    <string name="edit_task">Edit</string>
+    <string name="title">Title</string>
+    <string name="notes">Notes</string>
+    <string name="difficulty">Difficulty</string>
+    <string name="diff_trivial">Trivial</string>
+    <string name="diff_easy">Easy</string>
+    <string name="diff_medium">Medium</string>
+    <string name="diff_hard">Hard</string>
+    <string name="habit_direction">Buttons</string>
+    <string name="positive">Good  +</string>
+    <string name="negative">Bad  −</string>
+    <string name="repeat">Repeats</string>
+    <string name="weekly">On weekdays</string>
+    <string name="every_n">Every few days</string>
+    <plurals name="every_n_days">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %d days</item>
+    </plurals>
+    <string name="checklist">Checklist</string>
+    <string name="add_item">Add an item…</string>
+    <string name="due_date">Due date</string>
+    <string name="no_due">No due date</string>
+    <string name="cost">Cost in gold</string>
+    <string name="reminder">Reminder</string>
+    <string name="no_reminder">No reminder</string>
+    <string name="delete_task_q">Delete this task?</string>
+    <string name="delete_task_text">It disappears from your board. The XP and gold it gave you stay.</string>
+    <string name="title_required">Give it a title</string>
+
+    <!-- Feedback -->
+    <string name="snack_gain">+%1$s XP · +%2$s gold</string>
+    <string name="snack_hurt">−%s health</string>
+    <string name="snack_hit">%s damage to the boss</string>
+    <string name="snack_crit">Critical hit! %s damage</string>
+    <string name="snack_drop">Found: %s</string>
+    <string name="snack_bought">Enjoy: %s</string>
+    <string name="snack_healed">+%s health</string>
+    <string name="not_enough_gold">Not enough gold yet</string>
+
+    <!-- New day -->
+    <string name="recap_title">Before the new day</string>
+    <string name="recap_text">These dailies weren\'t ticked yesterday. Did you do any of them after all? Tick what you finished; the rest will cost a little health.</string>
+    <string name="recap_start">Start the new day</string>
+    <string name="report_hurt">Missed dailies cost %s health.</string>
+    <string name="report_boss">The boss struck back for %s.</string>
+
+    <!-- Big moments -->
+    <string name="faint_title">You fainted</string>
+    <string name="faint_text">You lost a level and your gold. Your gear and pets are safe. Rest, then try again: one small task is enough to start.</string>
+    <string name="faint_ok">Get back up</string>
+    <string name="level_title">Level up!</string>
+    <string name="level_text">You reached level %d. Health fully restored.</string>
+    <string name="level_unlocked">New gear is waiting in the shop.</string>
+    <string name="victory_title">Victory!</string>
+    <string name="victory_text">%1$s is defeated. You earned %2$s gold, %3$s XP and: %4$s.</string>
+    <string name="hooray">Hooray</string>
+
+    <!-- Shop -->
+    <string name="shop_rewards">Your rewards</string>
+    <string name="shop_gear">Gear</string>
+    <string name="shop_scenes">Scenes</string>
+    <string name="health_potion">Health potion</string>
+    <string name="health_potion_text">Restores %s health</string>
+    <string name="equipped">Equipped</string>
+    <string name="equip">Equip</string>
+    <string name="unequip">Take off</string>
+    <string name="from_level">From level %d</string>
+    <string name="slot_weapon">Weapon</string>
+    <string name="slot_armor">Armor</string>
+    <string name="slot_head">Head</string>
+    <string name="slot_shield">Off-hand</string>
+    <string name="slot_empty">Nothing</string>
+    <string name="stat_str">STR</string>
+    <string name="stat_int">INT</string>
+    <string name="stat_con">CON</string>
+    <string name="stat_per">PER</string>
+    <string name="stat_str_long">Strength: harder hits on bosses and more critical hits</string>
+    <string name="stat_int_long">Intelligence: more experience from every task</string>
+    <string name="stat_con_long">Constitution: less damage from slips and missed dailies</string>
+    <string name="stat_per_long">Perception: more gold and more drops</string>
+    <string name="scene_use">Use</string>
+    <string name="scene_current">In use</string>
+
+    <!-- Stable -->
+    <string name="bag">Bag</string>
+    <string name="pets_count">Pets %1$d / %2$d</string>
+    <string name="collection">Collection</string>
+    <string name="hatch">Hatch</string>
+    <string name="hatch_title">Hatch a pet</string>
+    <string name="hatch_pick_egg">Egg</string>
+    <string name="hatch_pick_potion">Potion</string>
+    <string name="hatched">%s hatched!</string>
+    <string name="already_have">You already have this one</string>
+    <string name="companion">Companion</string>
+    <string name="set_companion">Take along</string>
+    <string name="fully_grown">Fully grown</string>
+    <string name="growth">Growth %d%%</string>
+    <string name="loves">Loves %s</string>
+    <string name="bag_empty">Finish tasks to find eggs, potions and food. Combine an egg with a potion to hatch a pet.</string>
+    <string name="pet_name">%1$s · %2$s</string>
+    <string name="egg_name">%s egg</string>
+    <string name="potion_name">%s potion</string>
+    <string name="grew">+%d%% growth</string>
+    <string name="no_food">No food yet</string>
+
+    <!-- Quests -->
+    <string name="quest_active">Current fight</string>
+    <string name="quest_hint">Every task you finish hits the boss. Every daily you miss lets it hit back.</string>
+    <string name="quest_start">Fight</string>
+    <string name="quest_abandon">Retreat</string>
+    <string name="quest_abandon_q">Retreat from this fight?</string>
+    <string name="quest_abandon_text">The boss will heal. You can challenge it again any time.</string>
+    <string name="quest_locked">From level %d</string>
+    <string name="quest_again">Fight again</string>
+    <string name="quest_rewards">Rewards: %s</string>
+    <string name="quest_strength">Hits for about %s per missed daily</string>
+    <string name="quest_busy">Finish the current fight first</string>
+    <string name="quest_none">No fight right now. Pick a boss below: it turns your tasks into attacks.</string>
+
+    <!-- Hero -->
+    <string name="appearance">Appearance</string>
+    <string name="hero_name">Name</string>
+    <string name="skin">Skin</string>
+    <string name="hair">Hair</string>
+    <string name="hair_color">Hair colour</string>
+    <string name="equipment">Equipment</string>
+    <string name="stats">Stats</string>
+    <string name="activity">Last 12 weeks</string>
+    <string name="total_done">Tasks done</string>
+    <string name="bosses_beaten">Bosses beaten</string>
+    <string name="pets_hatched">Pets</string>
+    <string name="times_fainted">Fainted</string>
+    <string name="rest_inn">Rest at the inn</string>
+    <string name="rest_inn_text">Holiday or sick day? Missed dailies won\'t hurt and streaks are kept.</string>
+    <string name="default_hero_name">Hero</string>
+    <string name="less">less</string>
+    <string name="more">more</string>
+
+    <!-- Settings -->
+    <string name="set_appearance">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="language">Language</string>
+    <string name="lang_system">System</string>
+    <string name="set_game">Game</string>
+    <string name="day_start">New day starts at</string>
+    <string name="day_start_text">Night owl? Dailies roll over at this hour instead of midnight.</string>
+    <string name="haptics">Vibrate on tap</string>
+    <string name="set_reminders">Reminders</string>
+    <string name="reminders">Task reminders</string>
+    <string name="reminders_text">The reminders you set on dailies and to-dos</string>
+    <string name="evening">Evening check-in</string>
+    <string name="evening_text">A nudge when dailies are still open</string>
+    <string name="off">Off</string>
+    <string name="autostart_title">Reminders don\'t arrive?</string>
+    <string name="autostart_text">Some phones (Xiaomi, Huawei, Samsung…) stop apps in the background. Allow autostart and turn off battery restrictions for Dayquest.</string>
+    <string name="perm_title">Allow notifications</string>
+    <string name="perm_text">So your reminders can reach you.</string>
+
+    <string name="transfer">Move your progress</string>
+    <string name="transfer_text">There are no accounts: your hero lives on this phone. To continue on another device, send yourself a file or a code and import it there.</string>
+    <string name="export_file">Save file</string>
+    <string name="share_file">Send file</string>
+    <string name="copy_code">Copy code</string>
+    <string name="import_file">Import file</string>
+    <string name="paste_code">Paste code</string>
+    <string name="code_copied">Code copied. On the other phone open Settings → Move your progress → Paste code.</string>
+    <string name="import_title">Replace this hero?</string>
+    <string name="import_text">Everything in Dayquest on this phone will be replaced by the imported progress.</string>
+    <string name="import_do">Replace</string>
+    <string name="imported">Welcome back, %s!</string>
+    <string name="import_failed">That doesn\'t look like Dayquest progress</string>
+    <string name="paste_title">Paste the code</string>
+    <string name="paste_hint">DQ1:…</string>
+    <string name="saved">Saved</string>
+    <string name="save_failed">Couldn\'t save the file</string>
+    <string name="share_via">Send progress via…</string>
+
+    <string name="about">About</string>
+    <string name="about_text">Dayquest is free and open source. No ads, no premium, no account; everything stays on your device.</string>
+    <string name="about_version">Version %s · Pixel font: Handjet (SIL OFL)</string>
+
+    <!-- Onboarding -->
+    <string name="welcome_title">Turn your days into a quest</string>
+    <string name="welcome_text">Build habits, tick off dailies, clear your to-dos. Your hero levels up, finds pets and defeats bosses. Slack off, and the hero gets hurt.</string>
+    <string name="welcome_start">Create a hero</string>
+    <string name="welcome_import">I already have a hero</string>
+    <string name="create_title">Your hero</string>
+    <string name="starter_title">Pick a few to start</string>
+    <string name="starter_text">Small is good. Everything can be changed later.</string>
+    <string name="starter_go">Begin the adventure</string>
+
+    <string name="st_water">Drink a glass of water</string>
+    <string name="st_junk">Junk food</string>
+    <string name="st_walk">Walk for 10 minutes</string>
+    <string name="st_scroll">Mindless scrolling</string>
+    <string name="st_bed">Make the bed</string>
+    <string name="st_read">Read 10 pages</string>
+    <string name="st_exercise">Exercise</string>
+    <string name="st_plan">Plan tomorrow</string>
+    <string name="st_meditate">Meditate for 5 minutes</string>
+    <string name="st_todo_board">Fill my quest board</string>
+    <string name="st_todo_desk">Tidy up my desk</string>
+    <string name="st_reward_episode">Watch an episode</string>
+    <string name="st_reward_treat">A sweet treat</string>
+
+    <!-- Notifications -->
+    <string name="channel_name">Reminders</string>
+    <string name="channel_desc">Reminders for dailies and to-dos</string>
+    <string name="notif_task">Time for: %s</string>
+    <string name="notif_task_text">Tick it off for XP and gold.</string>
+    <plurals name="notif_evening">
+        <item quantity="one">%d daily is still open</item>
+        <item quantity="other">%d dailies are still open</item>
+    </plurals>
+    <string name="notif_evening_text">There is still time before the day ends.</string>
+
+    <!-- Catalog -->
+    <string name="g_wooden_sword">Wooden Sword</string>
+    <string name="g_iron_sword">Iron Sword</string>
+    <string name="g_apprentice_staff">Apprentice Staff</string>
+    <string name="g_battle_axe">Battle Axe</string>
+    <string name="g_flame_blade">Flame Blade</string>
+    <string name="g_frost_staff">Frost Staff</string>
+    <string name="g_star_blade">Starforged Blade</string>
+    <string name="g_tunic">Traveler\'s Tunic</string>
+    <string name="g_leather">Leather Armor</string>
+    <string name="g_chainmail">Chainmail</string>
+    <string name="g_mystic_robe">Mystic Robe</string>
+    <string name="g_knight_plate">Knight\'s Plate</string>
+    <string name="g_dragon_scale">Dragonscale Armor</string>
+    <string name="g_cap">Red Cap</string>
+    <string name="g_iron_helm">Iron Helm</string>
+    <string name="g_wizard_hat">Wizard Hat</string>
+    <string name="g_horned_helm">Horned Helm</string>
+    <string name="g_crown">Crown of Focus</string>
+    <string name="g_buckler">Buckler</string>
+    <string name="g_kite_shield">Kite Shield</string>
+    <string name="g_spell_tome">Spell Tome</string>
+    <string name="g_aegis">Aegis</string>
+
+    <string name="sp_fox">Fox</string>
+    <string name="sp_cat">Cat</string>
+    <string name="sp_owl">Owl</string>
+    <string name="sp_slime">Slime</string>
+    <string name="sp_bunny">Bunny</string>
+    <string name="sp_wolf">Wolf</string>
+    <string name="sp_turtle">Turtle</string>
+    <string name="sp_dragon">Dragon</string>
+
+    <string name="po_base">Classic</string>
+    <string name="po_golden">Golden</string>
+    <string name="po_moss">Moss</string>
+    <string name="po_rose">Rose</string>
+    <string name="po_frost">Frost</string>
+    <string name="po_shadow">Shadow</string>
+    <string name="po_ember">Ember</string>
+
+    <string name="food_berry">Berries</string>
+    <string name="food_fish">Fish</string>
+    <string name="food_meat">Meat</string>
+    <string name="food_cake">Cake</string>
+
+    <string name="b_slime_king">Slime King</string>
+    <string name="bs_slime_king">A wobbly monarch who grows fat on dirty dishes and unmade beds. Tidy up and pop him.</string>
+    <string name="b_goblin_chief">Goblin Chief Later</string>
+    <string name="bs_goblin_chief">He steals your time one \"later\" at a time. Do it now and he loses his grip.</string>
+    <string name="b_stone_golem">Golem of Delay</string>
+    <string name="bs_stone_golem">Heavy, slow and very hard to move, just like the task you keep putting off.</string>
+    <string name="b_frost_wyrm">Frost Wyrm of Inertia</string>
+    <string name="bs_frost_wyrm">Its icy breath freezes good intentions. Keep moving to stay warm.</string>
+    <string name="b_shadow_lich">Lich of Doubt</string>
+    <string name="bs_shadow_lich">It whispers that you can\'t. Every finished task proves it wrong.</string>
+    <string name="b_ember_dragon">Burnout Dragon</string>
+    <string name="bs_ember_dragon">The last foe feeds on pushing too hard. Steady days beat heroic sprints.</string>
+
+    <string name="sc_meadow">Sunny Meadow</string>
+    <string name="sc_forest">Whispering Pines</string>
+    <string name="sc_shore">Seashore</string>
+    <string name="sc_snow">Snowy Peaks</string>
+    <string name="sc_desert">Golden Dunes</string>
+    <string name="sc_cave">Crystal Cave</string>
+    <!-- Long game: forge -->
+    <string name="forge">The forge</string>
+    <string name="forge_text">From level 20, every 5 levels the forge offers a new tier of gear. It never runs out.</string>
+    <string name="tier">Tier %d</string>
+    <string name="rarity_common">Common</string>
+    <string name="rarity_rare">Rare</string>
+    <string name="rarity_epic">Epic</string>
+    <string name="rarity_legendary">Legendary</string>
+    <string-array name="forge_prefix">
+        <item>Runed</item>
+        <item>Celestial</item>
+        <item>Abyssal</item>
+        <item>Verdant</item>
+        <item>Gilded</item>
+        <item>Storm</item>
+        <item>Ashen</item>
+        <item>Moonlit</item>
+        <item>Sunforged</item>
+        <item>Starlit</item>
+        <item>Obsidian</item>
+        <item>Crystal</item>
+    </string-array>
+    <string name="n_sword">Sword</string>
+    <string name="n_staff">Staff</string>
+    <string name="n_axe">Axe</string>
+    <string name="n_tunic">Tunic</string>
+    <string name="n_plate">Plate</string>
+    <string name="n_robe">Robe</string>
+    <string name="n_cap">Cap</string>
+    <string name="n_helm">Helm</string>
+    <string name="n_hat">Hat</string>
+    <string name="n_horns">Horned Helm</string>
+    <string name="n_crown">Crown</string>
+    <string name="n_wreath">Wreath</string>
+    <string name="n_buckler">Buckler</string>
+    <string name="n_shield">Shield</string>
+    <string name="n_tome">Tome</string>
+
+    <!-- Long game: seasons -->
+    <string name="season_spring">Spring</string>
+    <string name="season_summer">Summer</string>
+    <string name="season_autumn">Autumn</string>
+    <string name="season_winter">Winter</string>
+    <string name="seasonal">Only this season · %s</string>
+    <string name="seasonal_text">Seasonal hats are sold only in their season. Seasonal potions drop only then, too.</string>
+    <string name="g_flower_crown">Flower Crown</string>
+    <string name="g_sun_hat">Straw Sun Hat</string>
+    <string name="g_pumpkin_hat">Pumpkin Hat</string>
+    <string name="g_winter_hat">Cozy Beanie</string>
+    <string name="po_blossom">Blossom</string>
+    <string name="po_tide">Tide</string>
+    <string name="po_harvest">Harvest</string>
+    <string name="po_aurora">Aurora</string>
+    <string name="southern">Southern hemisphere</string>
+    <string name="southern_text">Seasons follow the calendar. Turn this on if winter comes in July for you.</string>
+
+    <!-- Long game: bosses -->
+    <string name="bn_slime">Slime</string>
+    <string name="bn_goblin">Goblin</string>
+    <string name="bn_golem">Golem</string>
+    <string name="bn_wyrm">Wyrm</string>
+    <string name="bn_lich">Lich</string>
+    <string name="bn_dragon">Dragon</string>
+    <string name="bn_yeti">Yeti</string>
+    <string name="bn_treant">Treant</string>
+    <string name="bn_crab">Crab</string>
+    <string name="bn_pumpkin">Pumpkinhead</string>
+    <string-array name="weekly_adj">
+        <item>Wandering</item>
+        <item>Gloomy</item>
+        <item>Sleepy</item>
+        <item>Noisy</item>
+        <item>Sly</item>
+        <item>Grumpy</item>
+        <item>Misty</item>
+        <item>Prickly</item>
+    </string-array>
+    <string name="weekly_name">%1$s %2$s</string>
+    <string name="bs_weekly">It wanders in for one week only. Beat it before Sunday ends; a new one arrives every Monday.</string>
+    <string name="b_treant">Treant of Clutter</string>
+    <string name="bs_treant">It wakes every spring from the piles you never sorted. Clear a shelf and its branches wither.</string>
+    <string name="b_crab">Crab of Slacking</string>
+    <string name="bs_crab">Sunbathing all day, it pinches anyone who tries to get up. Move a little every day.</string>
+    <string name="b_pumpkin">Pumpkinhead of Gloom</string>
+    <string name="bs_pumpkin">Autumn blues with a carved grin. Small finished tasks light up the evenings.</string>
+    <string name="b_yeti">Yeti of Hibernation</string>
+    <string name="bs_yeti">It wants you under a blanket until March. Keep your dailies and stay warm.</string>
+    <string name="rank_elite">Elite %s</string>
+    <string name="rank_ancient">Ancient %s</string>
+    <string name="rank_mythic">Mythic %1$s · %2$d</string>
+    <string name="main_bosses">Main bosses</string>
+    <string name="season_boss">Boss of the season · %s</string>
+    <string name="week_boss">Boss of the week</string>
+    <string name="once_season">Once a season</string>
+    <string name="once_week">New every Monday</string>
+    <string name="wins">Victories: %d</string>
+
+    <!-- Long game: achievements -->
+    <string name="achievements">Achievements</string>
+    <string name="ach_new">Achievement unlocked!</string>
+    <string name="ach_reward">+%s gold</string>
+    <string name="ach_count">%1$d of %2$d</string>
+    <string name="chronicle">Chronicle</string>
+    <string name="chronicle_tasks">tasks</string>
+    <string name="chronicle_days">active days</string>
+    <string name="chronicle_wins">victories</string>
+    <plurals name="ach_streak">
+        <item quantity="one">%d-day streak</item>
+        <item quantity="other">%d-day streak</item>
+    </plurals>
+    <plurals name="ach_together">
+        <item quantity="one">%d day together</item>
+        <item quantity="other">%d days together</item>
+    </plurals>
+    <plurals name="ach_active">
+        <item quantity="one">%d active day</item>
+        <item quantity="other">%d active days</item>
+    </plurals>
+    <plurals name="ach_tasks">
+        <item quantity="one">%d task done</item>
+        <item quantity="other">%d tasks done</item>
+    </plurals>
+    <plurals name="ach_level">
+        <item quantity="one">Level %d</item>
+        <item quantity="other">Level %d</item>
+    </plurals>
+    <plurals name="ach_bosses">
+        <item quantity="one">%d boss defeated</item>
+        <item quantity="other">%d bosses defeated</item>
+    </plurals>
+    <plurals name="ach_weekly">
+        <item quantity="one">%d boss of the week</item>
+        <item quantity="other">%d bosses of the week</item>
+    </plurals>
+    <plurals name="ach_seasons">
+        <item quantity="one">%d seasonal boss</item>
+        <item quantity="other">%d seasonal bosses</item>
+    </plurals>
+    <plurals name="ach_mythic">
+        <item quantity="one">%d mythic victory</item>
+        <item quantity="other">%d mythic victories</item>
+    </plurals>
+    <plurals name="ach_pets">
+        <item quantity="one">%d pet</item>
+        <item quantity="other">%d pets</item>
+    </plurals>
+    <plurals name="ach_grown">
+        <item quantity="one">%d fully grown pet</item>
+        <item quantity="other">%d fully grown pets</item>
+    </plurals>
+    <plurals name="ach_decor">
+        <item quantity="one">%d piece of furniture</item>
+        <item quantity="other">%d pieces of furniture</item>
+    </plurals>
+
+    <!-- Long game: home -->
+    <string name="home">Home</string>
+    <string name="home_text">Your hero\'s room. Furnish it with the gold you earn: every piece has a place.</string>
+    <string name="home_open">Open</string>
+    <string name="decor_wall">On the wall</string>
+    <string name="decor_big">Furniture</string>
+    <string name="decor_small">Small things</string>
+    <string name="decor_rug">Rug</string>
+    <string name="decor_wallpaper">Wallpaper</string>
+    <string name="decor_floor">Floor</string>
+    <string name="spot_left">left</string>
+    <string name="spot_center">centre</string>
+    <string name="spot_right">right</string>
+    <string name="spot_empty">Empty</string>
+    <string name="take_away">Take away</string>
+    <string name="d_painting_hills">Painting: Hills</string>
+    <string name="d_painting_sea">Painting: Sea</string>
+    <string name="d_clock">Pendulum clock</string>
+    <string name="d_map">Old map</string>
+    <string name="d_banner">Guild banner</string>
+    <string name="d_mirror">Mirror</string>
+    <string name="d_window">Window</string>
+    <string name="d_trophies">Trophy shelf</string>
+    <string name="d_bed">Bed</string>
+    <string name="d_desk">Writing desk</string>
+    <string name="d_bookshelf">Bookshelf</string>
+    <string name="d_wardrobe">Wardrobe</string>
+    <string name="d_fireplace">Fireplace</string>
+    <string name="d_aquarium">Aquarium</string>
+    <string name="d_piano">Piano</string>
+    <string name="d_plant">Potted plant</string>
+    <string name="d_barrel">Barrel</string>
+    <string name="d_candles">Candles</string>
+    <string name="d_lamp">Lamp</string>
+    <string name="d_chest">Chest</string>
+    <string name="d_pet_bed">Pet bed</string>
+    <string name="d_globe">Globe</string>
+    <string name="d_guitar">Guitar</string>
+    <string name="d_rug_red">Red rug</string>
+    <string name="d_rug_blue">Blue rug</string>
+    <string name="d_rug_round">Round rug</string>
+    <string name="d_rug_royal">Royal rug</string>
+    <string name="d_wp_plain">Plaster</string>
+    <string name="d_wp_stripes">Stripes</string>
+    <string name="d_wp_dots">Polka dots</string>
+    <string name="d_wp_bricks">Bricks</string>
+    <string name="d_wp_wood">Wood panels</string>
+    <string name="d_wp_stars">Night sky</string>
+    <string name="d_fl_planks">Planks</string>
+    <string name="d_fl_tiles">Tiles</string>
+    <string name="d_fl_stone">Stone</string>
+    <string name="d_fl_carpet">Carpet</string>
+    <string name="d_fl_checker">Checkerboard</string>
+</resources>

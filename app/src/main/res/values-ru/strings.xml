@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dayquest</string>
+
+    <string name="back">Назад</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="delete">Удалить</string>
+    <string name="add">Добавить</string>
+    <string name="undo">Отменить</string>
+    <string name="next">Дальше</string>
+    <string name="settings">Настройки</string>
+
+    <string name="nav_tasks">Задачи</string>
+    <string name="nav_shop">Лавка</string>
+    <string name="nav_stable">Питомцы</string>
+    <string name="nav_quests">Квесты</string>
+    <string name="nav_hero">Герой</string>
+
+    <string name="tab_habits">Привычки</string>
+    <string name="tab_dailies">Ежедневные</string>
+    <string name="tab_todos">Дела</string>
+
+    <string name="add_habit_hint">Добавить привычку…</string>
+    <string name="add_daily_hint">Добавить ежедневное…</string>
+    <string name="add_todo_hint">Добавить дело…</string>
+    <string name="add_reward_hint">Добавить награду…</string>
+
+    <string name="empty_habits">Привычки можно отмечать сколько угодно раз. Жмите + после хорошего поступка и − после срыва.</string>
+    <string name="empty_dailies">Ежедневные задачи повторяются по расписанию. Каждая пропущенная немного ранит героя, когда начнётся новый день.</string>
+    <string name="empty_todos">Дела — разовые задачи. Чем дольше дело ждёт, тем больше оно принесёт, когда вы его наконец сделаете.</string>
+    <string name="empty_rewards">Тратьте золото на настоящие радости: кофе, серию сериала, ленивое утро.</string>
+
+    <string name="not_due">Сегодня не нужно</string>
+    <string name="completed">Готово</string>
+    <string name="due_on">Срок: %s</string>
+    <string name="overdue">Просрочено · %s</string>
+    <string name="dailies_progress">Сегодня сделано %1$d из %2$d</string>
+
+    <string name="gold">Золото</string>
+    <string name="lv">УР %d</string>
+
+    <string name="new_habit">Новая привычка</string>
+    <string name="new_daily">Новая ежедневная</string>
+    <string name="new_todo">Новое дело</string>
+    <string name="new_reward">Новая награда</string>
+    <string name="edit_task">Изменить</string>
+    <string name="title">Название</string>
+    <string name="notes">Заметки</string>
+    <string name="difficulty">Сложность</string>
+    <string name="diff_trivial">Пустяк</string>
+    <string name="diff_easy">Легко</string>
+    <string name="diff_medium">Средне</string>
+    <string name="diff_hard">Сложно</string>
+    <string name="habit_direction">Кнопки</string>
+    <string name="positive">Хорошая  +</string>
+    <string name="negative">Плохая  −</string>
+    <string name="repeat">Повтор</string>
+    <string name="weekly">По дням недели</string>
+    <string name="every_n">Раз в несколько дней</string>
+    <plurals name="every_n_days">
+        <item quantity="one">Каждый %d день</item>
+        <item quantity="few">Каждые %d дня</item>
+        <item quantity="many">Каждые %d дней</item>
+        <item quantity="other">Каждые %d дня</item>
+    </plurals>
+    <string name="checklist">Чек-лист</string>
+    <string name="add_item">Добавить пункт…</string>
+    <string name="due_date">Срок</string>
+    <string name="no_due">Без срока</string>
+    <string name="cost">Цена в золоте</string>
+    <string name="reminder">Напоминание</string>
+    <string name="no_reminder">Без напоминания</string>
+    <string name="delete_task_q">Удалить задачу?</string>
+    <string name="delete_task_text">Она исчезнет с доски. Полученные опыт и золото останутся.</string>
+    <string name="title_required">Добавьте название</string>
+
+    <string name="snack_gain">+%1$s опыта · +%2$s золота</string>
+    <string name="snack_hurt">−%s здоровья</string>
+    <string name="snack_hit">%s урона боссу</string>
+    <string name="snack_crit">Критический удар! %s урона</string>
+    <string name="snack_drop">Находка: %s</string>
+    <string name="snack_bought">Наслаждайтесь: %s</string>
+    <string name="snack_healed">+%s здоровья</string>
+    <string name="not_enough_gold">Пока не хватает золота</string>
+
+    <string name="recap_title">Перед новым днём</string>
+    <string name="recap_text">Вчера эти задачи остались неотмеченными. Может, вы всё-таки их сделали? Отметьте выполненные — остальные немного ранят героя.</string>
+    <string name="recap_start">Начать новый день</string>
+    <string name="report_hurt">Пропущенные задачи отняли %s здоровья.</string>
+    <string name="report_boss">Босс ответил ударом на %s.</string>
+
+    <string name="faint_title">Герой без сил</string>
+    <string name="faint_text">Вы потеряли уровень и золото. Снаряжение и питомцы на месте. Отдохните и попробуйте снова: для начала хватит одной маленькой задачи.</string>
+    <string name="faint_ok">Подняться</string>
+    <string name="level_title">Новый уровень!</string>
+    <string name="level_text">Вы достигли %d уровня. Здоровье полностью восстановлено.</string>
+    <string name="level_unlocked">В лавке появилось новое снаряжение.</string>
+    <string name="victory_title">Победа!</string>
+    <string name="victory_text">%1$s повержен. Награда: %2$s золота, %3$s опыта и %4$s.</string>
+    <string name="hooray">Ура</string>
+
+    <string name="shop_rewards">Ваши награды</string>
+    <string name="shop_gear">Снаряжение</string>
+    <string name="shop_scenes">Места</string>
+    <string name="health_potion">Зелье здоровья</string>
+    <string name="health_potion_text">Восстанавливает %s здоровья</string>
+    <string name="equipped">Надето</string>
+    <string name="equip">Надеть</string>
+    <string name="unequip">Снять</string>
+    <string name="from_level">С %d уровня</string>
+    <string name="slot_weapon">Оружие</string>
+    <string name="slot_armor">Броня</string>
+    <string name="slot_head">Голова</string>
+    <string name="slot_shield">Вторая рука</string>
+    <string name="slot_empty">Ничего</string>
+    <string name="stat_str">СИЛ</string>
+    <string name="stat_int">ИНТ</string>
+    <string name="stat_con">ВЫН</string>
+    <string name="stat_per">ВОС</string>
+    <string name="stat_str_long">Сила: сильнее удары по боссам и больше критов</string>
+    <string name="stat_int_long">Интеллект: больше опыта за каждую задачу</string>
+    <string name="stat_con_long">Выносливость: меньше урона от срывов и пропусков</string>
+    <string name="stat_per_long">Восприятие: больше золота и находок</string>
+    <string name="scene_use">Выбрать</string>
+    <string name="scene_current">Выбрано</string>
+
+    <string name="bag">Сумка</string>
+    <string name="pets_count">Питомцы %1$d / %2$d</string>
+    <string name="collection">Коллекция</string>
+    <string name="hatch">Вылупить</string>
+    <string name="hatch_title">Вылупить питомца</string>
+    <string name="hatch_pick_egg">Яйцо</string>
+    <string name="hatch_pick_potion">Зелье</string>
+    <string name="hatched">Вылупился: %s!</string>
+    <string name="already_have">Такой питомец уже есть</string>
+    <string name="companion">Спутник</string>
+    <string name="set_companion">Взять с собой</string>
+    <string name="fully_grown">Полностью вырос</string>
+    <string name="growth">Рост %d%%</string>
+    <string name="loves">Обожает: %s</string>
+    <string name="bag_empty">Выполняйте задачи, чтобы находить яйца, зелья и еду. Яйцо + зелье = питомец.</string>
+    <string name="pet_name">%1$s · %2$s</string>
+    <string name="egg_name">Яйцо: %s</string>
+    <string name="potion_name">Зелье: %s</string>
+    <string name="grew">+%d%% роста</string>
+    <string name="no_food">Еды пока нет</string>
+
+    <string name="quest_active">Текущий бой</string>
+    <string name="quest_hint">Каждая выполненная задача бьёт босса. Каждая пропущенная ежедневная даёт ему ударить в ответ.</string>
+    <string name="quest_start">В бой</string>
+    <string name="quest_abandon">Отступить</string>
+    <string name="quest_abandon_q">Отступить из боя?</string>
+    <string name="quest_abandon_text">Босс восстановит силы. Бросить ему вызов можно в любой момент.</string>
+    <string name="quest_locked">С %d уровня</string>
+    <string name="quest_again">Сразиться снова</string>
+    <string name="quest_rewards">Награда: %s</string>
+    <string name="quest_strength">Бьёт примерно на %s за каждый пропуск</string>
+    <string name="quest_busy">Сначала закончите текущий бой</string>
+    <string name="quest_none">Сейчас боя нет. Выберите босса ниже — и ваши задачи станут атаками.</string>
+
+    <string name="appearance">Внешность</string>
+    <string name="hero_name">Имя</string>
+    <string name="skin">Кожа</string>
+    <string name="hair">Причёска</string>
+    <string name="hair_color">Цвет волос</string>
+    <string name="equipment">Снаряжение</string>
+    <string name="stats">Характеристики</string>
+    <string name="activity">Последние 12 недель</string>
+    <string name="total_done">Выполнено</string>
+    <string name="bosses_beaten">Боссов побеждено</string>
+    <string name="pets_hatched">Питомцев</string>
+    <string name="times_fainted">Падений</string>
+    <string name="rest_inn">Отдых в таверне</string>
+    <string name="rest_inn_text">Отпуск или болезнь? Пропуски не ранят, серии сохраняются.</string>
+    <string name="default_hero_name">Герой</string>
+    <string name="less">меньше</string>
+    <string name="more">больше</string>
+
+    <string name="set_appearance">Тема</string>
+    <string name="theme_system">Системная</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="language">Язык</string>
+    <string name="lang_system">Системный</string>
+    <string name="set_game">Игра</string>
+    <string name="day_start">Новый день начинается в</string>
+    <string name="day_start_text">Сова? Ежедневные задачи обновятся в этот час, а не в полночь.</string>
+    <string name="haptics">Вибрация при нажатии</string>
+    <string name="set_reminders">Напоминания</string>
+    <string name="reminders">Напоминания о задачах</string>
+    <string name="reminders_text">Те, что вы задали у ежедневных задач и дел</string>
+    <string name="evening">Вечерняя проверка</string>
+    <string name="evening_text">Напомнит, если ежедневные задачи ещё не сделаны</string>
+    <string name="off">Выкл.</string>
+    <string name="autostart_title">Не приходят напоминания?</string>
+    <string name="autostart_text">Некоторые телефоны (Xiaomi, Huawei, Samsung…) останавливают приложения в фоне. Разрешите Dayquest автозапуск и снимите ограничения батареи.</string>
+    <string name="perm_title">Разрешите уведомления</string>
+    <string name="perm_text">Чтобы напоминания до вас доходили.</string>
+
+    <string name="transfer">Перенос прогресса</string>
+    <string name="transfer_text">Аккаунтов нет: герой живёт на этом телефоне. Чтобы продолжить на другом устройстве, отправьте себе файл или код и импортируйте его там.</string>
+    <string name="export_file">Сохранить файл</string>
+    <string name="share_file">Отправить файл</string>
+    <string name="copy_code">Скопировать код</string>
+    <string name="import_file">Открыть файл</string>
+    <string name="paste_code">Вставить код</string>
+    <string name="code_copied">Код скопирован. На другом телефоне откройте Настройки → Перенос прогресса → Вставить код.</string>
+    <string name="import_title">Заменить героя?</string>
+    <string name="import_text">Всё, что есть в Dayquest на этом телефоне, заменится импортированным прогрессом.</string>
+    <string name="import_do">Заменить</string>
+    <string name="imported">С возвращением, %s!</string>
+    <string name="import_failed">Это не похоже на прогресс Dayquest</string>
+    <string name="paste_title">Вставьте код</string>
+    <string name="paste_hint">DQ1:…</string>
+    <string name="saved">Сохранено</string>
+    <string name="save_failed">Не удалось сохранить файл</string>
+    <string name="share_via">Отправить прогресс через…</string>
+
+    <string name="about">О приложении</string>
+    <string name="about_text">Dayquest бесплатный и с открытым кодом. Без рекламы, премиума и аккаунтов: всё хранится на вашем устройстве.</string>
+    <string name="about_version">Версия %s · Пиксельный шрифт: Handjet (SIL OFL)</string>
+
+    <string name="welcome_title">Превратите свои дни в приключение</string>
+    <string name="welcome_text">Заводите привычки, отмечайте ежедневные задачи, закрывайте дела. Герой растёт в уровнях, находит питомцев и побеждает боссов. А если лениться — ему достаётся.</string>
+    <string name="welcome_start">Создать героя</string>
+    <string name="welcome_import">У меня уже есть герой</string>
+    <string name="create_title">Ваш герой</string>
+    <string name="starter_title">Выберите, с чего начать</string>
+    <string name="starter_text">Лучше начать с малого. Всё можно поменять потом.</string>
+    <string name="starter_go">В путь</string>
+
+    <string name="st_water">Выпить стакан воды</string>
+    <string name="st_junk">Фастфуд</string>
+    <string name="st_walk">Прогулка 10 минут</string>
+    <string name="st_scroll">Бездумная лента</string>
+    <string name="st_bed">Заправить кровать</string>
+    <string name="st_read">Прочитать 10 страниц</string>
+    <string name="st_exercise">Зарядка</string>
+    <string name="st_plan">Спланировать завтра</string>
+    <string name="st_meditate">Медитация 5 минут</string>
+    <string name="st_todo_board">Заполнить доску задач</string>
+    <string name="st_todo_desk">Разобрать рабочий стол</string>
+    <string name="st_reward_episode">Посмотреть серию</string>
+    <string name="st_reward_treat">Что-нибудь сладкое</string>
+
+    <string name="channel_name">Напоминания</string>
+    <string name="channel_desc">Напоминания о ежедневных задачах и делах</string>
+    <string name="notif_task">Пора: %s</string>
+    <string name="notif_task_text">Отметьте и получите опыт и золото.</string>
+    <plurals name="notif_evening">
+        <item quantity="one">Осталась %d ежедневная задача</item>
+        <item quantity="few">Осталось %d ежедневные задачи</item>
+        <item quantity="many">Осталось %d ежедневных задач</item>
+        <item quantity="other">Осталось %d ежедневной задачи</item>
+    </plurals>
+    <string name="notif_evening_text">До конца дня ещё есть время.</string>
+
+    <string name="g_wooden_sword">Деревянный меч</string>
+    <string name="g_iron_sword">Железный меч</string>
+    <string name="g_apprentice_staff">Посох ученика</string>
+    <string name="g_battle_axe">Боевой топор</string>
+    <string name="g_flame_blade">Пламенный клинок</string>
+    <string name="g_frost_staff">Ледяной посох</string>
+    <string name="g_star_blade">Звёздный клинок</string>
+    <string name="g_tunic">Туника странника</string>
+    <string name="g_leather">Кожаная броня</string>
+    <string name="g_chainmail">Кольчуга</string>
+    <string name="g_mystic_robe">Мистическая мантия</string>
+    <string name="g_knight_plate">Рыцарские латы</string>
+    <string name="g_dragon_scale">Драконья чешуя</string>
+    <string name="g_cap">Красная шапочка</string>
+    <string name="g_iron_helm">Железный шлем</string>
+    <string name="g_wizard_hat">Шляпа волшебника</string>
+    <string name="g_horned_helm">Рогатый шлем</string>
+    <string name="g_crown">Корона сосредоточенности</string>
+    <string name="g_buckler">Баклер</string>
+    <string name="g_kite_shield">Каплевидный щит</string>
+    <string name="g_spell_tome">Книга заклинаний</string>
+    <string name="g_aegis">Эгида</string>
+
+    <string name="sp_fox">Лис</string>
+    <string name="sp_cat">Кот</string>
+    <string name="sp_owl">Сова</string>
+    <string name="sp_slime">Слайм</string>
+    <string name="sp_bunny">Кролик</string>
+    <string name="sp_wolf">Волк</string>
+    <string name="sp_turtle">Черепаха</string>
+    <string name="sp_dragon">Дракон</string>
+
+    <string name="po_base">классика</string>
+    <string name="po_golden">золото</string>
+    <string name="po_moss">мох</string>
+    <string name="po_rose">роза</string>
+    <string name="po_frost">иней</string>
+    <string name="po_shadow">тень</string>
+    <string name="po_ember">пламя</string>
+
+    <string name="food_berry">Ягоды</string>
+    <string name="food_fish">Рыба</string>
+    <string name="food_meat">Мясо</string>
+    <string name="food_cake">Пирожное</string>
+
+    <string name="b_slime_king">Король слизней</string>
+    <string name="bs_slime_king">Дрожащий монарх, который жиреет на грязной посуде и незаправленных кроватях. Наведите порядок — и он лопнет.</string>
+    <string name="b_goblin_chief">Гоблин Потом</string>
+    <string name="bs_goblin_chief">Ворует ваше время по одному «потом». Сделайте сейчас — и он ослабит хватку.</string>
+    <string name="b_stone_golem">Голем Отсрочки</string>
+    <string name="bs_stone_golem">Тяжёлый, медленный и неподъёмный — точь-в-точь задача, которую вы всё откладываете.</string>
+    <string name="b_frost_wyrm">Ледяной змей Инерции</string>
+    <string name="bs_frost_wyrm">Его дыхание замораживает благие намерения. Не останавливайтесь — и не замёрзнете.</string>
+    <string name="b_shadow_lich">Лич Сомнений</string>
+    <string name="bs_shadow_lich">Шепчет, что у вас не получится. Каждая сделанная задача доказывает обратное.</string>
+    <string name="b_ember_dragon">Дракон Выгорания</string>
+    <string name="bs_ember_dragon">Последний враг питается рывками на износ. Ровные дни сильнее геройских спринтов.</string>
+
+    <string name="sc_meadow">Солнечный луг</string>
+    <string name="sc_forest">Шепчущий бор</string>
+    <string name="sc_shore">Морской берег</string>
+    <string name="sc_snow">Снежные пики</string>
+    <string name="sc_desert">Золотые дюны</string>
+    <string name="sc_cave">Хрустальная пещера</string>
+    <!-- Долгая игра: кузница. Существительные помечены родом (m, f, n, p) для согласования прилагательных. -->
+    <string name="forge">Кузница</string>
+    <string name="forge_text">С 20 уровня каждые 5 уровней кузница предлагает новый ранг снаряжения. Он никогда не кончается.</string>
+    <string name="tier">Ранг %d</string>
+    <string name="rarity_common">Обычное</string>
+    <string name="rarity_rare">Редкое</string>
+    <string name="rarity_epic">Эпическое</string>
+    <string name="rarity_legendary">Легендарное</string>
+    <string-array name="forge_prefix">
+        <item>рунический|руническая|руническое|рунические</item>
+        <item>небесный|небесная|небесное|небесные</item>
+        <item>бездонный|бездонная|бездонное|бездонные</item>
+        <item>изумрудный|изумрудная|изумрудное|изумрудные</item>
+        <item>золочёный|золочёная|золочёное|золочёные</item>
+        <item>грозовой|грозовая|грозовое|грозовые</item>
+        <item>пепельный|пепельная|пепельное|пепельные</item>
+        <item>лунный|лунная|лунное|лунные</item>
+        <item>солнечный|солнечная|солнечное|солнечные</item>
+        <item>звёздный|звёздная|звёздное|звёздные</item>
+        <item>обсидиановый|обсидиановая|обсидиановое|обсидиановые</item>
+        <item>хрустальный|хрустальная|хрустальное|хрустальные</item>
+    </string-array>
+    <string name="n_sword">меч|m</string>
+    <string name="n_staff">посох|m</string>
+    <string name="n_axe">топор|m</string>
+    <string name="n_tunic">туника|f</string>
+    <string name="n_plate">латы|p</string>
+    <string name="n_robe">мантия|f</string>
+    <string name="n_cap">шапка|f</string>
+    <string name="n_helm">шлем|m</string>
+    <string name="n_hat">шляпа|f</string>
+    <string name="n_horns">рогатый шлем|m</string>
+    <string name="n_crown">корона|f</string>
+    <string name="n_wreath">венок|m</string>
+    <string name="n_buckler">баклер|m</string>
+    <string name="n_shield">щит|m</string>
+    <string name="n_tome">фолиант|m</string>
+
+    <string name="season_spring">Весна</string>
+    <string name="season_summer">Лето</string>
+    <string name="season_autumn">Осень</string>
+    <string name="season_winter">Зима</string>
+    <string name="seasonal">Только в этом сезоне · %s</string>
+    <string name="seasonal_text">Сезонные шляпы продаются только в свой сезон. Сезонные зелья тоже выпадают только тогда.</string>
+    <string name="g_flower_crown">Цветочный венок</string>
+    <string name="g_sun_hat">Соломенная шляпа</string>
+    <string name="g_pumpkin_hat">Тыквенная шляпа</string>
+    <string name="g_winter_hat">Тёплая шапка</string>
+    <string name="po_blossom">цветение</string>
+    <string name="po_tide">прибой</string>
+    <string name="po_harvest">урожай</string>
+    <string name="po_aurora">сияние</string>
+    <string name="southern">Южное полушарие</string>
+    <string name="southern_text">Сезоны идут по календарю. Включите, если зима у вас в июле.</string>
+
+    <string name="bn_slime">слизень</string>
+    <string name="bn_goblin">гоблин</string>
+    <string name="bn_golem">голем</string>
+    <string name="bn_wyrm">змей</string>
+    <string name="bn_lich">лич</string>
+    <string name="bn_dragon">дракон</string>
+    <string name="bn_yeti">йети</string>
+    <string name="bn_treant">древень</string>
+    <string name="bn_crab">краб</string>
+    <string name="bn_pumpkin">тыквоголов</string>
+    <string-array name="weekly_adj">
+        <item>Блуждающий</item>
+        <item>Хмурый</item>
+        <item>Сонный</item>
+        <item>Шумный</item>
+        <item>Лукавый</item>
+        <item>Ворчливый</item>
+        <item>Туманный</item>
+        <item>Колючий</item>
+    </string-array>
+    <string name="weekly_name">%1$s %2$s</string>
+    <string name="bs_weekly">Забредает всего на неделю. Победите его до конца воскресенья: в понедельник придёт новый.</string>
+    <string name="b_treant">Древень Захламления</string>
+    <string name="bs_treant">Просыпается каждую весну из куч, которые вы так и не разобрали. Разберите полку — и его ветви засохнут.</string>
+    <string name="b_crab">Краб Безделья</string>
+    <string name="bs_crab">Загорает весь день и щиплет любого, кто пытается встать. Двигайтесь понемногу каждый день.</string>
+    <string name="b_pumpkin">Тыквоголов Хандры</string>
+    <string name="bs_pumpkin">Осенняя тоска с вырезанной ухмылкой. Маленькие сделанные дела освещают вечера.</string>
+    <string name="b_yeti">Йети Спячки</string>
+    <string name="bs_yeti">Хочет уложить вас под одеяло до марта. Держите ежедневные задачи — и не замёрзнете.</string>
+    <string name="rank_elite">Элитный %s</string>
+    <string name="rank_ancient">Древний %s</string>
+    <string name="rank_mythic">Мифический %1$s · %2$d</string>
+    <string name="main_bosses">Главные боссы</string>
+    <string name="season_boss">Босс сезона · %s</string>
+    <string name="week_boss">Босс недели</string>
+    <string name="once_season">Раз в сезон</string>
+    <string name="once_week">Новый каждый понедельник</string>
+    <string name="wins">Побед: %d</string>
+
+    <string name="achievements">Достижения</string>
+    <string name="ach_new">Новое достижение!</string>
+    <string name="ach_reward">+%s золота</string>
+    <string name="ach_count">%1$d из %2$d</string>
+    <string name="chronicle">Летопись</string>
+    <string name="chronicle_tasks">задач</string>
+    <string name="chronicle_days">активных дней</string>
+    <string name="chronicle_wins">побед</string>
+    <plurals name="ach_streak">
+        <item quantity="one">Серия в %d день</item>
+        <item quantity="few">Серия в %d дня</item>
+        <item quantity="many">Серия в %d дней</item>
+        <item quantity="other">Серия в %d дня</item>
+    </plurals>
+    <plurals name="ach_together">
+        <item quantity="one">%d день вместе</item>
+        <item quantity="few">%d дня вместе</item>
+        <item quantity="many">%d дней вместе</item>
+        <item quantity="other">%d дня вместе</item>
+    </plurals>
+    <plurals name="ach_active">
+        <item quantity="one">%d активный день</item>
+        <item quantity="few">%d активных дня</item>
+        <item quantity="many">%d активных дней</item>
+        <item quantity="other">%d активного дня</item>
+    </plurals>
+    <plurals name="ach_tasks">
+        <item quantity="one">%d выполненная задача</item>
+        <item quantity="few">%d выполненные задачи</item>
+        <item quantity="many">%d выполненных задач</item>
+        <item quantity="other">%d выполненной задачи</item>
+    </plurals>
+    <plurals name="ach_level">
+        <item quantity="one">%d уровень</item>
+        <item quantity="few">%d уровень</item>
+        <item quantity="many">%d уровень</item>
+        <item quantity="other">%d уровень</item>
+    </plurals>
+    <plurals name="ach_bosses">
+        <item quantity="one">%d побеждённый босс</item>
+        <item quantity="few">%d побеждённых босса</item>
+        <item quantity="many">%d побеждённых боссов</item>
+        <item quantity="other">%d побеждённого босса</item>
+    </plurals>
+    <plurals name="ach_weekly">
+        <item quantity="one">%d босс недели</item>
+        <item quantity="few">%d босса недели</item>
+        <item quantity="many">%d боссов недели</item>
+        <item quantity="other">%d босса недели</item>
+    </plurals>
+    <plurals name="ach_seasons">
+        <item quantity="one">%d сезонный босс</item>
+        <item quantity="few">%d сезонных босса</item>
+        <item quantity="many">%d сезонных боссов</item>
+        <item quantity="other">%d сезонного босса</item>
+    </plurals>
+    <plurals name="ach_mythic">
+        <item quantity="one">%d мифическая победа</item>
+        <item quantity="few">%d мифические победы</item>
+        <item quantity="many">%d мифических побед</item>
+        <item quantity="other">%d мифической победы</item>
+    </plurals>
+    <plurals name="ach_pets">
+        <item quantity="one">%d питомец</item>
+        <item quantity="few">%d питомца</item>
+        <item quantity="many">%d питомцев</item>
+        <item quantity="other">%d питомца</item>
+    </plurals>
+    <plurals name="ach_grown">
+        <item quantity="one">%d взрослый питомец</item>
+        <item quantity="few">%d взрослых питомца</item>
+        <item quantity="many">%d взрослых питомцев</item>
+        <item quantity="other">%d взрослого питомца</item>
+    </plurals>
+    <plurals name="ach_decor">
+        <item quantity="one">%d предмет мебели</item>
+        <item quantity="few">%d предмета мебели</item>
+        <item quantity="many">%d предметов мебели</item>
+        <item quantity="other">%d предмета мебели</item>
+    </plurals>
+
+    <string name="home">Дом</string>
+    <string name="home_text">Комната вашего героя. Обставляйте её на заработанное золото: у каждой вещи своё место.</string>
+    <string name="home_open">Открыть</string>
+    <string name="decor_wall">На стену</string>
+    <string name="decor_big">Мебель</string>
+    <string name="decor_small">Мелочи</string>
+    <string name="decor_rug">Ковёр</string>
+    <string name="decor_wallpaper">Обои</string>
+    <string name="decor_floor">Пол</string>
+    <string name="spot_left">слева</string>
+    <string name="spot_center">в центре</string>
+    <string name="spot_right">справа</string>
+    <string name="spot_empty">Пусто</string>
+    <string name="take_away">Убрать</string>
+    <string name="d_painting_hills">Картина «Холмы»</string>
+    <string name="d_painting_sea">Картина «Море»</string>
+    <string name="d_clock">Часы с маятником</string>
+    <string name="d_map">Старая карта</string>
+    <string name="d_banner">Знамя гильдии</string>
+    <string name="d_mirror">Зеркало</string>
+    <string name="d_window">Окно</string>
+    <string name="d_trophies">Полка трофеев</string>
+    <string name="d_bed">Кровать</string>
+    <string name="d_desk">Письменный стол</string>
+    <string name="d_bookshelf">Книжный шкаф</string>
+    <string name="d_wardrobe">Гардероб</string>
+    <string name="d_fireplace">Камин</string>
+    <string name="d_aquarium">Аквариум</string>
+    <string name="d_piano">Пианино</string>
+    <string name="d_plant">Цветок в горшке</string>
+    <string name="d_barrel">Бочка</string>
+    <string name="d_candles">Свечи</string>
+    <string name="d_lamp">Лампа</string>
+    <string name="d_chest">Сундук</string>
+    <string name="d_pet_bed">Лежанка питомца</string>
+    <string name="d_globe">Глобус</string>
+    <string name="d_guitar">Гитара</string>
+    <string name="d_rug_red">Красный ковёр</string>
+    <string name="d_rug_blue">Синий ковёр</string>
+    <string name="d_rug_round">Круглый ковёр</string>
+    <string name="d_rug_royal">Королевский ковёр</string>
+    <string name="d_wp_plain">Штукатурка</string>
+    <string name="d_wp_stripes">Полоски</string>
+    <string name="d_wp_dots">Горошек</string>
+    <string name="d_wp_bricks">Кирпич</string>
+    <string name="d_wp_wood">Деревянные панели</string>
+    <string name="d_wp_stars">Ночное небо</string>
+    <string name="d_fl_planks">Доски</string>
+    <string name="d_fl_tiles">Плитка</string>
+    <string name="d_fl_stone">Камень</string>
+    <string name="d_fl_carpet">Ковролин</string>
+    <string name="d_fl_checker">Шахматка</string>
+</resources>
