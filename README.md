@@ -43,6 +43,7 @@ In Dayquest your habits, dailies and to-dos power a pixel hero. Finish things an
 | 🐾 | **88 pets** | 8 species × 11 hatching potions. Pick an egg and a potion in one card and see who hatches. Feed them their favourite food until they are fully grown and wear a tiny crown. |
 | 🛡️ | **Gear you can see** | Every helmet, robe, sword and shield changes both your stats and your sprite. The shop shows your hero *wearing* an item before you buy it. |
 | ☀️ | **Kind mornings** | Before a new day starts, Dayquest asks which of yesterday's dailies you actually did. Night owls can move the day boundary up to 06:00. *Rest at the inn* pauses damage for holidays and sick days. |
+| 🧭 | **A gentle start** | A five-page guide explains the game with its own art before you create your hero, each tab shows a one-time tip on your first visit, and *Settings → How to play* replays the guide. |
 | ↩️ | **Undo anything** | Every tap shows what it gave (XP, gold, damage, drops) with an *Undo* button that reverts it exactly. |
 | 🔔 | **Reminders** | Per-task reminder times and an evening "dailies still open" nudge. |
 | 📊 | **History** | A 12-week activity heatmap, streaks, totals and a yearly chronicle. |
@@ -124,6 +125,7 @@ git clone https://github.com/bigdevwhale/dayquest.git
 cd dayquest
 ./gradlew testDebugUnitTest            # unit tests
 ./gradlew assembleDebug                # app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug                 # app.dayquest.dev, installed next to the release
 ./gradlew installDebug -Pdemo          # app.dayquest.demo with a mid-game hero, next to the real app
 ./gradlew testDebugUnitTest -Ppreview=/tmp/sheets   # render sprite sheets, scenes and rooms to PNG
 ```

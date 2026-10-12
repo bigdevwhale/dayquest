@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -24,6 +25,8 @@ data class Settings(
     val haptics: Boolean = true,
     /** Seasons flip for the southern hemisphere. */
     val southern: Boolean = false,
+    /** First-visit tips already dismissed. */
+    val tips: Set<String> = emptySet(),
 )
 
 class SettingsStore(context: Context) {
@@ -37,6 +40,7 @@ class SettingsStore(context: Context) {
             evening = it[EVENING] ?: (20 * 60),
             haptics = it[HAPTICS] ?: true,
             southern = it[SOUTHERN] ?: false,
+            tips = it[TIPS] ?: emptySet(),
         )
     }
 
@@ -48,6 +52,7 @@ class SettingsStore(context: Context) {
     suspend fun setEvening(minutes: Int) = store.edit { it[EVENING] = minutes }
     suspend fun setHaptics(on: Boolean) = store.edit { it[HAPTICS] = on }
     suspend fun setSouthern(on: Boolean) = store.edit { it[SOUTHERN] = on }
+    suspend fun seeTip(key: String) = store.edit { it[TIPS] = (it[TIPS] ?: emptySet()) + key }
 
     suspend fun restore(s: Settings) = store.edit {
         it[THEME] = s.theme.name
@@ -56,6 +61,7 @@ class SettingsStore(context: Context) {
         it[EVENING] = s.evening
         it[HAPTICS] = s.haptics
         it[SOUTHERN] = s.southern
+        it[TIPS] = s.tips
     }
 
     private companion object {
@@ -65,5 +71,6 @@ class SettingsStore(context: Context) {
         val EVENING = intPreferencesKey("evening")
         val HAPTICS = booleanPreferencesKey("haptics")
         val SOUTHERN = booleanPreferencesKey("southern")
+        val TIPS = stringSetPreferencesKey("tips")
     }
 }

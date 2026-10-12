@@ -538,4 +538,29 @@
     <string name="d_fl_stone">Stone</string>
     <string name="d_fl_carpet">Carpet</string>
     <string name="d_fl_checker">Checkerboard</string>
+    <!-- How it works -->
+    <string name="guide">How to play</string>
+    <string name="guide_skip">Skip</string>
+    <string name="guide_start">Create my hero</string>
+    <string name="guide_done">Got it</string>
+    <string name="g1_title">Your habits keep a hero alive</string>
+    <string name="g1_text">Everything you do in real life moves this little hero. Finish things and it earns experience and gold and levels up. Slack off and it loses health.</string>
+    <string name="g2_title">Three kinds of tasks</string>
+    <string name="g2_habit">Habits: tap + after a good one, − after a slip. As often as you like.</string>
+    <string name="g2_daily">Dailies: repeat on a schedule. Tick them before the day ends.</string>
+    <string name="g2_todo">To-dos: one-off tasks. The longer they wait, the more they pay.</string>
+    <string name="g3_title">What you earn</string>
+    <string name="g3_text">Experience levels you up and fully heals you. Gold buys your own rewards, gear and furniture. Tasks sometimes drop eggs, potions and food: combine an egg with a potion to hatch a pet.</string>
+    <string name="g4_title">Bosses fight back</string>
+    <string name="g4_text">Start a quest and every task you finish hits the boss. Each daily you miss lets it hit back at the start of a new day. Beat it for gold and rare loot.</string>
+    <string name="g5_title">Kind by design</string>
+    <string name="g5_text">Each morning you can tick off what you did yesterday but forgot to mark. Every tap can be undone. Ill or on holiday? Rest at the inn and nothing hurts. No account: your hero moves to a new phone with a file or a code.</string>
+
+    <!-- First-visit tips -->
+    <string name="tip_ok">Got it</string>
+    <string name="tip_tasks">Tap the square when a daily or to-do is done, and + or − on habits. Each tap shows what it gave and can be undone. Missed dailies cost health when a new day starts.</string>
+    <string name="tip_shop">Gold buys three things here: your own real-life rewards, gear that raises your stats (try it on first), and new places for your hero.</string>
+    <string name="tip_stable">Eggs and hatching potions drop from finished tasks. Pick one of each to hatch a pet, take it along and feed it until it is fully grown.</string>
+    <string name="tip_quests">Start a fight: from then on every task you finish hits the boss, and every daily you miss lets it hit back. A new boss of the week comes every Monday.</string>
+    <string name="tip_hero">Change your look, swap gear, furnish your home and follow your achievements. Rest at the inn pauses damage when life gets in the way.</string>
 </resources>

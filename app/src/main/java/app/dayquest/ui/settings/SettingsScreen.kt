@@ -79,7 +79,7 @@ import java.time.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(settings: app.dayquest.data.Settings, onBack: () -> Unit) {
+fun SettingsScreen(settings: app.dayquest.data.Settings, onBack: () -> Unit, onGuide: () -> Unit) {
     val context = LocalContext.current
     val c = context.container
     var canNotify by remember { mutableStateOf(Reminders.canNotify(context)) }
@@ -151,6 +151,13 @@ fun SettingsScreen(settings: app.dayquest.data.Settings, onBack: () -> Unit) {
                 Text(stringResource(R.string.autostart_title), style = DType.Strong)
                 Gap(2)
                 Text(stringResource(R.string.autostart_text), style = DType.Muted)
+            }
+
+            SectionTitle(stringResource(R.string.guide))
+            DCard(onClick = onGuide) {
+                Text(stringResource(R.string.guide), style = DType.Strong.copy(color = D.c.accent))
+                Gap(2)
+                Text(stringResource(R.string.g1_title), style = DType.Muted)
             }
 
             SectionTitle(stringResource(R.string.about))

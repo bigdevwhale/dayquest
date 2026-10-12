@@ -82,6 +82,7 @@ fun QuestsScreen(hero: Hero) {
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
         item {
             Text(stringResource(R.string.nav_quests), style = DType.Title, modifier = Modifier.padding(top = 18.dp, bottom = 12.dp))
+            app.dayquest.ui.components.Tip("quests", stringResource(R.string.tip_quests), Modifier.padding(bottom = 12.dp))
         }
         item {
             if (active != null) {

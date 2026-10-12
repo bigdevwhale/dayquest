@@ -82,6 +82,7 @@ fun StableScreen(hero: Hero) {
                 Text(stringResource(R.string.pets_count, pets.size, Catalog.totalPets), style = DType.Number.copy(color = D.c.muted))
             }
         }
+        item { app.dayquest.ui.components.Tip("stable", stringResource(R.string.tip_stable), Modifier.padding(vertical = 4.dp)) }
         item { HatchCard(eggs, potions, byKey) }
         item {
             SectionTitle(stringResource(R.string.bag))

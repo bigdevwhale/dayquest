@@ -248,7 +248,10 @@ private fun Main(hero: Hero, settings: Settings) {
         composable("edit/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { e ->
             EditTaskScreen(id = e.arguments?.getLong("id") ?: 0, type = TaskType.TODO, initialTitle = "", onDone = { nav.popBackStack() })
         }
-        composable("settings") { SettingsScreen(settings, onBack = { nav.popBackStack() }) }
+        composable("settings") { SettingsScreen(settings, onBack = { nav.popBackStack() }, onGuide = { nav.navigate("guide") }) }
+        composable("guide") {
+            app.dayquest.ui.onboarding.HowItWorks(hero.look(), stringResource(R.string.guide_done), onFinish = { nav.popBackStack() })
+        }
         composable("home") { app.dayquest.ui.home.HomeScreen(hero, onBack = { nav.popBackStack() }) }
     }
 

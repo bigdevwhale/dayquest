@@ -73,6 +73,7 @@ import app.dayquest.ui.LocalFeedback
 import app.dayquest.ui.components.DTextField
 import app.dayquest.ui.components.Gap
 import app.dayquest.ui.components.Segmented
+import app.dayquest.ui.components.Tip
 import app.dayquest.ui.dayLabel
 import app.dayquest.ui.gainText
 import app.dayquest.ui.goldText
@@ -166,6 +167,7 @@ fun TasksScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (TaskType, String) ->
                 )
             }
         }
+        item(key = "tip") { Tip("tasks", stringResource(R.string.tip_tasks), Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
         item(key = "quick-$board") {
             QuickAdd(
                 hint = stringResource(

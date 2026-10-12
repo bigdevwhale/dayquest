@@ -80,10 +80,12 @@ fun OnboardingScreen() {
     var look by remember { mutableStateOf(Look(1, 0, 1, "wooden_sword", "tunic", "", "")) }
     val picked = remember { mutableStateListOf<Int>().apply { starters.forEachIndexed { i, s -> if (s.on) add(i) } } }
 
-    BackHandler(enabled = step > 0) { step = if (step == 3) 0 else step - 1 }
+    // Steps: 0 welcome, 5 how it works, 1 hero, 2 starter tasks, 3 import.
+    BackHandler(enabled = step > 0) { step = if (step == 3 || step == 5) 0 else step - 1 }
 
     Column(Modifier.fillMaxSize().background(D.c.bg)) {
         when (step) {
+            5 -> HowItWorks(look, stringResource(R.string.guide_start), onFinish = { step = 1 }, onSkip = { step = 1 })
             0 -> {
                 SceneView(SceneState(SceneKind.MEADOW, 12f, look, "fox:base", season = app.dayquest.ui.rememberSeason()), virtualHeight = 96)
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -93,7 +95,7 @@ fun OnboardingScreen() {
                     Text(stringResource(R.string.welcome_text), style = DType.Sub, textAlign = TextAlign.Center)
                 }
                 Column(Modifier.padding(24.dp).navigationBarsPadding()) {
-                    PrimaryButton(stringResource(R.string.welcome_start), { step = 1 }, Modifier.fillMaxWidth())
+                    PrimaryButton(stringResource(R.string.welcome_start), { step = 5 }, Modifier.fillMaxWidth())
                     TextButton(onClick = { step = 3 }, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.welcome_import), style = DType.Button, color = D.c.accent)
                     }

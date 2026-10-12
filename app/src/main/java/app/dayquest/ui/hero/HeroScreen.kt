@@ -91,6 +91,8 @@ fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit) {
         }
         StatsPanel(hero)
         Column(Modifier.padding(horizontal = 16.dp)) {
+            Gap(12)
+            app.dayquest.ui.components.Tip("hero", stringResource(R.string.tip_hero))
             SectionTitle(stringResource(R.string.home))
             Column(Modifier.fillMaxWidth().clip(D.RMd).border(1.dp, D.c.line, D.RMd).clickable(onClick = onHome)) {
                 app.dayquest.ui.home.RoomView(app.dayquest.ui.home.roomState(hero, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100), virtualHeight = 64)

@@ -40,6 +40,10 @@ android {
     }
 
     buildTypes {
+        // Debug builds live next to the installed release (app.dayquest.dev) so testing never touches a real hero.
+        debug {
+            if (!demo) applicationIdSuffix = ".dev"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

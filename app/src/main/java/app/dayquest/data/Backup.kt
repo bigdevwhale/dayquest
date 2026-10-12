@@ -35,7 +35,7 @@ object Backup {
         .put("pets", JSONArray(s.pets.map { JSONObject().put("key", it.key).put("growth", it.growth).put("hatchedAt", it.hatchedAt) }))
         .put("settings", settings?.let {
             JSONObject().put("theme", it.theme.name).put("dayStart", it.dayStart).put("reminders", it.reminders)
-                .put("evening", it.evening).put("haptics", it.haptics).put("southern", it.southern)
+                .put("evening", it.evening).put("haptics", it.haptics).put("southern", it.southern).put("tips", JSONArray(it.tips.toList()))
         } ?: JSONObject.NULL)
         .toString()
 
@@ -107,6 +107,7 @@ object Backup {
                 theme = runCatching { ThemeMode.valueOf(it.optString("theme")) }.getOrDefault(ThemeMode.SYSTEM),
                 dayStart = it.optInt("dayStart"), reminders = it.optBoolean("reminders", true),
                 evening = it.optInt("evening", 20 * 60), haptics = it.optBoolean("haptics", true), southern = it.optBoolean("southern"),
+                tips = it.optJSONArray("tips")?.let { a -> (0 until a.length()).map { i -> a.getString(i) }.toSet() } ?: emptySet(),
             )
         }
         return snapshot to settings

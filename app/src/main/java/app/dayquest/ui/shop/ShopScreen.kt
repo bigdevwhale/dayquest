@@ -119,6 +119,7 @@ fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
                 { aisle = it },
             )
             Gap(8)
+            app.dayquest.ui.components.Tip("shop", stringResource(R.string.tip_shop), Modifier.padding(vertical = 4.dp))
         }
         when (aisle) {
             Aisle.REWARDS -> {
