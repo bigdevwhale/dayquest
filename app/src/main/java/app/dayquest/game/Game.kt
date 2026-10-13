@@ -40,6 +40,15 @@ data class Outcome(
     val bountyGold: Double = 0.0,
     /** Items from a bounty or a card's gift. */
     val items: List<String> = emptyList(),
+    /** Mana gained (or spent). */
+    val mp: Double = 0.0,
+    /** The skill that was cast, for its own sound and effect. */
+    val skill: Skill? = null,
+    /** Weekend dungeon: the room just cleared (1-based, 0 for none), and whether it was the last. */
+    val room: Int = 0,
+    val dungeonDone: Boolean = false,
+    val roomGold: Double = 0.0,
+    val roomItems: List<String> = emptyList(),
 )
 
 /** What a chest held. */
@@ -74,19 +83,28 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
     /** Today's health potion price: the merchant's card halves it. */
     suspend fun potionCost(): Double = Rules.HEALTH_POTION_COST * DayEvent.of(today()).potion
 
-    /** What the hero's companion adds right now. */
-    private suspend fun boost(h: Hero): Boost = if (h.pet.isEmpty()) Boost() else Companions.boost(db.pet(h.pet))
+    /** What the hero's companion and mount add right now. */
+    private suspend fun boost(h: Hero): Boost =
+        (if (h.pet.isEmpty()) Boost() else Companions.boost(db.pet(h.pet))) +
+            (if (h.mount.isEmpty()) Boost() else Companions.mountBoost(db.pet(h.mount)))
 
     fun stats(h: Hero): Stats {
-        val base = Stats(h.level / 2, h.level / 2, h.level / 2, h.level / 2)
+        val base = Stats(h.level / 2, h.level / 2, h.level / 2, h.level / 2) + Classes.bonus(Classes.of(h), h.level)
         return listOf(h.weapon, h.armor, h.head, h.shield).mapNotNull { Catalog.gear(it)?.stats }.fold(base, Stats::plus)
     }
 
-    suspend fun hero(): Hero = db.hero() ?: Hero(lastDay = today()).also { db.saveHero(it) }
+    /** Extra XP and gold from friends in the tavern with fresh hero cards. */
+    private suspend fun party(day: Long): Double = Party.bonus(db.friends().mapNotNull { Party.decode(it.code) }, day)
+
+    suspend fun partyBonus(): Double = party(today())
+
+    suspend fun hero(): Hero = db.hero() ?: Hero(lastDay = today(), uid = newUid()).also { db.saveHero(it) }
+
+    private fun newUid() = java.util.UUID.randomUUID().toString().replace("-", "").take(16)
 
     suspend fun createHero(name: String, skin: Int, hairStyle: Int, hairColor: Int) = mutex.withLock {
         val h = db.hero() ?: Hero(lastDay = today())
-        db.saveHero(h.copy(name = name, skin = skin, hairStyle = hairStyle, hairColor = hairColor, lastDay = today()))
+        db.saveHero(h.copy(name = name, skin = skin, hairStyle = hairStyle, hairColor = hairColor, lastDay = today(), uid = h.uid.ifEmpty { newUid() }))
     }
 
     suspend fun updateLook(name: String, skin: Int, hairStyle: Int, hairColor: Int) = mutex.withLock {
@@ -249,13 +267,20 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         if (h.quest.isNotEmpty() && e.boss > 0) {
             questHp = minOf(questHp + e.boss, Catalog.boss(h.quest)?.hp ?: questHp)
         }
+        // Steps back out of the dungeon, but a cleared room stays cleared.
+        val run = Dungeon.parse(h.dungeon)
+        val dungeon = if (e.step > 0 && run != null && Dungeon.current(h.dungeon, e.day) == run) {
+            Dungeon.encode(run.copy(steps = (run.steps - e.step).coerceAtLeast(0)))
+        } else h.dungeon
         db.saveHero(
             h.copy(
                 xp = (h.xp - e.xp).coerceAtLeast(0.0),
                 gold = (h.gold - e.gold).coerceAtLeast(0.0),
                 hp = (h.hp - e.hp).coerceIn(1.0, Rules.MAX_HP),
+                mp = (h.mp - e.mp).coerceAtLeast(0.0),
                 questHp = questHp,
                 dropsToday = if (e.drop.isNotEmpty()) (h.dropsToday - 1).coerceAtLeast(0) else h.dropsToday,
+                dungeon = dungeon,
             )
         )
         if (e.drop.isNotEmpty()) db.addItem(e.drop, -1)
@@ -270,47 +295,83 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         val s = stats(h)
         val ev = DayEvent.of(day)
         val pet = boost(h)
+        val buffs = Classes.buffs(h, day)
+        val party = party(day)
+        // Focus sessions pay like a task but don't count as one (bounties, achievements).
+        val counts = kind != LogKind.FOCUS
         val doneBefore = db.doneOn(day)
-        val mult = bonus * ev.reward(kind, d, isFirst = doneBefore == 0) * challenge().reward
+        val mult = bonus * ev.reward(kind, d, isFirst = counts && doneBefore == 0) * challenge().reward
         val jackpot = ev.jackpot > 0 && random.nextDouble() < ev.jackpot
-        val xp = Rules.xpGain(delta, d, s, mult) * ev.xp * (1 + pet.xp)
-        val gold = Rules.goldGain(delta, d, s, mult) * ev.gold * (if (jackpot) 5.0 else 1.0) * (1 + pet.gold)
+        val xp = Rules.xpGain(delta, d, s, mult) * ev.xp * (1 + pet.xp + buffs.xp + party)
+        val gold = Rules.goldGain(delta, d, s, mult) * ev.gold * (if (jackpot) 5.0 else 1.0) * (1 + pet.gold + party)
         val boss = Catalog.boss(h.quest)
-        val crit = boss != null && random.nextDouble() < Rules.critChance(s) + ev.crit + pet.crit
+        val crit = boss != null && random.nextDouble() < Rules.critChance(s) + ev.crit + pet.crit + buffs.crit
         val hit = if (boss != null) Rules.bossDamage(delta, d, s, crit) * ev.boss * (1 + pet.boss) else 0.0
-        val drop = rollDrop(h, d, s, season(), ev, pet.drop)
+        val drop = rollDrop(h, d, s, season(), ev, pet.drop + buffs.drop, buffs.dropCap)
         if (drop.isNotEmpty()) db.addItem(drop, 1)
-        // A healing companion patches the hero up a little with every finished task.
-        val heal = minOf(pet.heal, Rules.MAX_HP - h.hp).coerceAtLeast(0.0)
+        // A healing companion (or a healer's renewal) patches the hero up a little with every finished task.
+        val heal = minOf(pet.heal + buffs.heal, Rules.MAX_HP - h.hp).coerceAtLeast(0.0)
+        val mp = if (Classes.of(h) == null) 0.0 else minOf(Classes.mpGain(s), Classes.maxMp(s) - h.mp).coerceAtLeast(0.0)
 
-        var next = h.copy(xp = h.xp + xp, gold = h.gold + gold, hp = h.hp + heal, questHp = h.questHp - hit, dropsToday = h.dropsToday + if (drop.isNotEmpty()) 1 else 0)
+        var next = h.copy(xp = h.xp + xp, gold = h.gold + gold, hp = h.hp + heal, mp = h.mp + mp, questHp = h.questHp - hit, dropsToday = h.dropsToday + if (drop.isNotEmpty()) 1 else 0)
         // The card's bounty pays once, the moment the day's count reaches it (undoing later keeps it).
-        val bounty = ev.bounty > 0 && h.bountyDay != day && doneBefore + 1 >= ev.bounty
+        val bounty = counts && ev.bounty > 0 && h.bountyDay != day && doneBefore + 1 >= ev.bounty
         val bountyItems = if (bounty) giftItems(ev.bountyGift) else emptyList()
         if (bounty) {
             bountyItems.forEach { db.addItem(it, 1) }
             next = next.copy(gold = next.gold + ev.bountyGold, bountyDay = day)
             db.insertLog(LogEntry(day = day, kind = LogKind.EVENT, gold = ev.bountyGold))
         }
-        var defeated: Boss? = null
-        if (boss != null && next.questHp <= 0) {
-            defeated = boss
-            boss.rewards.forEach { (key, n) -> db.addItem(key, n) }
-            next = next.copy(quest = "", questHp = 0.0, questsDone = next.withWin(boss.record), xp = next.xp + boss.xp, gold = next.gold + boss.gold)
-            db.insertLog(LogEntry(day = day, kind = LogKind.VICTORY, gold = boss.gold, xp = boss.xp))
-        }
-        val before = next.level
-        next = levelUp(next)
-        val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, xp = xp, gold = gold, hp = heal, valueDelta = delta, boss = hit, drop = drop))
+        val walk = walkDungeon(next, d, day)
+        val (won, defeated) = defeat(walk.hero, day)
+        val before = won.level
+        next = levelUp(won)
+        val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, xp = xp, gold = gold, hp = heal, valueDelta = delta, boss = hit, drop = drop, mp = mp, step = walk.step))
         return next to Outcome(
             xp = xp, gold = gold, hp = heal, boss = hit, crit = crit, drop = drop, levelUp = if (next.level > before) next.level else 0, bossDefeated = defeated, logId = id,
-            jackpot = jackpot, bounty = bounty, bountyGold = if (bounty) ev.bountyGold else 0.0, items = bountyItems,
+            jackpot = jackpot, bounty = bounty, bountyGold = if (bounty) ev.bountyGold else 0.0, items = bountyItems, mp = mp,
+            room = walk.room, dungeonDone = walk.done, roomGold = walk.gold, roomItems = walk.items,
         )
+    }
+
+    /** A boss brought to zero: its loot, the win on record and the fight closed. */
+    private suspend fun defeat(h: Hero, day: Long): Pair<Hero, Boss?> {
+        val boss = Catalog.boss(h.quest) ?: return h to null
+        if (h.questHp > 0) return h to null
+        boss.rewards.forEach { (key, n) -> db.addItem(key, n) }
+        db.insertLog(LogEntry(day = day, kind = LogKind.VICTORY, gold = boss.gold, xp = boss.xp))
+        return h.copy(quest = "", questHp = 0.0, questsDone = h.withWin(boss.record), xp = h.xp + boss.xp, gold = h.gold + boss.gold) to boss
+    }
+
+    private class Walk(val hero: Hero, val step: Int = 0, val room: Int = 0, val done: Boolean = false, val gold: Double = 0.0, val items: List<String> = emptyList())
+
+    /** On weekends every finished task is a step through the dungeon; cleared rooms pay at once. */
+    private suspend fun walkDungeon(h: Hero, d: Difficulty, day: Long): Walk {
+        if (!Dungeon.isOpen(day)) return Walk(h)
+        val run = Dungeon.current(h.dungeon, day)
+        if (run.finished) return Walk(h)
+        val step = Dungeon.steps(d)
+        val (after, cleared) = Dungeon.advance(run, step)
+        var next = h.copy(dungeon = Dungeon.encode(after))
+        if (cleared.isEmpty()) return Walk(next, step)
+        var gold = 0.0
+        val items = ArrayList<String>()
+        cleared.forEach { room ->
+            gold += Dungeon.roomGold(h.level, room)
+            if (room == Dungeon.last) {
+                items += Rules.SADDLE
+                next = next.copy(chests = next.chests + 1, dungeonsCleared = next.dungeonsCleared + 1)
+            } else items += pickItem(h, season())
+        }
+        items.forEach { db.addItem(it, 1) }
+        // Logged on its own, so undoing the task that cleared a room keeps the room's loot.
+        db.insertLog(LogEntry(day = day, kind = LogKind.DUNGEON, gold = gold))
+        return Walk(next.copy(gold = next.gold + gold), step, cleared.last() + 1, Dungeon.last in cleared, gold, items)
     }
 
     private suspend fun hurt(h: Hero, d: Difficulty, delta: Double, taskId: Long, kind: LogKind, day: Long): Pair<Hero, Outcome> {
         val challenge = challenge()
-        val dmg = Rules.damage(delta, d, stats(h)) * DayEvent.of(day).hurt * challenge.hurt * (1 - boost(h).guard)
+        val dmg = Rules.damage(delta, d, stats(h)) * DayEvent.of(day).hurt * challenge.hurt * (1 - boost(h).guard) * Classes.buffs(h, day).hurt
         val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, hp = -dmg, valueDelta = delta))
         val hurt = h.copy(hp = h.hp - dmg)
         return if (hurt.hp <= 0) faint(hurt, challenge) to Outcome(hp = -dmg, fainted = true, logId = id)
@@ -333,8 +394,8 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         questHp = Catalog.boss(h.quest)?.hp ?: 0.0,
     )
 
-    private fun rollDrop(h: Hero, d: Difficulty, s: Stats, season: Season, ev: DayEvent, petDrop: Double): String {
-        if (h.dropsToday >= Rules.dropCap(h.level) + ev.dropCap) return ""
+    private fun rollDrop(h: Hero, d: Difficulty, s: Stats, season: Season, ev: DayEvent, petDrop: Double, extraCap: Int = 0): String {
+        if (h.dropsToday >= Rules.dropCap(h.level) + ev.dropCap + extraCap) return ""
         if (random.nextDouble() >= (Rules.dropChance(d, s) + ev.drop + petDrop).coerceAtMost(0.65)) return ""
         return pickItem(h, season)
     }
@@ -386,7 +447,9 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         var bossHit = 0.0
         val boss = Catalog.boss(h.quest)
         val challenge = challenge()
-        val hurt = DayEvent.of(day).hurt * challenge.hurt * (1 - boost(h).guard)
+        // Skills cast on the closing day still hold tonight.
+        val buffs = Classes.buffs(h, day)
+        val hurt = DayEvent.of(day).hurt * challenge.hurt * (1 - boost(h).guard) * buffs.hurt
         val tasks = db.tasks()
         val updated = tasks.mapNotNull { t ->
             when (t.type) {
@@ -394,9 +457,9 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
                     val delta = Rules.delta(t.value, false)
                     val dmg = Rules.damage(delta, t.difficulty, s) * hurt
                     hp += dmg
-                    if (boss != null) bossHit += boss.str * t.difficulty.mult.coerceAtLeast(0.5) * 1.5 * Rules.defense(s) * hurt
+                    if (boss != null && !buffs.bossWard) bossHit += boss.str * t.difficulty.mult.coerceAtLeast(0.5) * 1.5 * Rules.defense(s) * hurt
                     db.insertLog(LogEntry(taskId = t.id, day = day, kind = LogKind.MISSED, hp = -dmg, valueDelta = delta))
-                    t.copy(value = t.value + delta, streak = 0)
+                    t.copy(value = t.value + delta, streak = if (buffs.keepStreaks) t.streak else 0)
                 } else null
                 TaskType.TODO -> if (!t.done && !h.resting) t.copy(value = t.value + Rules.delta(t.value, false) * 0.5) else null
                 TaskType.HABIT -> t.copy(
@@ -409,7 +472,10 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         db.updateTasks(updated)
         db.resetDailyChecklists()
         if (bossHit > 0) db.insertLog(LogEntry(day = day, kind = LogKind.BOSS, hp = -bossHit))
-        var next = h.copy(hp = h.hp - hp - bossHit, lastDay = today, dropsToday = 0)
+        // A night's sleep brings back some mana; spent buffs fall away.
+        val mp = if (Classes.of(h) == null) h.mp else (h.mp + Classes.mpOvernight(s)).coerceAtMost(Classes.maxMp(s))
+        val buffsLeft = Classes.decode(h.buffs).filterValues { it >= today }.entries.joinToString(",") { "${it.key}=${it.value}" }
+        var next = h.copy(hp = h.hp - hp - bossHit, lastDay = today, dropsToday = 0, mp = mp, buffs = buffsLeft)
         val fainted = next.hp <= 0
         if (fainted) next = faint(next, challenge)
         db.saveHero(next)
@@ -503,8 +569,100 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         grow
     }
 
+    /** One pet can walk beside the hero or carry them, not both at once. */
     suspend fun setCompanion(petKey: String) = mutex.withLock {
-        db.saveHero(hero().copy(pet = petKey))
+        val h = hero()
+        db.saveHero(h.copy(pet = petKey, mount = if (h.mount == petKey) "" else h.mount))
+    }
+
+    // ---- Mounts --------------------------------------------------------------------------
+
+    suspend fun buySaddle(): Boolean = mutex.withLock {
+        val h = hero()
+        if (h.gold + 1e-9 < Rules.SADDLE_COST) return false
+        db.saveHero(h.copy(gold = h.gold - Rules.SADDLE_COST))
+        db.addItem(Rules.SADDLE, 1)
+        db.insertLog(LogEntry(day = today(), kind = LogKind.BUY, gold = -Rules.SADDLE_COST))
+        true
+    }
+
+    /** Saddles a fully grown pet: it becomes a mount for good. The first one is ridden right away. */
+    suspend fun saddle(petKey: String): Boolean = mutex.withLock {
+        val pet = db.pet(petKey) ?: return false
+        if (pet.growth < 100 || pet.mount || (db.item(Rules.SADDLE)?.count ?: 0) < 1) return false
+        db.addItem(Rules.SADDLE, -1)
+        db.savePet(pet.copy(mount = true))
+        val h = hero()
+        if (h.mount.isEmpty()) db.saveHero(h.copy(mount = petKey, pet = if (h.pet == petKey) "" else h.pet))
+        true
+    }
+
+    /** Rides a saddled pet, or ("") gets off. */
+    suspend fun ride(petKey: String) = mutex.withLock {
+        val h = hero()
+        if (petKey.isEmpty()) db.saveHero(h.copy(mount = ""))
+        else if (db.pet(petKey)?.mount == true) db.saveHero(h.copy(mount = petKey, pet = if (h.pet == petKey) "" else h.pet))
+    }
+
+    // ---- Classes and skills --------------------------------------------------------------
+
+    /** Picks a class (from level 5). The first pick is free, a change costs gold and empties the mana. */
+    suspend fun chooseClass(c: HeroClass): Boolean = mutex.withLock {
+        val h = hero()
+        if (h.level < Classes.UNLOCK || h.heroClass == c.name) return false
+        val cost = if (h.heroClass.isEmpty()) 0.0 else Classes.CHANGE_COST
+        if (h.gold + 1e-9 < cost) return false
+        val fresh = h.copy(heroClass = c.name, gold = h.gold - cost, buffs = "")
+        db.saveHero(fresh.copy(mp = if (h.heroClass.isEmpty()) Classes.maxMp(stats(fresh)) else 0.0))
+        if (cost > 0) db.insertLog(LogEntry(day = today(), kind = LogKind.BUY, gold = -cost))
+        true
+    }
+
+    /** Why a skill can't be cast right now, or null when it can. */
+    fun blocked(h: Hero, skill: Skill, day: Long): SkillBlock? = when {
+        Classes.of(h) != skill.cls -> SkillBlock.CLASS
+        h.level < skill.level -> SkillBlock.LEVEL
+        skill.kind == SkillKind.DAY && skill in Classes.active(h.buffs, day) -> SkillBlock.ACTIVE
+        (skill == Skill.SMASH || skill == Skill.FIREBALL) && h.quest.isEmpty() -> SkillBlock.NO_BOSS
+        skill == Skill.HEAL && h.hp >= Rules.MAX_HP -> SkillBlock.FULL_HP
+        h.mp + 1e-9 < skill.mana -> SkillBlock.MANA
+        else -> null
+    }
+
+    suspend fun cast(skill: Skill): Outcome? = mutex.withLock {
+        val h = hero()
+        val day = today()
+        if (blocked(h, skill, day) != null) return null
+        val s = stats(h)
+        var next = h.copy(mp = h.mp - skill.mana)
+        var out = Outcome(mp = -skill.mana, skill = skill)
+        when (skill) {
+            Skill.SMASH, Skill.FIREBALL -> {
+                val hit = if (skill == Skill.SMASH) Classes.smash(s) else Classes.fireball(s)
+                val xp = if (skill == Skill.FIREBALL) Classes.fireballXp(s) else 0.0
+                next = next.copy(questHp = next.questHp - hit, xp = next.xp + xp)
+                val (won, defeated) = defeat(next, day)
+                val before = won.level
+                next = levelUp(won)
+                out = out.copy(boss = hit, xp = xp, bossDefeated = defeated, levelUp = if (next.level > before) next.level else 0)
+            }
+            Skill.PICKPOCKET -> Classes.pickpocket(s).let { g -> next = next.copy(gold = next.gold + g); out = out.copy(gold = g) }
+            Skill.HEAL -> minOf(Classes.heal(s), Rules.MAX_HP - h.hp).let { hp -> next = next.copy(hp = next.hp + hp); out = out.copy(hp = hp) }
+            else -> next = next.copy(buffs = Classes.encode(h.buffs, skill, day))
+        }
+        db.saveHero(next)
+        val id = db.insertLog(LogEntry(day = day, kind = LogKind.SKILL, mp = -skill.mana, boss = out.boss, xp = out.xp, gold = out.gold, hp = out.hp))
+        emit(out.copy(logId = id))
+    }
+
+    // ---- Focus ---------------------------------------------------------------------------
+
+    /** A finished focus session pays like a task of matching size (and counts as a dungeon step). */
+    suspend fun focusDone(minutes: Int): Outcome? = mutex.withLock {
+        if (minutes < Rules.FOCUS_MIN) return null
+        val (h2, o) = gain(hero(), Rules.focusDifficulty(minutes), 1.0, 1.0, 0, LogKind.FOCUS, today())
+        db.saveHero(h2)
+        emit(o)
     }
 
     /** The fights on offer right now: the next rank of each main boss, this season's boss and this week's. */
@@ -585,6 +743,8 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
             pets = pets.size,
             grown = pets.count { it.growth >= 100 },
             decor = h.ownedDecor.split(',').count { HomeCatalog.item(it)?.let { d -> d.price > 0 } == true },
+            mounts = db.mountCount(),
+            dungeons = h.dungeonsCleared,
         )
     }
 
@@ -599,6 +759,31 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         db.saveHero(h.copy(achievements = (have.filter { it.isNotEmpty() } + fresh.map { it.key }).joinToString(","), gold = h.gold + gold))
         db.insertLog(LogEntry(day = today(), kind = LogKind.ACHIEVEMENT, gold = gold))
         fresh
+    }
+
+    // ---- Tavern --------------------------------------------------------------------------
+
+    /** This hero as a friend would see it. */
+    suspend fun heroCard(): HeroCard {
+        val h = hero().let { if (it.uid.isEmpty()) it.copy(uid = newUid()).also { u -> db.saveHero(u) } else it }
+        val pets = db.pets()
+        return HeroCard(
+            uid = h.uid, name = h.name, level = h.level, heroClass = h.heroClass,
+            skin = h.skin, hairStyle = h.hairStyle, hairColor = h.hairColor,
+            weapon = h.weapon, armor = h.armor, head = h.head, shield = h.shield,
+            pet = h.pet, petGrown = (pets.firstOrNull { it.key == h.pet }?.growth ?: 0) >= 100, mount = h.mount,
+            bestStreak = db.bestStreak(), bosses = h.defeatedCount, pets = pets.size,
+            achievements = h.achievements.split(',').count { it.isNotEmpty() }, dungeons = h.dungeonsCleared, day = today(),
+        )
+    }
+
+    /** Takes a friend's code into the tavern (a newer card of the same hero replaces the old one). */
+    suspend fun addFriend(text: String): Pair<FriendResult, HeroCard?> {
+        val card = Party.decode(text) ?: return FriendResult.BAD to null
+        if (card.uid == hero().uid) return FriendResult.SELF to card
+        val old = db.friends().firstOrNull { it.uid == card.uid }
+        db.saveFriend(app.dayquest.data.Friend(card.uid, Party.encode(card), old?.addedAt ?: System.currentTimeMillis()))
+        return (if (old == null) FriendResult.ADDED else FriendResult.UPDATED) to card
     }
 
     suspend fun abandonQuest() = mutex.withLock {

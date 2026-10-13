@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Add
@@ -75,7 +76,7 @@ private class Line(val id: Long, text: String, done: Boolean) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () -> Unit) {
+fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () -> Unit, onStats: (Long) -> Unit = {}) {
     val context = LocalContext.current
     val c = context.container
     val db = c.db.game()
@@ -144,6 +145,9 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
             ),
             onBack = onDone,
         ) {
+            if (base.id != 0L && kind != TaskType.REWARD) IconButton(onClick = { onStats(base.id) }) {
+                Icon(Icons.Rounded.BarChart, stringResource(R.string.task_stats), tint = D.c.accent)
+            }
             if (base.id != 0L) IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Rounded.DeleteOutline, stringResource(R.string.delete), tint = D.c.hp) }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {

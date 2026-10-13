@@ -70,6 +70,7 @@ fun itemName(key: String): String {
         key.startsWith("egg:") -> Species.of(id)?.let { stringResource(R.string.egg_name, stringResource(it.label)) }
         key.startsWith("potion:") -> Potion.of(id)?.let { stringResource(R.string.potion_name, stringResource(it.label)) }
         key.startsWith("food:") -> Food.of(id)?.let { stringResource(it.label) }
+        key == app.dayquest.game.Rules.SADDLE -> stringResource(R.string.saddle)
         else -> null
     } ?: key
 }
@@ -80,8 +81,19 @@ fun itemSprite(key: String): Sprite? {
         key.startsWith("egg:") -> Species.of(id)?.let(Sprites::egg)
         key.startsWith("potion:") -> Potion.of(id)?.let { Sprites.potion(it) }
         key.startsWith("food:") -> Food.of(id)?.let(Sprites::food)
+        key == app.dayquest.game.Rules.SADDLE -> app.dayquest.pixel.Badges.saddle
         else -> null
     }
+}
+
+/** What a skill does, with this hero's numbers filled in. */
+@Composable
+fun skillText(skill: app.dayquest.game.Skill, s: app.dayquest.game.Stats): String = when (skill) {
+    app.dayquest.game.Skill.SMASH -> stringResource(skill.text, gainText(app.dayquest.game.Classes.smash(s)))
+    app.dayquest.game.Skill.FIREBALL -> stringResource(skill.text, gainText(app.dayquest.game.Classes.fireball(s)), gainText(app.dayquest.game.Classes.fireballXp(s)))
+    app.dayquest.game.Skill.PICKPOCKET -> stringResource(skill.text, goldText(app.dayquest.game.Classes.pickpocket(s)))
+    app.dayquest.game.Skill.HEAL -> stringResource(skill.text, gainText(app.dayquest.game.Classes.heal(s)))
+    else -> stringResource(skill.text)
 }
 
 @Composable
@@ -97,6 +109,7 @@ fun android.content.Context.itemLabel(key: String): String {
         key.startsWith("egg:") -> Species.of(id)?.let { getString(R.string.egg_name, getString(it.label)) }
         key.startsWith("potion:") -> Potion.of(id)?.let { getString(R.string.potion_name, getString(it.label)) }
         key.startsWith("food:") -> Food.of(id)?.let { getString(it.label) }
+        key == app.dayquest.game.Rules.SADDLE -> getString(R.string.saddle)
         else -> null
     } ?: key
 }
@@ -149,4 +162,10 @@ fun rememberSeason(): app.dayquest.game.Season {
     val c = androidx.compose.ui.platform.LocalContext.current.let { (it.applicationContext as app.dayquest.DayquestApp).container }
     val southern by androidx.compose.runtime.remember { c.settings.settings }.collectAsState(initial = null)
     return app.dayquest.game.Season.of(LocalDate.now(), southern?.southern ?: false)
+}
+
+/** Non-composable twin of [petName]. */
+fun android.content.Context.petLabel(key: String): String {
+    val (s, p) = Catalog.petParts(key) ?: return key
+    return getString(R.string.pet_name, getString(s.label), getString(p.label))
 }

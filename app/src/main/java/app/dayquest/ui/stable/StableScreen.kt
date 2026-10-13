@@ -45,6 +45,7 @@ import app.dayquest.game.Catalog
 import app.dayquest.game.Companions
 import app.dayquest.game.Food
 import app.dayquest.game.Potion
+import app.dayquest.game.Rules
 import app.dayquest.game.Species
 import app.dayquest.pixel.Sprites
 import app.dayquest.ui.LocalFeedback
@@ -56,6 +57,7 @@ import app.dayquest.ui.components.SoftButton
 import app.dayquest.ui.itemName
 import app.dayquest.ui.itemSprite
 import app.dayquest.ui.petName
+import app.dayquest.ui.petLabel
 import app.dayquest.ui.pixel.PixelBar
 import app.dayquest.ui.pixel.PixelImage
 import app.dayquest.ui.theme.D
@@ -75,6 +77,8 @@ fun StableScreen(hero: Hero) {
     val eggs = items.filter { it.key.startsWith("egg:") }
     val potions = items.filter { it.key.startsWith("potion:") }
     val food = items.filter { it.key.startsWith("food:") }
+    val saddles = items.firstOrNull { it.key == Rules.SADDLE }?.count ?: 0
+    val mounts = pets.filter { it.mount }
 
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
         item {
@@ -86,10 +90,17 @@ fun StableScreen(hero: Hero) {
         item { app.dayquest.ui.components.Tip("stable", stringResource(R.string.tip_stable), Modifier.padding(vertical = 4.dp)) }
         item { HatchCard(eggs, potions, byKey) }
         item {
+            SectionTitle(stringResource(R.string.mounts)) { Text("${mounts.size}", style = DType.Number.copy(color = D.c.muted)) }
+            if (mounts.isEmpty()) Text(stringResource(R.string.mounts_empty), style = DType.Sub, modifier = Modifier.padding(horizontal = 4.dp))
+            else Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                mounts.forEach { m -> MountSlot(m, hero.mount == m.key) { open = m.key } }
+            }
+        }
+        item {
             SectionTitle(stringResource(R.string.bag))
             if (items.isEmpty()) Text(stringResource(R.string.bag_empty), style = DType.Sub, modifier = Modifier.padding(horizontal = 4.dp))
             else Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                (eggs + potions + food).forEach { BagSlot(it) }
+                (eggs + potions + food + items.filter { it.key == Rules.SADDLE }).forEach { BagSlot(it) }
             }
         }
         items(Species.entries.toList(), key = { it.key }) { s ->
@@ -117,7 +128,23 @@ fun StableScreen(hero: Hero) {
         }
     }
 
-    open?.let { key -> byKey[key]?.let { PetDialog(it, hero, food) { open = null } } }
+    open?.let { key -> byKey[key]?.let { PetDialog(it, hero, food, saddles) { open = null } } }
+}
+
+@Composable
+private fun MountSlot(pet: Pet, riding: Boolean, onClick: () -> Unit) {
+    val (s, p) = Catalog.petParts(pet.key) ?: return
+    Column(
+        Modifier.width(96.dp).clip(D.RSm).background(if (riding) D.c.accentSoft else D.c.surface)
+            .border(if (riding) 2.dp else 1.dp, if (riding) D.c.accent else D.c.line, D.RSm).clickable(onClick = onClick).padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) { PixelImage(Sprites.mount(s, p), pixel = 2.dp) }
+        Text(
+            if (riding) stringResource(R.string.riding) else petName(pet.key),
+            style = DType.Small.copy(fontSize = 10.sp, color = if (riding) D.c.accent else D.c.muted), textAlign = TextAlign.Center, maxLines = 2,
+        )
+    }
 }
 
 @Composable
@@ -215,7 +242,7 @@ private fun PerkLine(pet: Pet, s: Species) {
 }
 
 @Composable
-private fun PetDialog(pet: Pet, hero: Hero, food: List<Item>, onDismiss: () -> Unit) {
+private fun PetDialog(pet: Pet, hero: Hero, food: List<Item>, saddles: Int, onDismiss: () -> Unit) {
     val c = LocalContext.current.container
     val fb = LocalFeedback.current
     val (s, p) = Catalog.petParts(pet.key) ?: return
@@ -233,8 +260,33 @@ private fun PetDialog(pet: Pet, hero: Hero, food: List<Item>, onDismiss: () -> U
                 Gap(6)
                 PerkLine(pet, s)
                 Gap(10)
-                if (grown) Text(stringResource(R.string.fully_grown), style = DType.Pixel.copy(color = D.c.gold))
-                else {
+                if (grown) {
+                    Text(stringResource(R.string.fully_grown), style = DType.Pixel.copy(color = D.c.gold))
+                    Gap(12)
+                    val ctx = LocalContext.current
+                    when {
+                        pet.mount -> {
+                            val perk = Companions.perk(s)
+                            val full = Companions.mountBoost(pet).let { b ->
+                                if (perk == app.dayquest.game.Perk.HEAL) app.dayquest.ui.goldText(b.heal)
+                                else "${kotlin.math.round(listOf(b.gold, b.xp, b.drop, b.guard, b.boss, b.crit).max() * 100).toInt()}%"
+                            }
+                            Text(stringResource(R.string.mount_perk, stringResource(perk.text, full)), style = DType.Small, textAlign = TextAlign.Center)
+                            Gap(8)
+                            if (hero.mount == pet.key) SoftButton(stringResource(R.string.dismount), { c.launch { c.game.ride("") }; onDismiss() }, Modifier.fillMaxWidth())
+                            else PrimaryButton(stringResource(R.string.ride), { fb.thud(); c.launch { c.game.ride(pet.key) }; onDismiss() }, Modifier.fillMaxWidth())
+                        }
+                        saddles > 0 -> PrimaryButton(stringResource(R.string.saddle_up) + "  ×$saddles", {
+                            c.scope.launch {
+                                val ok = c.game.saddle(pet.key)
+                                withContext(Dispatchers.Main) {
+                                    if (ok) { fb.thud(); app.dayquest.ui.Sfx.play(app.dayquest.ui.Sound.LEVEL); fb.show(ctx.getString(R.string.saddled, ctx.petLabel(pet.key))); onDismiss() }
+                                }
+                            }
+                        }, Modifier.fillMaxWidth())
+                        else -> Text(stringResource(R.string.saddle_need), style = DType.Muted, textAlign = TextAlign.Center)
+                    }
+                } else {
                     PixelBar(pet.growth / 100f, D.c.good)
                     Gap(4)
                     Text(stringResource(R.string.growth, pet.growth), style = DType.Small)
@@ -266,6 +318,7 @@ private fun PetDialog(pet: Pet, hero: Hero, food: List<Item>, onDismiss: () -> U
                 }
                 Gap(16)
                 if (hero.pet == pet.key) Text(stringResource(R.string.companion), style = DType.Pixel.copy(color = D.c.accent))
+                else if (hero.mount == pet.key) Text(stringResource(R.string.riding), style = DType.Pixel.copy(color = D.c.accent))
                 else SoftButton(stringResource(R.string.set_companion), { c.launch { c.game.setCompanion(pet.key) }; onDismiss() }, Modifier.fillMaxWidth())
             }
         },

@@ -211,6 +211,21 @@ private fun Main(hero: Hero, settings: Settings) {
         if (fresh.isNotEmpty()) withContext(kotlinx.coroutines.Dispatchers.Main) { unlocked.addAll(fresh) }
     }
     LaunchedEffect(hero.level, hero.questsDone, hero.ownedDecor) { c.scope.launch { checkAchievements() } }
+    // ---- Weekend dungeon and focus sessions ----
+    var dungeonGold by remember { mutableStateOf<Double?>(null) }
+    var focusDone by remember { mutableStateOf<Pair<Int, app.dayquest.game.Outcome>?>(null) }
+    suspend fun claimFocus() {
+        val r = app.dayquest.ui.focus.Focus.claim(c, context) ?: return
+        Sfx.play(Sound.CHIME)
+        withContext(kotlinx.coroutines.Dispatchers.Main) { focusDone = r }
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { c.scope.launch { claimFocus() } }
+    LaunchedEffect(settings.focusEnd) {
+        if (settings.focusEnd > 0) {
+            delay((settings.focusEnd - System.currentTimeMillis()).coerceAtLeast(0) + 300)
+            c.scope.launch { claimFocus() }
+        }
+    }
     // ---- Perfect day chest and the morning card ----
     var chest by remember { mutableStateOf(false) }
     var chestPerfect by remember { mutableStateOf(false) }
@@ -221,6 +236,7 @@ private fun Main(hero: Hero, settings: Settings) {
             c.scope.launch { checkAchievements() }
             if (o.fainted) fainted = true
             o.bossDefeated?.let { victory = it }
+            if (o.dungeonDone) dungeonGold = o.roomGold
             if (o.levelUp > 0 && !o.fainted) levelUp = o.levelUp
             soundOf(o)?.let { Sfx.play(it) }
             if (o.perfect) launch {
@@ -251,11 +267,15 @@ private fun Main(hero: Hero, settings: Settings) {
                                 onEdit = { nav.navigate("edit/$it") },
                                 onNew = { type, title -> nav.navigate("new/${type.name}?title=${android.net.Uri.encode(title)}") },
                                 onSettings = { nav.navigate("settings") },
+                                onFocus = { nav.navigate("focus") },
                             )
                             Tab.SHOP -> ShopScreen(hero, onEdit = { nav.navigate("edit/$it") }, onNew = { nav.navigate("new/REWARD?title=${android.net.Uri.encode(it)}") })
                             Tab.STABLE -> StableScreen(hero)
                             Tab.QUESTS -> QuestsScreen(hero)
-                            Tab.HERO -> HeroScreen(hero, onSettings = { nav.navigate("settings") }, onHome = { nav.navigate("home") })
+                            Tab.HERO -> HeroScreen(
+                                hero, onSettings = { nav.navigate("settings") }, onHome = { nav.navigate("home") },
+                                onJournal = { nav.navigate("journal") }, onTask = { nav.navigate("stats/$it") },
+                            )
                         }
                     }
                 }
@@ -272,8 +292,16 @@ private fun Main(hero: Hero, settings: Settings) {
             )
         }
         composable("edit/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { e ->
-            EditTaskScreen(id = e.arguments?.getLong("id") ?: 0, type = TaskType.TODO, initialTitle = "", onDone = { nav.popBackStack() })
+            EditTaskScreen(
+                id = e.arguments?.getLong("id") ?: 0, type = TaskType.TODO, initialTitle = "", onDone = { nav.popBackStack() },
+                onStats = { nav.navigate("stats/$it") },
+            )
         }
+        composable("stats/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { e ->
+            app.dayquest.ui.stats.TaskStatsScreen(e.arguments?.getLong("id") ?: 0, onBack = { nav.popBackStack() })
+        }
+        composable("focus") { app.dayquest.ui.focus.FocusScreen(hero, onBack = { nav.popBackStack() }) }
+        composable("journal") { app.dayquest.ui.journal.JournalScreen(onBack = { nav.popBackStack() }) }
         composable("settings") { SettingsScreen(settings, onBack = { nav.popBackStack() }, onGuide = { nav.navigate("guide") }) }
         composable("guide") {
             app.dayquest.ui.onboarding.HowItWorks(hero.look(), stringResource(R.string.guide_done), onFinish = { nav.popBackStack() })
@@ -342,6 +370,20 @@ private fun Main(hero: Hero, settings: Settings) {
             if (loot != null && loot.levelUp > 0) levelUp = loot.levelUp
         }
     }
+    focusDone?.let { (minutes, o) ->
+        MomentDialog(
+            app.dayquest.pixel.Badges.hourglass, stringResource(R.string.focus_done_title),
+            stringResource(R.string.focus_done_text, minutes, gainText(o.xp), goldText(o.gold)),
+            stringResource(R.string.hooray),
+        ) { focusDone = null }
+    }
+    if (victory == null && dungeonGold != null) {
+        MomentDialog(
+            Sprites.chestOpen, stringResource(R.string.dungeon_done_title),
+            stringResource(R.string.dungeon_done_text, goldText(dungeonGold ?: 0.0)),
+            stringResource(R.string.hooray),
+        ) { dungeonGold = null }
+    }
     victory?.let { b ->
         val loot = b.rewards.map { (k, n) -> "${itemName(k)} ×$n" }.joinToString(", ")
         MomentDialog(
@@ -357,6 +399,9 @@ private fun soundOf(o: app.dayquest.game.Outcome): Sound? = when {
     o.fainted -> Sound.FAINT
     o.bossDefeated != null -> Sound.VICTORY
     o.levelUp > 0 -> Sound.LEVEL
+    o.dungeonDone -> Sound.CHEST
+    o.skill != null && o.boss > 0 -> if (o.crit) Sound.CRIT else Sound.HIT
+    o.skill != null -> Sound.SPELL
     o.jackpot || o.bounty -> Sound.JACKPOT
     o.crit -> Sound.CRIT
     o.hp < 0 -> Sound.HURT

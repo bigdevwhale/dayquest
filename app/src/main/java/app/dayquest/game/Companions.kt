@@ -32,7 +32,9 @@ data class Boost(
     val heal: Double = 0.0,
     val boss: Double = 0.0,
     val crit: Double = 0.0,
-)
+) {
+    operator fun plus(o: Boost) = Boost(gold + o.gold, xp + o.xp, drop + o.drop, guard + o.guard, heal + o.heal, boss + o.boss, crit + o.crit)
+}
 
 object Companions {
     fun perk(s: Species): Perk = when (s) {
@@ -54,6 +56,9 @@ object Companions {
         val s = Catalog.petParts(pet.key)?.first ?: return 0.0
         return perk(s).full * rare(s) * if (pet.growth >= 100) 1.0 else 0.5
     }
+
+    /** A saddled pet carries the hero and gives its perk in full, on top of the companion's. */
+    fun mountBoost(pet: Pet?): Boost = if (pet == null || !pet.mount) Boost() else boost(pet.copy(growth = 100))
 
     fun boost(pet: Pet?): Boost {
         if (pet == null) return Boost()

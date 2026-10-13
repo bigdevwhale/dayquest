@@ -30,6 +30,21 @@ object Rules {
     const val FAVORITE_FOOD = 20
     const val OTHER_FOOD = 8
 
+    /** A saddle turns a fully grown pet into a mount. Sold in the shop, found at the end of the weekend dungeon. */
+    const val SADDLE = "saddle"
+    const val SADDLE_COST = 60.0
+
+    /** Focus sessions: the shortest that pays, and the lengths on offer. */
+    const val FOCUS_MIN = 10
+    val FOCUS_LENGTHS = listOf(15, 25, 50)
+
+    /** A longer session pays like a harder task. */
+    fun focusDifficulty(minutes: Int) = when {
+        minutes >= 45 -> Difficulty.HARD
+        minutes >= 25 -> Difficulty.MEDIUM
+        else -> Difficulty.EASY
+    }
+
     /** Pet food in the shop: about a week of finished tasks grows a pet on its favourite. */
     fun foodPrice(f: Food) = when (f) {
         Food.BERRY -> 5.0

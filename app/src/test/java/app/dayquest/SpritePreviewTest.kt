@@ -93,6 +93,35 @@ class SpritePreviewTest {
     }
 
     @Test
+    fun mountsAndBadges() {
+        val mounts = Species.entries.flatMap { s -> listOf(Sprites.mount(s, Potion.BASE), Sprites.mount(s, Potion.FROST)) }
+        sheet("mounts", mounts, scale = 6, cols = 8)
+        val badges = app.dayquest.game.HeroClass.entries.map { app.dayquest.pixel.Badges.emblem(it) } +
+            (1..5).map { app.dayquest.pixel.Badges.mood(it) } +
+            listOf(app.dayquest.pixel.Badges.mana, app.dayquest.pixel.Badges.saddle, app.dayquest.pixel.Badges.hourglass, app.dayquest.pixel.Badges.mug, app.dayquest.pixel.Badges.door)
+        sheet("badges", badges, scale = 10, cols = 7)
+        val dir = out ?: return
+        val look = Look(1, 0, 2, "flame_blade", "chainmail", "wizard_hat", "kite_shield")
+        val frames = listOf(
+            SceneState(SceneKind.MEADOW, 12f, look, "fox:base", mount = "wolf:base"),
+            SceneState(SceneKind.FOREST, 14f, look, "owl:base", boss = Catalog.boss("goblin_chief"), mount = "dragon:ember"),
+            SceneState(SceneKind.SNOW, 10f, look, "", mount = "turtle:frost"),
+        )
+        val scale = 4
+        val r = SceneRenderer(180, 72)
+        val img = Img(180 * scale, 72 * scale * frames.size)
+        frames.forEachIndexed { i, s ->
+            repeat(30) { k -> r.render(s, 5_000L + i * 1000 + k * 70) }
+            for (y in 0 until r.h) for (x in 0 until r.w) {
+                val c = r.buffer.px[y * r.w + x] or (0xFF shl 24)
+                for (dy in 0 until scale) for (dx in 0 until scale) img.setRGB(x * scale + dx, (i * r.h + y) * scale + dy, c)
+            }
+        }
+        dir.mkdirs()
+        img.save(File(dir, "mount_scenes.png"))
+    }
+
+    @Test
     fun scenes() {
         val dir = out ?: return
         val look = Look(1, 0, 2, "flame_blade", "chainmail", "wizard_hat", "kite_shield")

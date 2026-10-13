@@ -5,6 +5,7 @@ import app.dayquest.game.Challenge
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -32,6 +33,9 @@ data class Settings(
     val challenge: Challenge = Challenge.NORMAL,
     /** First-visit tips already dismissed. */
     val tips: Set<String> = emptySet(),
+    /** A running focus session: when it ends (epoch ms, 0 when none) and how long it is. */
+    val focusEnd: Long = 0,
+    val focusMinutes: Int = 0,
 )
 
 class SettingsStore(context: Context) {
@@ -48,6 +52,8 @@ class SettingsStore(context: Context) {
             sounds = it[SOUNDS] ?: true,
             challenge = it[CHALLENGE]?.let { c -> runCatching { Challenge.valueOf(c) }.getOrNull() } ?: Challenge.NORMAL,
             tips = it[TIPS] ?: emptySet(),
+            focusEnd = it[FOCUS_END] ?: 0,
+            focusMinutes = it[FOCUS_MINUTES] ?: 0,
         )
     }
 
@@ -62,6 +68,11 @@ class SettingsStore(context: Context) {
     suspend fun setSounds(on: Boolean) = store.edit { it[SOUNDS] = on }
     suspend fun setChallenge(c: Challenge) = store.edit { it[CHALLENGE] = c.name }
     suspend fun seeTip(key: String) = store.edit { it[TIPS] = (it[TIPS] ?: emptySet()) + key }
+
+    suspend fun setFocus(end: Long, minutes: Int) = store.edit {
+        it[FOCUS_END] = end
+        it[FOCUS_MINUTES] = minutes
+    }
 
     suspend fun restore(s: Settings) = store.edit {
         it[THEME] = s.theme.name
@@ -85,5 +96,7 @@ class SettingsStore(context: Context) {
         val SOUNDS = booleanPreferencesKey("sounds")
         val CHALLENGE = stringPreferencesKey("challenge")
         val TIPS = stringSetPreferencesKey("tips")
+        val FOCUS_END = longPreferencesKey("focus_end")
+        val FOCUS_MINUTES = intPreferencesKey("focus_minutes")
     }
 }

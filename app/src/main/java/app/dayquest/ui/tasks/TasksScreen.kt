@@ -102,8 +102,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
+import app.dayquest.ui.journal.MoodCard
 
 private enum class Board { HABITS, DAILIES, TODOS }
+
+val ManaBlue = Color(0xFF4F9BEF)
+private val BossColor = Color(0xFFB45CFF)
 
 /** Routes every game outcome to the scene: particles plus floating numbers. */
 class SceneFx {
@@ -139,7 +143,7 @@ fun rememberSceneFx(): SceneFx {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit) {
+fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit, onFocus: () -> Unit) {
     val context = LocalContext.current
     val c = context.container
     val fb = LocalFeedback.current
@@ -161,9 +165,10 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
     val todos = tasks.filter { it.type == TaskType.TODO }
 
     val actions = remember(fb) { Actions(c, fb, context) }
+    val mood by remember(today) { c.db.game().observeJournalDay(today) }.collectAsStateWithLifecycle(initialValue = null)
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item(key = "header") { HeroHeader(hero, fx, onSettings, onChest) }
+        item(key = "header") { HeroHeader(hero, fx, onSettings, onChest, onFocus) }
         stickyHeader(key = "tabs") {
             Column(Modifier.fillMaxWidth().background(D.c.bg).padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Segmented(
@@ -231,6 +236,8 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                 }
             }
         }
+        // The day's mood waits at the end of the board, after the tasks.
+        item(key = "mood") { MoodCard(today, mood, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) }
     }
 }
 
@@ -256,6 +263,7 @@ class Actions(private val c: app.dayquest.AppContainer, private val fb: Feedback
             if (o.hp < 0) add(s(R.string.snack_hurt, gainText(-o.hp)))
             if (o.boss > 0) add(s(if (o.crit) R.string.snack_crit else R.string.snack_hit, gainText(o.boss)))
             if (o.drop.isNotEmpty()) add(s(R.string.snack_drop, context.itemLabel(o.drop)))
+            if (o.room > 0 && !o.dungeonDone) add(s(R.string.room_cleared, o.room, goldText(o.roomGold), o.roomItems.joinToString(", ") { context.itemLabel(it) }))
         }
         if (parts.isNotEmpty()) fb.show(parts.joinToString("\n"), s(R.string.undo), o.logId)
     }
@@ -302,7 +310,7 @@ private fun LazyListScope.taskItems(
 // ---- Header ------------------------------------------------------------------------------
 
 @Composable
-private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest: () -> Unit) {
+private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest: () -> Unit, onFocus: () -> Unit) {
     val boss = Catalog.boss(hero.quest)
     val db = LocalContext.current.container.db.game()
     val pet by remember(hero.pet) { db.observePets().map { l -> l.firstOrNull { it.key == hero.pet } } }
@@ -310,7 +318,7 @@ private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest:
     Column(Modifier.fillMaxWidth()) {
         Box {
             SceneView(
-                SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, (pet?.growth ?: 0) >= 100, boss, hero.resting, app.dayquest.ui.rememberSeason()),
+                SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, (pet?.growth ?: 0) >= 100, boss, hero.resting, app.dayquest.ui.rememberSeason(), mount = hero.mount),
                 bursts = fx.bursts, floaters = fx.floaters,
             )
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -328,6 +336,11 @@ private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest:
                     }
                 }
                 Spacer(Modifier.weight(1f))
+                Box(
+                    Modifier.size(40.dp).clip(D.RSm).background(Color(0x55000000)).clickable(onClick = onFocus),
+                    contentAlignment = Alignment.Center,
+                ) { PixelImage(app.dayquest.pixel.Badges.hourglass, pixel = 2.dp) }
+                Spacer(Modifier.width(8.dp))
                 IconButton(onClick = onSettings, modifier = Modifier.size(40.dp).clip(D.RSm).background(Color(0x55000000))) {
                     Icon(Icons.Rounded.Settings, stringResource(R.string.settings), tint = Color.White)
                 }
@@ -362,9 +375,24 @@ fun StatsPanel(hero: Hero, modifier: Modifier = Modifier) {
         StatLine(Sprites.heart, hero.hp / Rules.MAX_HP, D.c.hp, "${num(hero.hp.coerceAtLeast(0.0))} / ${Rules.MAX_HP.toInt()}")
         Gap(6)
         StatLine(Sprites.star, (hero.xp / next).toFloat(), D.c.xp, "${num(hero.xp)} / $next")
-        if (boss != null) {
+        if (app.dayquest.game.Classes.of(hero) != null) {
+            val max = app.dayquest.game.Classes.maxMp(LocalContext.current.container.game.stats(hero))
             Gap(6)
-            StatLine(Sprites.boss(boss.shape, boss.primary, boss.secondary), (hero.questHp / boss.hp).toFloat(), Color(0xFFB45CFF), "${num(hero.questHp)} / ${num(boss.hp)}", iconPixel = 0.5f)
+            StatLine(app.dayquest.pixel.Badges.mana, (hero.mp / max).toFloat(), ManaBlue, "${num(hero.mp.coerceAtMost(max))} / ${num(max)}")
+        }
+        if (boss != null) {
+            // The foe's bar sits apart from the hero's own, under its name, so it never reads as a fourth hero stat.
+            Gap(10)
+            androidx.compose.material3.HorizontalDivider(color = D.c.line)
+            Gap(8)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.width(24.dp), contentAlignment = Alignment.Center) { PixelImage(Sprites.boss(boss.shape, boss.primary, boss.secondary), pixel = 0.5.dp) }
+                Spacer(Modifier.width(8.dp))
+                Text(app.dayquest.ui.bossName(boss), style = DType.Small.copy(color = BossColor), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Text("${num(hero.questHp)} / ${num(boss.hp)}", style = DType.Number.copy(fontSize = 13.sp, color = D.c.muted))
+            }
+            Gap(4)
+            PixelBar((hero.questHp / boss.hp).toFloat(), BossColor)
         }
     }
 }

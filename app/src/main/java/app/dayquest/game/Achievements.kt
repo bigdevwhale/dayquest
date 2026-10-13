@@ -17,6 +17,8 @@ enum class Metric(@PluralsRes val title: Int, val targets: List<Int>) {
     PETS(R.plurals.ach_pets, listOf(10, 30, 60, 88)),
     GROWN(R.plurals.ach_grown, listOf(1, 10, 30)),
     DECOR(R.plurals.ach_decor, listOf(5, 15, 30)),
+    MOUNTS(R.plurals.ach_mounts, listOf(1, 10, 30)),
+    DUNGEONS(R.plurals.ach_dungeons, listOf(1, 10, 52)),
 }
 
 data class Achievement(val metric: Metric, val index: Int) {
@@ -43,6 +45,8 @@ data class Facts(
     val pets: Int = 0,
     val grown: Int = 0,
     val decor: Int = 0,
+    val mounts: Int = 0,
+    val dungeons: Int = 0,
 ) {
     fun value(m: Metric) = when (m) {
         Metric.STREAK -> streak
@@ -57,6 +61,8 @@ data class Facts(
         Metric.PETS -> pets
         Metric.GROWN -> grown
         Metric.DECOR -> decor
+        Metric.MOUNTS -> mounts
+        Metric.DUNGEONS -> dungeons
     }
 }
 

@@ -61,6 +61,7 @@ import app.dayquest.ui.components.DCard
 import app.dayquest.ui.components.DTextField
 import app.dayquest.ui.components.Gap
 import app.dayquest.ui.components.SectionTitle
+import app.dayquest.ui.components.Segmented
 import app.dayquest.ui.components.SoftButton
 import app.dayquest.ui.look
 import app.dayquest.ui.pixel.PixelImage
@@ -71,18 +72,23 @@ import app.dayquest.ui.tasks.StatsPanel
 import app.dayquest.ui.theme.D
 import app.dayquest.ui.theme.DType
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+
+private enum class HeroTab { HERO, AWARDS, HISTORY, TAVERN }
 
 @Composable
-fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit) {
-    val c = LocalContext.current.container
+fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit, onJournal: () -> Unit, onTask: (Long) -> Unit) {
+    val context = LocalContext.current
+    val c = context.container
     val pets by remember { c.db.game().observePets() }.collectAsStateWithLifecycle(initialValue = emptyList())
     val done by remember { c.db.game().observeDoneCount() }.collectAsStateWithLifecycle(initialValue = 0)
     var slot by remember { mutableStateOf<Slot?>(null) }
+    var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(HeroTab.HERO) }
     val stats = c.game.stats(hero)
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Box {
-            SceneView(SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100, null, hero.resting, app.dayquest.ui.rememberSeason()))
+            SceneView(SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100, null, hero.resting, app.dayquest.ui.rememberSeason(), mount = hero.mount))
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp), horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = onSettings, modifier = Modifier.size(40.dp).clip(D.RSm).background(Color(0x55000000))) {
                     Icon(Icons.Rounded.Settings, stringResource(R.string.settings), tint = Color.White)
@@ -92,85 +98,111 @@ fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit) {
         StatsPanel(hero)
         Column(Modifier.padding(horizontal = 16.dp)) {
             Gap(12)
-            app.dayquest.ui.components.Tip("hero", stringResource(R.string.tip_hero))
-            SectionTitle(stringResource(R.string.home))
-            Column(Modifier.fillMaxWidth().clip(D.RMd).border(1.dp, D.c.line, D.RMd).clickable(onClick = onHome)) {
-                app.dayquest.ui.home.RoomView(app.dayquest.ui.home.roomState(hero, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100), virtualHeight = 64)
-                Row(Modifier.fillMaxWidth().background(D.c.surface).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.home_text), style = DType.Muted, modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(8.dp))
-                    SoftButton(stringResource(R.string.home_open), onHome)
-                }
-            }
-
-            AchievementsSection(hero)
-
-            SectionTitle(stringResource(R.string.appearance))
-            LookEditor(hero.name, Look(hero.skin, hero.hairStyle, hero.hairColor, hero.weapon, hero.armor, hero.head, hero.shield)) { name, look ->
-                c.launch { c.game.updateLook(name.ifBlank { hero.name }, look.skin, look.hairStyle, look.hairColor) }
-            }
-
-            SectionTitle(stringResource(R.string.equipment))
-            DCard(padding = androidx.compose.foundation.layout.PaddingValues(6.dp)) {
-                Slot.entries.forEachIndexed { i, s ->
-                    val key = when (s) {
-                        Slot.WEAPON -> hero.weapon
-                        Slot.ARMOR -> hero.armor
-                        Slot.HEAD -> hero.head
-                        Slot.SHIELD -> hero.shield
-                    }
-                    val g = Catalog.gear(key)
-                    Row(Modifier.fillMaxWidth().clip(D.RSm).clickable { slot = s }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(slotLabel(s), style = DType.Small)
-                            Text(g?.let { app.dayquest.ui.gearName(it) } ?: stringResource(R.string.slot_empty), style = DType.Strong)
+            Segmented(
+                options = HeroTab.entries.toList(), selected = tab, onSelect = { tab = it },
+                label = {
+                    stringResource(
+                        when (it) {
+                            HeroTab.HERO -> R.string.nav_hero
+                            HeroTab.AWARDS -> R.string.tab_awards
+                            HeroTab.HISTORY -> R.string.tab_history
+                            HeroTab.TAVERN -> R.string.tavern
                         }
-                        g?.let { StatChips(it.stats) }
+                    )
+                },
+            )
+            Gap(4)
+            when (tab) {
+                HeroTab.HERO -> {
+                    app.dayquest.ui.components.Tip("hero", stringResource(R.string.tip_hero))
+                    ClassSection(hero)
+                    SectionTitle(stringResource(R.string.equipment))
+                    DCard(padding = androidx.compose.foundation.layout.PaddingValues(6.dp)) {
+                        Slot.entries.forEachIndexed { i, s ->
+                            val key = when (s) {
+                                Slot.WEAPON -> hero.weapon
+                                Slot.ARMOR -> hero.armor
+                                Slot.HEAD -> hero.head
+                                Slot.SHIELD -> hero.shield
+                            }
+                            val g = Catalog.gear(key)
+                            Row(Modifier.fillMaxWidth().clip(D.RSm).clickable { slot = s }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(slotLabel(s), style = DType.Small)
+                                    Text(g?.let { app.dayquest.ui.gearName(it) } ?: stringResource(R.string.slot_empty), style = DType.Strong)
+                                }
+                                g?.let { StatChips(it.stats) }
+                            }
+                            if (i < Slot.entries.size - 1) HorizontalDivider(color = D.c.line)
+                        }
                     }
-                    if (i < Slot.entries.size - 1) HorizontalDivider(color = D.c.line)
-                }
-            }
 
-            SectionTitle(stringResource(R.string.stats))
-            DCard {
-                listOf(
-                    Triple(R.string.stat_str, stats.str, R.string.stat_str_long),
-                    Triple(R.string.stat_int, stats.int, R.string.stat_int_long),
-                    Triple(R.string.stat_con, stats.con, R.string.stat_con_long),
-                    Triple(R.string.stat_per, stats.per, R.string.stat_per_long),
-                ).forEach { (short, v, long) ->
-                    Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(short), style = DType.Pixel.copy(color = D.c.accent), modifier = Modifier.width(44.dp))
-                        Text(v.toString(), style = DType.Number, modifier = Modifier.width(36.dp))
-                        Text(stringResource(long), style = DType.Muted, modifier = Modifier.weight(1f))
+                    SectionTitle(stringResource(R.string.stats))
+                    DCard {
+                        listOf(
+                            Triple(R.string.stat_str, stats.str, R.string.stat_str_long),
+                            Triple(R.string.stat_int, stats.int, R.string.stat_int_long),
+                            Triple(R.string.stat_con, stats.con, R.string.stat_con_long),
+                            Triple(R.string.stat_per, stats.per, R.string.stat_per_long),
+                        ).forEach { (short, v, long) ->
+                            Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(stringResource(short), style = DType.Pixel.copy(color = D.c.accent), modifier = Modifier.width(44.dp))
+                                Text(v.toString(), style = DType.Number, modifier = Modifier.width(36.dp))
+                                Text(stringResource(long), style = DType.Muted, modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+
+                    Gap(12)
+                    DCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(stringResource(R.string.rest_inn), style = DType.Strong)
+                                Gap(2)
+                                Text(stringResource(R.string.rest_inn_text), style = DType.Muted)
+                            }
+                            Switch(hero.resting, { v -> c.launch { c.game.setResting(v) } }, colors = SwitchDefaults.colors(checkedTrackColor = D.c.accent))
+                        }
+                    }
+
+                    SectionTitle(stringResource(R.string.home))
+                    Column(Modifier.fillMaxWidth().clip(D.RMd).border(1.dp, D.c.line, D.RMd).clickable(onClick = onHome)) {
+                        app.dayquest.ui.home.RoomView(app.dayquest.ui.home.roomState(hero, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100), virtualHeight = 64)
+                        Row(Modifier.fillMaxWidth().background(D.c.surface).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.home_text), style = DType.Muted, modifier = Modifier.weight(1f))
+                            Spacer(Modifier.width(8.dp))
+                            SoftButton(stringResource(R.string.home_open), onHome)
+                        }
+                    }
+
+                    SectionTitle(stringResource(R.string.appearance))
+                    LookEditor(hero.name, Look(hero.skin, hero.hairStyle, hero.hairColor, hero.weapon, hero.armor, hero.head, hero.shield)) { name, look ->
+                        c.launch { c.game.updateLook(name.ifBlank { hero.name }, look.skin, look.hairStyle, look.hairColor) }
+                    }
+
+                }
+                HeroTab.AWARDS -> AchievementsSection(hero)
+                HeroTab.HISTORY -> {
+                    app.dayquest.ui.stats.InsightsSection(onTask)
+                    SectionTitle(stringResource(R.string.activity))
+                    Heatmap()
+                    Chronicle()
+                    app.dayquest.ui.journal.JournalSection(onJournal)
+                    Gap(12)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Total(stringResource(R.string.total_done), done.toString(), Modifier.weight(1f))
+                        Total(stringResource(R.string.bosses_beaten), hero.defeatedCount.toString(), Modifier.weight(1f))
+                    }
+                    Gap(10)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Total(stringResource(R.string.pets_hatched), "${pets.size}", Modifier.weight(1f))
+                        Total(stringResource(R.string.times_fainted), hero.deaths.toString(), Modifier.weight(1f))
                     }
                 }
-            }
-
-            Gap(12)
-            DCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.rest_inn), style = DType.Strong)
-                        Gap(2)
-                        Text(stringResource(R.string.rest_inn_text), style = DType.Muted)
-                    }
-                    Switch(hero.resting, { v -> c.launch { c.game.setResting(v) } }, colors = SwitchDefaults.colors(checkedTrackColor = D.c.accent))
+                HeroTab.TAVERN -> {
+                    Gap(12)
+                    app.dayquest.ui.tavern.TavernContent()
                 }
-            }
-
-            SectionTitle(stringResource(R.string.activity))
-            Heatmap()
-            Chronicle()
-            Gap(12)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Total(stringResource(R.string.total_done), done.toString(), Modifier.weight(1f))
-                Total(stringResource(R.string.bosses_beaten), hero.defeatedCount.toString(), Modifier.weight(1f))
-            }
-            Gap(10)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Total(stringResource(R.string.pets_hatched), "${pets.size}", Modifier.weight(1f))
-                Total(stringResource(R.string.times_fainted), hero.deaths.toString(), Modifier.weight(1f))
             }
             Gap(28)
         }

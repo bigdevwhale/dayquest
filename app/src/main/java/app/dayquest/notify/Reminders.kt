@@ -33,6 +33,8 @@ import java.time.ZoneId
 object Reminders {
     private const val CHANNEL_ID = "reminders_v1"
     const val ACTION_FIRE = "app.dayquest.notify.FIRE"
+    const val ACTION_FOCUS = "app.dayquest.notify.FOCUS"
+    private const val FOCUS_ID = 2
     private const val PREFS = "reminders"
     private const val LAST_CHECK = "last_check"
     private const val EVENING_ID = 1
@@ -58,6 +60,26 @@ object Reminders {
     )
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private fun focusIntent(context: Context) = PendingIntent.getBroadcast(
+        context, 2,
+        Intent(context, ReminderReceiver::class.java).setAction(ACTION_FOCUS),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    /** Rings when a focus session ends, even with the app closed (give or take a minute, like reminders). */
+    fun scheduleFocus(context: Context, at: Long) {
+        context.getSystemService(AlarmManager::class.java).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, focusIntent(context))
+    }
+
+    fun cancelFocus(context: Context) {
+        context.getSystemService(AlarmManager::class.java).cancel(focusIntent(context))
+        NotificationManagerCompat.from(context).cancel(FOCUS_ID)
+    }
+
+    fun notifyFocus(context: Context) {
+        if (canNotify(context)) notify(context, FOCUS_ID, context.getString(R.string.notif_focus), context.getString(R.string.notif_focus_text))
+    }
 
     private fun nextAt(minutes: Int, after: Long): Long {
         val zone = ZoneId.systemDefault()
@@ -147,6 +169,10 @@ private val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Reminders.ACTION_FOCUS) {
+            Reminders.notifyFocus(context)
+            return
+        }
         if (intent.action != Reminders.ACTION_FIRE) return
         val pending = goAsync()
         receiverScope.launch {

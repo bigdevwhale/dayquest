@@ -2,6 +2,8 @@ package app.dayquest
 
 import app.dayquest.data.CheckItem
 import app.dayquest.data.DayKind
+import app.dayquest.data.Friend
+import app.dayquest.data.JournalEntry
 import app.dayquest.data.GameDao
 import app.dayquest.data.Hero
 import app.dayquest.data.Item
@@ -11,7 +13,17 @@ import app.dayquest.data.Pet
 import app.dayquest.data.Settings
 import app.dayquest.data.Task
 import app.dayquest.data.TaskType
+import app.dayquest.game.Catalog
 import app.dayquest.game.Challenge
+import app.dayquest.game.Classes
+import app.dayquest.game.Difficulty
+import app.dayquest.game.Dungeon
+import app.dayquest.game.DungeonRun
+import app.dayquest.game.HeroCard
+import app.dayquest.game.HeroClass
+import app.dayquest.game.Party
+import app.dayquest.game.Skill
+import app.dayquest.game.SkillBlock
 import app.dayquest.game.Companions
 import app.dayquest.game.Food
 import app.dayquest.game.Perk
@@ -23,6 +35,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -159,6 +172,153 @@ class GameTest {
     }
 
     @Test
+    fun aClassDoublesItsStatAndItsSkillsCostMana() = runBlocking {
+        val db = FakeDao()
+        val g = game(db)
+        db.saveHero(Hero(name = "x", lastDay = g.today(), level = 4))
+        assertFalse(g.chooseClass(HeroClass.WARRIOR))
+        db.saveHero(db.hero!!.copy(level = 10, gold = 50.0))
+        val before = g.stats(db.hero!!)
+        assertTrue(g.chooseClass(HeroClass.WARRIOR))
+        assertEquals(before.str + 5, g.stats(db.hero!!).str)
+        assertEquals(before.int, g.stats(db.hero!!).int)
+        // The first pick is free and starts with a full pool of mana.
+        assertEquals(50.0, db.hero!!.gold, 1e-9)
+        assertEquals(Classes.maxMp(g.stats(db.hero!!)), db.hero!!.mp, 1e-9)
+
+        // Smash needs a boss.
+        assertEquals(SkillBlock.NO_BOSS, g.blocked(db.hero!!, Skill.SMASH, g.today()))
+        assertNull(g.cast(Skill.SMASH))
+        g.startQuest(Catalog.bosses.first())
+        val mp = db.hero!!.mp
+        val o = g.cast(Skill.SMASH)!!
+        assertTrue(o.boss > 0)
+        assertEquals(Catalog.bosses.first().hp - o.boss, db.hero!!.questHp, 1e-9)
+        assertEquals(mp - Skill.SMASH.mana, db.hero!!.mp, 1e-9)
+
+        // A day skill holds once a day; a change of class costs gold the hero doesn't have.
+        assertNotNull(g.cast(Skill.BATTLE_CRY))
+        assertEquals(SkillBlock.ACTIVE, g.blocked(db.hero!!, Skill.BATTLE_CRY, g.today()))
+        assertFalse(g.chooseClass(HeroClass.MAGE))
+    }
+
+    @Test
+    fun ironSkinHalvesTonightsDamage() = runBlocking {
+        fun lost(cast: Boolean) = runBlocking {
+            val db = FakeDao()
+            val g = game(db)
+            val today = g.today()
+            db.saveHero(Hero(name = "x", lastDay = today - 1, level = 12, heroClass = HeroClass.WARRIOR.name, mp = 40.0))
+            db.insert(Task(type = TaskType.DAILY, title = "d", streak = 5, createdAt = 0))
+            if (cast) db.saveHero(db.hero!!.copy(buffs = Classes.encode("", Skill.IRON_SKIN, today - 1)))
+            g.startNewDay()!!.hp
+        }
+        assertEquals(0.5, lost(true) / lost(false), 1e-9)
+    }
+
+    @Test
+    fun shadowStepKeepsStreaksAndManaComesBackOvernight() = runBlocking {
+        val db = FakeDao()
+        val g = game(db)
+        val today = g.today()
+        db.saveHero(Hero(name = "x", lastDay = today - 1, level = 12, heroClass = HeroClass.ROGUE.name, buffs = Classes.encode("", Skill.SHADOW_STEP, today - 1)))
+        val id = db.insert(Task(type = TaskType.DAILY, title = "d", streak = 5, createdAt = 0))
+        g.startNewDay()
+        assertEquals(5, db.task(id)!!.streak)
+        assertTrue(db.hero!!.mp > 0)
+        assertEquals("", db.hero!!.buffs)
+    }
+
+    @Test
+    fun manaComesWithTasksAndGoesWithUndo() = runBlocking {
+        val db = FakeDao()
+        val g = game(db)
+        db.saveHero(Hero(name = "x", lastDay = g.today(), level = 10, heroClass = HeroClass.MAGE.name))
+        val id = db.insert(Task(type = TaskType.TODO, title = "t"))
+        val o = g.setTodo(id, true)!!
+        assertTrue(o.mp > 0)
+        assertEquals(o.mp, db.hero!!.mp, 1e-9)
+        g.undo(o.logId)
+        assertEquals(0.0, db.hero!!.mp, 1e-9)
+    }
+
+    @Test
+    fun theDungeonWalksRoomByRoom() {
+        val run = DungeonRun(2026, 42)
+        val (a, cleared) = Dungeon.advance(run, 1)
+        assertTrue(cleared.isEmpty())
+        assertEquals(1, a.steps)
+        val (b, cleared2) = Dungeon.advance(a, 5)
+        assertEquals(listOf(0, 1), cleared2)
+        assertEquals(2, b.room)
+        assertEquals(1, b.steps)
+        val (c, _) = Dungeon.advance(b, 100)
+        assertTrue(c.finished)
+        assertEquals(c, Dungeon.parse(Dungeon.encode(c)))
+        assertEquals(Dungeon.ROOMS.size, Dungeon.foes(2026, 42).size)
+        assertEquals(Dungeon.foes(2026, 42), Dungeon.foes(2026, 42))
+        // Saturday 2026-10-17 and Sunday are open; the Monday after is not.
+        val sat = java.time.LocalDate.of(2026, 10, 17).toEpochDay()
+        assertTrue(Dungeon.isOpen(sat) && Dungeon.isOpen(sat + 1) && !Dungeon.isOpen(sat + 2))
+        assertEquals(5, Dungeon.daysUntilOpen(sat + 2))
+        // A new week starts a fresh run.
+        assertEquals(0, Dungeon.current(Dungeon.encode(c), sat + 7).room)
+    }
+
+    @Test
+    fun aGrownPetCanBeSaddledAndRidden() = runBlocking {
+        val db = FakeDao()
+        val g = game(db)
+        db.saveHero(Hero(name = "x", lastDay = g.today(), gold = 100.0, pet = "wolf:base"))
+        db.savePet(Pet("wolf:base", growth = 100))
+        db.savePet(Pet("fox:base", growth = 50))
+        assertFalse(g.saddle("wolf:base"))
+        assertTrue(g.buySaddle())
+        assertFalse(g.saddle("fox:base"))
+        assertTrue(g.saddle("wolf:base"))
+        // Riding the companion sends it off the walking spot.
+        assertEquals("wolf:base", db.hero!!.mount)
+        assertEquals("", db.hero!!.pet)
+        assertEquals(0, db.items[Rules.SADDLE]!!.count)
+        assertEquals(0.15, Companions.mountBoost(db.pets["wolf:base"]).boss, 1e-9)
+        g.setCompanion("wolf:base")
+        assertEquals("", db.hero!!.mount)
+    }
+
+    @Test
+    fun heroCodesTravelAndFreshFriendsHelp() = runBlocking {
+        val card = HeroCard("abc123", "Ann|e", 12, "MAGE", 1, 2, 3, "iron_sword", "tunic", "", "", "fox:base", true, "", 30, 4, 9, 12, 1, 20400)
+        val code = Party.encode(card)
+        assertTrue(code.startsWith(Party.PREFIX))
+        assertEquals(card, Party.decode("Hi! Here is my hero: $code see you"))
+        assertNull(Party.decode("DQ1:notahero"))
+        assertEquals(0.02, Party.bonus(listOf(card), 20405), 1e-9)
+        assertEquals(0.0, Party.bonus(listOf(card), 20410), 1e-9)
+
+        fun earned(friends: Int) = runBlocking {
+            val db = FakeDao()
+            val g = game(db)
+            start(db, g)
+            repeat(friends) { db.saveFriend(Friend("f$it", Party.encode(card.copy(uid = "f$it", day = g.today())))) }
+            val id = db.insert(Task(type = TaskType.TODO, title = "t"))
+            g.setTodo(id, true)!!.gold
+        }
+        assertEquals(earned(0) * 1.10, earned(7), 1e-9)
+    }
+
+    @Test
+    fun aFocusSessionPaysButIsNotATask() = runBlocking {
+        val db = FakeDao()
+        val g = game(db)
+        start(db, g)
+        assertNull(g.focusDone(5))
+        val o = g.focusDone(25)!!
+        assertTrue(o.xp > 0 && o.gold > 0)
+        assertEquals(0, db.doneOn(g.today()))
+        assertEquals(Difficulty.HARD, Rules.focusDifficulty(50))
+    }
+
+    @Test
     fun anOwlCompanionCanBringFoodOvernight() {
         val r = Random(3)
         val finds = List(200) { Companions.forage(Pet("owl:base", growth = 100), r) }.filter { it.isNotEmpty() }
@@ -175,6 +335,7 @@ private class FakeDao : GameDao() {
     var hero: Hero? = null
     val items = mutableMapOf<String, Item>()
     val pets = mutableMapOf<String, Pet>()
+    val friends = mutableMapOf<String, Friend>()
     private var next = 1L
 
     override fun observeTasks(): Flow<List<Task>> = TODO()
@@ -229,6 +390,22 @@ private class FakeDao : GameDao() {
     override suspend fun insertLogs(items: List<LogEntry>) = Unit
     override suspend fun insertItems(items: List<Item>) = Unit
     override suspend fun insertPets(items: List<Pet>) = Unit
+    override fun observeTaskLog(taskId: Long): Flow<List<LogEntry>> = TODO()
+    override fun observeTaskEventsSince(from: Long): Flow<List<LogEntry>> = TODO()
+    override suspend fun mountCount() = pets.values.count { it.mount }
+    override fun observeJournal(): Flow<List<JournalEntry>> = TODO()
+    override fun observeJournalDay(day: Long): Flow<JournalEntry?> = TODO()
+    override suspend fun saveJournal(entry: JournalEntry) = Unit
+    override suspend fun deleteJournal(day: Long) = Unit
+    override fun observeFriends(): Flow<List<Friend>> = TODO()
+    override suspend fun friends() = friends.values.toList()
+    override suspend fun saveFriend(friend: Friend) { friends[friend.uid] = friend }
+    override suspend fun deleteFriend(uid: String) { friends.remove(uid) }
+    override suspend fun allJournal() = emptyList<JournalEntry>()
+    override suspend fun clearJournal() = Unit
+    override suspend fun clearFriends() = Unit
+    override suspend fun insertJournal(items: List<JournalEntry>) = Unit
+    override suspend fun insertFriends(items: List<Friend>) = Unit
 
     private companion object {
         val DONE = setOf(LogKind.UP, LogKind.DAILY, LogKind.TODO)

@@ -26,6 +26,8 @@ data class SceneState(
     val season: Season? = null,
     /** The hero's garden instead of a landscape: its placed pieces, by spot. */
     val garden: Map<app.dayquest.game.Spot, String>? = null,
+    /** The saddled pet the hero rides: a big beast standing behind them. */
+    val mount: String = "",
 )
 
 private class Particle(
@@ -35,6 +37,15 @@ private class Particle(
 
 /** Kinds of moments the scene reacts to. */
 enum class Burst { GOLD, XP, HIT, CRIT, HURT, LEVEL, DROP, HEAL, VICTORY, FIREWORKS }
+
+/** How far above the mount's highest pixel the rider's sprite starts: head and shoulders show, the rest hides behind. */
+private const val RIDER_LIFT = 14
+
+/** The first row with any pixel in it: low beasts (the turtle) seat their rider lower. */
+private fun topRow(s: Sprite): Int = (0 until s.h).firstOrNull { y -> (0 until s.w).any { x -> Color.a(s.at(x, y)) > 0 } } ?: 0
+
+/** How far the rider's feet sit above the mount's bottom edge, in sprite pixels (for drawing a rider outside the scene). */
+fun riderRise(mount: Sprite, rider: Sprite): Int = mount.h - (topRow(mount) - RIDER_LIFT + rider.h)
 
 class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
     val buffer = PixelBuffer(w, h)
@@ -698,28 +709,41 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
         val lunge = if (now < attackUntil) 3 else 0
         val hurtShake = if (now < hurtUntil) (if ((now / 50) % 2 == 0L) -1 else 1) else 0
         val hero = Sprites.hero(look, blink)
-        val hx = heroX + lunge + hurtShake
-        val hy = standY - hero.h + 2 + bob
-        // Pet
-        val parts = Catalog.petParts(s.pet)
-        if (parts != null) {
-            val (sp, po) = parts
-            val pet = Sprites.pet(sp, po, s.petGrown, blink = (now + 900) % 4100 < 140)
-            val hopT = (now % 2600)
-            val hop = if (hopT < 300) (sin(hopT / 300.0 * PI) * 3).roundToInt() else 0
-            val px = if (s.boss != null) hx - pet.w + 3 else hx + hero.w - 2
-            val py = standY - pet.h + 2 - hop + if (sp == Species.TURTLE) 0 else 0
-            shadow(px + pet.w / 2, 8)
-            b.blit(pet, px, py, flip = s.boss == null, glowAlpha = if (s.petGrown) (140 + 60 * sin(now / 400.0)).toInt() else 0)
-        }
-        shadow(hx + hero.w / 2, 10)
         val glow = (150 + 80 * sin(now / 500.0)).toInt()
         val tint = when {
             now < hurtUntil -> 0x99E5484D.toInt()
             now < levelUntil && (now / 120) % 2 == 0L -> 0x55FFF3B0
             else -> 0
         }
-        b.blit(hero, hx, hy, tint = tint, glowAlpha = glow)
+        val mounted = Catalog.petParts(s.mount)
+        // Riding: the beast stands where the hero would, and the hero sits on it, seen from the front:
+        // head and shoulders above the beast's head, legs hidden behind it.
+        val mount = mounted?.let { (sp, po) -> Sprites.mount(sp, po, blink = (now + 1700) % 5300 < 160) }
+        val hx = heroX + lunge + hurtShake
+        val mx = mount?.let { hx + hero.w / 2 - it.w / 2 } ?: 0
+        val my = mount?.let { standY - it.h + 3 + bob } ?: 0
+        val hy = if (mount != null) my + topRow(mount) - RIDER_LIFT else standY - hero.h + 2 + bob
+        // The companion trots alongside, beside the hero or the beast.
+        val right = if (mount != null) mx + mount.w - 5 else hx + hero.w - 2
+        val parts = Catalog.petParts(s.pet)
+        if (parts != null) {
+            val (sp, po) = parts
+            val pet = Sprites.pet(sp, po, s.petGrown, blink = (now + 900) % 4100 < 140)
+            val hopT = (now % 2600)
+            val hop = if (hopT < 300) (sin(hopT / 300.0 * PI) * 3).roundToInt() else 0
+            val px = if (s.boss != null && mount == null) hx - pet.w + 3 else right
+            val py = standY - pet.h + 2 - hop
+            shadow(px + pet.w / 2, 8)
+            b.blit(pet, px, py, flip = s.boss == null, glowAlpha = if (s.petGrown) (140 + 60 * sin(now / 400.0)).toInt() else 0)
+        }
+        if (mount != null) {
+            shadow(mx + mount.w / 2, 20)
+            b.blit(hero, hx, hy, tint = tint, glowAlpha = glow)
+            b.blit(mount, mx, my, tint = if (now < hurtUntil) 0x40E5484D else 0)
+        } else {
+            shadow(hx + hero.w / 2, 10)
+            b.blit(hero, hx, hy, tint = tint, glowAlpha = glow)
+        }
         if (s.resting) {
             val z = (now / 600) % 3
             val zc = 0xE0FFFFFF.toInt()

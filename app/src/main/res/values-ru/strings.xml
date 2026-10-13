@@ -155,7 +155,7 @@
     <string name="perk_grown">Когда вырастет: %s</string>
     <string name="found_title">Подарок от спутника</string>
     <string name="report_found">Спутник (%1$s) принёс находку: %2$s</string>
-    <string name="shop_food">Корм</string>
+    <string name="shop_food">Питомцам</string>
     <string name="shop_food_text">Кормите питомцев, чтобы они росли: взрослый спутник помогает вдвое сильнее. Любимая еда растит быстрее.</string>
     <string name="food_fans">Любимая еда: %s</string>
 
@@ -803,4 +803,185 @@
     <string name="ev_champion_d">Выполни 8 задач: 40 золота и инкубационное зелье.</string>
     <string name="ev_steady_t">Ровный темп</string>
     <string name="ev_steady_d" formatted="false">Средние задачи сегодня дают +50%.</string>
+
+    <!-- Classes and skills -->
+    <string name="cls_warrior">Воин</string>
+    <string name="cls_warrior_d">Сила растёт вдвое быстрее. Крушит боссов и стойко держит удары.</string>
+    <string name="cls_mage">Маг</string>
+    <string name="cls_mage_d">Интеллект растёт вдвое быстрее. Больше опыта, больше маны, огненные шары.</string>
+    <string name="cls_rogue">Плут</string>
+    <string name="cls_rogue_d">Восприятие растёт вдвое быстрее. Больше золота и находок, а серии ускользают от ночных потерь.</string>
+    <string name="cls_healer">Целитель</string>
+    <string name="cls_healer_d">Выносливость растёт вдвое быстрее. Лечит и смягчает плохие ночи.</string>
+    <string name="class_title">Класс</string>
+    <string name="class_locked">На %d уровне вы выберете класс: одна характеристика будет расти вдвое быстрее, и появятся умения за ману.</string>
+    <string name="class_choose">Выбрать класс</string>
+    <string name="class_pick_title">Выберите класс</string>
+    <string name="class_pick_text">Характеристика класса растёт вдвое быстрее, а ещё он даёт три умения, которые тратят ману. Мана возвращается с каждой сделанной задачей и за ночь.</string>
+    <string name="class_change">Сменить класс</string>
+    <string name="class_change_cost">Смена стоит %s золота и обнуляет ману.</string>
+    <string name="class_first_free">Первый выбор бесплатный.</string>
+    <string name="class_chosen">Ваш класс: %s</string>
+    <string name="skills">Умения</string>
+    <string name="skill_cost">%s MP</string>
+    <string name="skill_unlock">С %d уровня</string>
+    <string name="skill_active">Действует сегодня</string>
+    <string name="skill_no_boss">Нужен бой с боссом</string>
+    <string name="skill_full_hp">Здоровье полное</string>
+    <string name="skill_mana">Не хватает маны</string>
+    <string name="skill_cast_done">%s!</string>
+    <string name="sk_smash">Сокрушающий удар</string>
+    <string name="sk_smash_d">Бьёт босса на %s.</string>
+    <string name="sk_battle_cry">Боевой клич</string>
+    <string name="sk_battle_cry_d" formatted="false">+15% к шансу крита до конца дня.</string>
+    <string name="sk_iron_skin">Железная кожа</string>
+    <string name="sk_iron_skin_d">Срывы сегодня и пропущенные ежедневные этой ночью ранят вдвое слабее.</string>
+    <string name="sk_fireball">Огненный шар</string>
+    <string name="sk_fireball_d">Бьёт босса на %1$s и даёт %2$s опыта.</string>
+    <string name="sk_arcane_focus">Магическое сосредоточение</string>
+    <string name="sk_arcane_focus_d" formatted="false">+30% опыта за каждую задачу до конца дня.</string>
+    <string name="sk_frost_ward">Ледяной заслон</string>
+    <string name="sk_frost_ward_d">Этой ночью босс не сможет ударить в ответ.</string>
+    <string name="sk_pickpocket">Ловкие руки</string>
+    <string name="sk_pickpocket_d">Добывает откуда-то %s золота.</string>
+    <string name="sk_keen_eye">Зоркий глаз</string>
+    <string name="sk_keen_eye_d" formatted="false">+15% к шансу находки и ещё две находки сегодня.</string>
+    <string name="sk_shadow_step">Шаг в тень</string>
+    <string name="sk_shadow_step_d">Этой ночью пропущенные ежедневные сохранят свои серии.</string>
+    <string name="sk_heal">Исцеляющий свет</string>
+    <string name="sk_heal_d">Восстанавливает %s здоровья.</string>
+    <string name="sk_renewal">Обновление</string>
+    <string name="sk_renewal_d">Каждая задача, сделанная сегодня, лечит на 2 здоровья.</string>
+    <string name="sk_sanctuary">Святилище</string>
+    <string name="sk_sanctuary_d">Срывы сегодня и пропущенные ежедневные этой ночью ранят вчетверо слабее.</string>
+
+    <!-- Mounts -->
+    <string name="mounts">Ездовые звери</string>
+    <string name="saddle">Седло</string>
+    <string name="saddle_text">Превращает взрослого питомца в ездового зверя: он везёт вас в сцене и даёт свою помощь целиком, вдобавок к помощи спутника.</string>
+    <string name="saddle_up">Оседлать</string>
+    <string name="saddle_need">Нужно седло: купите в лавке или найдите в конце подземелья выходного дня.</string>
+    <string name="saddled">%s готов к поездке!</string>
+    <string name="ride">Ехать верхом</string>
+    <string name="riding">Верхом</string>
+    <string name="dismount">Спешиться</string>
+    <string name="mount_perk">Верхом: %s</string>
+    <string name="mounts_empty">Вырастите питомца и оседлайте его, чтобы ездить верхом.</string>
+    <plurals name="ach_mounts">
+        <item quantity="one">%d ездовой зверь</item>
+        <item quantity="few">%d ездовых зверя</item>
+        <item quantity="many">%d ездовых зверей</item>
+        <item quantity="other">%d ездового зверя</item>
+    </plurals>
+
+    <!-- Weekend dungeon -->
+    <string name="dungeon">Подземелье выходного дня</string>
+    <string name="dungeon_text">Открыто по субботам и воскресеньям. Каждая сделанная задача ведёт на шаг глубже (сложные считаются за два). Каждая комната платит, а в последней ждут сундук и седло.</string>
+    <plurals name="dungeon_in">
+        <item quantity="one">Откроется через %d день</item>
+        <item quantity="few">Откроется через %d дня</item>
+        <item quantity="many">Откроется через %d дней</item>
+        <item quantity="other">Откроется через %d дня</item>
+    </plurals>
+    <string name="dungeon_room">Комната %1$d из %2$d</string>
+    <string name="dungeon_steps">Шаги: %1$d / %2$d</string>
+    <string name="dungeon_done">Пройдено! Новое подземелье откроется в следующие выходные.</string>
+    <string name="room_cleared">Комната %1$d пройдена: +%2$s золота, %3$s</string>
+    <string name="dungeon_done_title">Подземелье пройдено!</string>
+    <string name="dungeon_done_text">Хранитель глубин повержен. Вы выносите %1$s золота, сундук и седло.</string>
+    <plurals name="ach_dungeons">
+        <item quantity="one">%d подземелье пройдено</item>
+        <item quantity="few">%d подземелья пройдено</item>
+        <item quantity="many">%d подземелий пройдено</item>
+        <item quantity="other">%d подземелья пройдено</item>
+    </plurals>
+
+    <!-- Task statistics and insights -->
+    <string name="task_stats">Статистика</string>
+    <string name="stats_total">Сделано раз</string>
+    <string name="stats_rate">За 30 дней</string>
+    <string name="stats_best">Серия / лучшая</string>
+    <string name="stats_slips">Срывы</string>
+    <string name="stats_value">Сила привычки за 90 дней</string>
+    <string name="stats_value_text">Растёт с каждым успехом и падает с каждым пропуском: красное заброшено, синее освоено.</string>
+    <string name="stats_weekdays">По дням недели</string>
+    <string name="stats_month">Последние 30 дней</string>
+    <string name="stats_done">Сделано</string>
+    <string name="stats_missed">Пропущено</string>
+    <string name="stats_empty">Пока пусто: сделайте эту задачу несколько раз, и появится её история.</string>
+    <string name="insights">Последние 30 дней</string>
+    <string name="insights_best">Получается</string>
+    <string name="insights_worst">Требует внимания</string>
+    <plurals name="insights_times">
+        <item quantity="one">%d раз</item>
+        <item quantity="few">%d раза</item>
+        <item quantity="many">%d раз</item>
+        <item quantity="other">%d раза</item>
+    </plurals>
+    <plurals name="insights_misses">
+        <item quantity="one">%d пропуск</item>
+        <item quantity="few">%d пропуска</item>
+        <item quantity="many">%d пропусков</item>
+        <item quantity="other">%d пропуска</item>
+    </plurals>
+
+    <!-- Journal -->
+    <string name="mood_q">Как прошёл день?</string>
+    <string name="mood_1">Тяжело</string>
+    <string name="mood_2">Так себе</string>
+    <string name="mood_3">Нормально</string>
+    <string name="mood_4">Хорошо</string>
+    <string name="mood_5">Отлично</string>
+    <string name="journal">Дневник</string>
+    <string name="journal_note_hint">Пара слов о дне…</string>
+    <string name="journal_open">Открыть дневник</string>
+    <string name="journal_empty">Раз в день отмечайте настроение на доске задач. Через пару недель станет видно, как связаны настроение и ваши дни.</string>
+    <string name="journal_corr">В хорошие дни вы делаете в среднем %1$s задач, в тяжёлые %2$s.</string>
+    <string name="journal_avg">Среднее настроение за 30 дней: %s</string>
+    <string name="journal_tasks">Сделано задач: %d</string>
+
+    <!-- Focus -->
+    <string name="focus">Фокус</string>
+    <string name="focus_text">Отложите телефон и займитесь одним делом. Завершённая сессия платит как задача (чем дольше, тем больше) и считается шагом в подземелье выходного дня. Если сдаться раньше, награды не будет.</string>
+    <string name="focus_min">%d мин</string>
+    <string name="focus_start">Начать</string>
+    <string name="focus_give_up">Сдаться</string>
+    <string name="focus_running">Фокусируемся…</string>
+    <string name="focus_done_title">Сессия завершена!</string>
+    <string name="focus_done_text">%1$d минут фокуса: +%2$s опыта и %3$s золота.</string>
+    <string name="focus_give_up_q">Прервать сессию?</string>
+    <string name="focus_give_up_text">За незавершённую сессию награды нет.</string>
+    <string name="notif_focus">Сессия фокуса завершена</string>
+    <string name="notif_focus_text">Возвращайтесь за наградой.</string>
+
+    <!-- Sharing and the tavern -->
+    <string name="share_hero">Поделиться героем</string>
+    <string name="share_chooser">Поделиться героем</string>
+    <string name="share_streak">Лучшая серия</string>
+    <string name="share_bosses">Боссы</string>
+    <string name="share_pets">Питомцы</string>
+    <string name="share_days">Дней вместе</string>
+    <string name="tavern">Таверна</string>
+    <string name="tavern_text" formatted="false">Герои путешествуют кодами, без аккаунтов. Обменяйтесь кодами с друзьями: каждый, чья карточка моложе недели, даёт +2% опыта и золота, до +10%.</string>
+    <string name="tavern_my_code">Код вашего героя</string>
+    <string name="tavern_copy">Скопировать код</string>
+    <string name="tavern_send">Отправить</string>
+    <string name="tavern_add">Добавить друга</string>
+    <string name="tavern_paste_hint">Вставьте код DQH1:</string>
+    <string name="tavern_added">%s теперь в вашей таверне</string>
+    <string name="tavern_updated">Карточка героя %s обновлена</string>
+    <string name="tavern_bad">Это не код героя</string>
+    <string name="tavern_self">Это ваш собственный герой</string>
+    <string name="tavern_empty">Здесь пока никого. Отправьте свой код другу и попросите его код.</string>
+    <string name="tavern_bonus">Бонус отряда: +%s опыта и золота</string>
+    <string name="tavern_fresh">Карточка от %s</string>
+    <string name="tavern_stale">Карточке больше недели: попросите свежую</string>
+    <string name="tavern_remove">Убрать</string>
+    <string name="tavern_remove_q">Убрать героя %s из таверны?</string>
+    <string name="copied">Скопировано</string>
+    <string name="tip_tavern">Код меняется по мере роста героя. Отправляйте свежий примерно раз в неделю и просите друзей о том же: свежие карточки сохраняют бонус отряда.</string>
+    <string name="tab_awards">Награды</string>
+    <string name="tab_history">История</string>
+    <string name="friends">Друзья</string>
+    <string name="stats_mixed">И то, и другое</string>
 </resources>

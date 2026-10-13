@@ -50,7 +50,11 @@ In Dayquest your habits, dailies and to-dos power a pixel hero. Finish things an
 | 🧭 | **A gentle start** | A five-page guide explains the game with its own art before you create your hero, each tab shows a one-time tip on your first visit, and *Settings → How to play* replays the guide. |
 | ↩️ | **Undo anything** | Every tap shows what it gave (XP, gold, damage, drops) with an *Undo* button that reverts it exactly. |
 | 🔔 | **Reminders** | Per-task reminder times and an evening "dailies still open" nudge. |
-| 📊 | **History** | A 12-week activity heatmap, streaks, totals and a yearly chronicle. |
+| 📊 | **History and insights** | A 12-week activity heatmap, streaks, totals and a yearly chronicle. Every task has its own statistics: completions by weekday, the last 30 days, and its strength over 90 days. The hero screen shows what went well this month and what needs care. |
+| 🧙 | **Classes and skills** | At level 5 choose a Warrior, Mage, Rogue or Healer: the class's stat grows twice as fast, and three skills cost mana (a fireball for the boss, a ward against tonight's damage, a shadow step that keeps streaks). Mana comes back with every task and overnight. |
+| 📓 | **Journal** | Once a day, pick a mood and write a line if you like. After a few weeks the journal shows how your mood and your finished tasks go together. |
+| ⏳ | **Focus** | A 15, 25 or 50 minute session with the hero on screen. A finished one pays like a task; leaving early pays nothing. Rings even with the app closed. |
+| 🍺 | **Tavern** | Swap one-line hero codes with friends, no account or server. Friends' heroes show up in your tavern, and each fresh card (under a week old) gives +2% XP and gold. *Share my hero* posts a picture of your scene and stats. |
 
 ## Built for years, not weeks
 
@@ -61,7 +65,9 @@ Most habit games run out of things to unlock within a couple of months. Dayquest
 | 🍂 | **Real seasons** | Blossom in spring, falling leaves in autumn, snow in winter, in every scene. Each season brings its own hatching potion (32 seasonal pets), a hat, a weapon and a cloak sold only then, and three seasonal bosses (from a queen bee to a snowman) you can each fight once per season. A switch flips seasons for the southern hemisphere. |
 | 🔨 | **The endless forge** | From level 20, every 5 levels a new tier of gear appears, from rare to epic to legendary. Items are generated from their tier, so the forge never runs dry, and the prices keep gold meaningful. |
 | 💀 | **Bosses that come back** | Beaten bosses return as Elite, Ancient and Mythic versions: recoloured, tougher, with richer loot. Twelve main bosses lead from the Slime King to the Hydra of Overcommitment, and a new generated *boss of the week* wanders in every Monday, drawn from 24 kinds of foe. |
-| 🏅 | **Achievements that need time** | 47 achievements, from a 7-day streak to *five years together*, each with a gold reward. They measure real days, not grinding. |
+| 🏅 | **Achievements that need time** | 53 achievements, from a 7-day streak to *five years together*, each with a gold reward. They measure real days, not grinding. |
+| 🕳️ | **The weekend dungeon** | Every Saturday and Sunday a new dungeon opens, five rooms deep. Every finished task is a step deeper; each room pays, and the last one hides a chest and a saddle. |
+| 🐎 | **Mounts** | Saddle a fully grown pet and it carries you through the scene, giving its perk in full on top of your companion's. |
 | 🏠 | **A home** | A room, an attic under the roof with a round window and a garden outside the cottage, with over 60 pieces to place, plus wallpapers, floors, fences and paths. The fireplace, lamp posts and candles glow at night, windows show the real sky, the garden follows the seasons, and the pet sleeps in its bed. |
 
 ## Screenshots

@@ -23,6 +23,7 @@ object DemoSeed {
                 ownedDecor = "wp_plain,fl_planks,wp_bricks,painting_hills,window,trophies,bookshelf,fireplace,aquarium,plant,pet_bed,rug_royal,lamp",
                 home = "WALL_L=painting_hills,WALL_C=window,WALL_R=trophies,BIG_L=bookshelf,BIG_R=fireplace,SMALL_L=plant,SMALL_R=pet_bed,RUG=rug_royal",
                 wallpaper = "wp_bricks",
+                heroClass = "MAGE", mp = 27.0, mount = "owl:aurora", dungeonsCleared = 2, uid = "demo0000mira0000",
             )
         )
         fun s(id: Int) = context.getString(id)
@@ -54,13 +55,24 @@ object DemoSeed {
             db.insertCheck(CheckItem(taskId = t.id, text = "Notes", position = 1))
         }
         listOf("fox:golden" to 100, "cat:base" to 40, "owl:base" to 0, "slime:rose" to 60, "turtle:moss" to 20, "bunny:base" to 80, "wolf:frost" to 0, "fox:harvest" to 30, "owl:aurora" to 100, "dragon:ember" to 10, "cat:blossom" to 0, "bunny:tide" to 50, "slime:base" to 100)
-            .forEach { (k, g) -> db.savePet(Pet(k, g)) }
+            .forEach { (k, g) -> db.savePet(Pet(k, g, mount = k == "owl:aurora" || k == "slime:base")) }
         listOf("egg:fox" to 2, "egg:owl" to 1, "egg:cat" to 1, "potion:golden" to 1, "potion:moss" to 2, "potion:harvest" to 2, "food:berry" to 3, "food:fish" to 1, "food:cake" to 2)
             .forEach { (k, n) -> db.saveItem(Item(k, n)) }
         // Some history for the activity heatmap
+        // Each logged task belongs to a real daily or habit, so the per-task statistics have a story to tell.
+        val owners = db.tasks().filter { it.type == TaskType.DAILY || it.type == TaskType.HABIT }
         for (d in 1..400) {
             val n = ((d * 7) % 5) + if (d % 6 == 0) 0 else 2
-            repeat(n) { db.insertLog(LogEntry(day = today - d, kind = LogKind.DAILY, xp = 10.0)) }
+            repeat(n) { k ->
+                val t = owners[(d + k * 3) % owners.size]
+                val kind = if (t.type == TaskType.HABIT) LogKind.UP else LogKind.DAILY
+                db.insertLog(LogEntry(taskId = t.id, day = today - d, kind = kind, xp = 10.0, valueDelta = 0.4))
+            }
+            if (d % 4 == 0) owners.firstOrNull { it.type == TaskType.DAILY }?.let { t ->
+                db.insertLog(LogEntry(taskId = t.id, day = today - d, kind = LogKind.MISSED, hp = -2.0, valueDelta = -1.1))
+            }
         }
+        // A month of moods that loosely follow how busy each day was.
+        for (d in 1..40) db.saveJournal(JournalEntry(today - d, mood = (((d * 7) % 5) + if (d % 6 == 0) 0 else 2).coerceIn(1, 5)))
     }
 }

@@ -30,10 +30,12 @@ object Backup {
         .put("log", JSONArray(s.log.map {
             JSONObject().put("id", it.id).put("taskId", it.taskId).put("at", it.at).put("day", it.day).put("kind", it.kind.name)
                 .put("xp", it.xp).put("gold", it.gold).put("hp", it.hp).put("valueDelta", it.valueDelta).put("boss", it.boss)
-                .put("drop", it.drop).put("undone", it.undone)
+                .put("drop", it.drop).put("undone", it.undone).put("mp", it.mp).put("step", it.step)
         }))
         .put("items", JSONArray(s.items.map { JSONObject().put("key", it.key).put("count", it.count) }))
-        .put("pets", JSONArray(s.pets.map { JSONObject().put("key", it.key).put("growth", it.growth).put("hatchedAt", it.hatchedAt) }))
+        .put("pets", JSONArray(s.pets.map { JSONObject().put("key", it.key).put("growth", it.growth).put("hatchedAt", it.hatchedAt).put("mount", it.mount) }))
+        .put("journal", JSONArray(s.journal.map { JSONObject().put("day", it.day).put("mood", it.mood).put("note", it.note) }))
+        .put("friends", JSONArray(s.friends.map { JSONObject().put("uid", it.uid).put("code", it.code).put("addedAt", it.addedAt) }))
         .put("settings", settings?.let {
             JSONObject().put("theme", it.theme.name).put("dayStart", it.dayStart).put("reminders", it.reminders)
                 .put("evening", it.evening).put("haptics", it.haptics).put("southern", it.southern).put("sounds", it.sounds).put("challenge", it.challenge.name).put("tips", JSONArray(it.tips.toList()))
@@ -49,6 +51,8 @@ object Backup {
         .put("dropsToday", h.dropsToday).put("deaths", h.deaths).put("resting", h.resting).put("createdAt", h.createdAt)
         .put("achievements", h.achievements).put("home", h.home).put("ownedDecor", h.ownedDecor).put("wallpaper", h.wallpaper).put("floor", h.floor)
         .put("perfectDay", h.perfectDay).put("chests", h.chests).put("eventDay", h.eventDay).put("bountyDay", h.bountyDay)
+        .put("heroClass", h.heroClass).put("mp", h.mp).put("buffs", h.buffs).put("mount", h.mount)
+        .put("dungeon", h.dungeon).put("dungeonsCleared", h.dungeonsCleared).put("uid", h.uid)
 
     private fun task(t: Task) = JSONObject()
         .put("id", t.id).put("type", t.type.name).put("title", t.title).put("notes", t.notes).put("difficulty", t.difficulty.name)
@@ -77,6 +81,8 @@ object Backup {
                     achievements = optString("achievements"), home = optString("home"),
                     ownedDecor = optString("ownedDecor", "wp_plain,fl_planks"), wallpaper = optString("wallpaper", "wp_plain"), floor = optString("floor", "fl_planks"),
                     perfectDay = optLong("perfectDay", -1), chests = optInt("chests"), eventDay = optLong("eventDay", -1), bountyDay = optLong("bountyDay", -1),
+                    heroClass = optString("heroClass"), mp = optDouble("mp", 0.0), buffs = optString("buffs"), mount = optString("mount"),
+                    dungeon = optString("dungeon"), dungeonsCleared = optInt("dungeonsCleared"), uid = optString("uid"),
                 )
             }
         }
@@ -100,10 +106,13 @@ object Backup {
                     id = getLong("id"), taskId = optLong("taskId"), at = optLong("at"), day = getLong("day"), kind = runCatching { LogKind.valueOf(getString("kind")) }.getOrDefault(LogKind.BUY),
                     xp = optDouble("xp", 0.0), gold = optDouble("gold", 0.0), hp = optDouble("hp", 0.0), valueDelta = optDouble("valueDelta", 0.0),
                     boss = optDouble("boss", 0.0), drop = optString("drop"), undone = optBoolean("undone"),
+                    mp = optDouble("mp", 0.0), step = optInt("step"),
                 )
             },
             items = root.list("items") { Item(getString("key"), getInt("count")) },
-            pets = root.list("pets") { Pet(getString("key"), optInt("growth"), optLong("hatchedAt")) },
+            pets = root.list("pets") { Pet(getString("key"), optInt("growth"), optLong("hatchedAt"), optBoolean("mount")) },
+            journal = root.list("journal") { JournalEntry(getLong("day"), getInt("mood"), optString("note")) },
+            friends = root.list("friends") { Friend(getString("uid"), getString("code"), optLong("addedAt")) },
         )
         val settings = root.optJSONObject("settings")?.let {
             Settings(

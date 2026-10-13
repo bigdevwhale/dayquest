@@ -187,6 +187,7 @@ fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
             Aisle.FOOD -> {
                 item(key = "food-text") { Text(stringResource(R.string.shop_food_text), style = DType.Muted, modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)) }
                 items(Food.entries.toList(), key = { it.key }) { f -> FoodRow(f, hero, bag.firstOrNull { it.key == "food:${f.key}" }?.count ?: 0) }
+                item(key = "saddle") { SaddleRow(hero, bag.firstOrNull { it.key == Rules.SADDLE }?.count ?: 0) }
             }
             Aisle.SCENES -> items(Catalog.scenes.chunked(2)) { pair ->
                 Row(Modifier.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -257,6 +258,25 @@ private fun FoodRow(f: Food, hero: Hero, count: Int) {
         PriceButton(cost, hero.gold >= cost, {
             c.scope.launch {
                 val ok = c.game.buyFood(f)
+                withContext(Dispatchers.Main) { if (ok) fb.buy() else fb.show(poor) }
+            }
+        })
+    }
+}
+
+@Composable
+private fun SaddleRow(hero: Hero, count: Int) {
+    val c = LocalContext.current.container
+    val fb = LocalFeedback.current
+    val poor = stringResource(R.string.not_enough_gold)
+    ShopRow(
+        icon = { PixelImage(app.dayquest.pixel.Badges.saddle, pixel = 4.dp) },
+        title = stringResource(R.string.saddle) + if (count > 0) "  ×$count" else "",
+        sub = stringResource(R.string.saddle_text),
+    ) {
+        PriceButton(Rules.SADDLE_COST, hero.gold >= Rules.SADDLE_COST, {
+            c.scope.launch {
+                val ok = c.game.buySaddle()
                 withContext(Dispatchers.Main) { if (ok) fb.buy() else fb.show(poor) }
             }
         })

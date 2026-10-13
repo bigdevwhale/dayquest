@@ -161,7 +161,7 @@
     <string name="perk_grown">Fully grown: %s</string>
     <string name="found_title">A gift from your companion</string>
     <string name="report_found">%1$s brought back: %2$s</string>
-    <string name="shop_food">Pet food</string>
+    <string name="shop_food">For pets</string>
     <string name="shop_food_text">Feed pets to grow them: a grown companion helps twice as much. Their favourite food grows them faster.</string>
     <string name="food_fans">Favourite of: %s</string>
 
@@ -793,4 +793,175 @@
     <string name="ev_champion_d">Finish 8 tasks: 40 gold and a hatching potion.</string>
     <string name="ev_steady_t">Steady pace</string>
     <string name="ev_steady_d" formatted="false">Medium tasks pay +50% today.</string>
+
+    <!-- Classes and skills -->
+    <string name="cls_warrior">Warrior</string>
+    <string name="cls_warrior_d">Strength grows twice as fast. Smashes bosses and shrugs off damage.</string>
+    <string name="cls_mage">Mage</string>
+    <string name="cls_mage_d">Intelligence grows twice as fast. More XP, more mana, fireballs.</string>
+    <string name="cls_rogue">Rogue</string>
+    <string name="cls_rogue_d">Perception grows twice as fast. More gold, more finds, and streaks that slip through the night.</string>
+    <string name="cls_healer">Healer</string>
+    <string name="cls_healer_d">Constitution grows twice as fast. Heals, and keeps the bad nights gentle.</string>
+    <string name="class_title">Class</string>
+    <string name="class_locked">At level %d you choose a class: one stat grows twice as fast, and you get skills that cost mana.</string>
+    <string name="class_choose">Choose a class</string>
+    <string name="class_pick_title">Choose your class</string>
+    <string name="class_pick_text">Your class\'s stat grows twice as fast, and it brings three skills that cost mana. Mana comes back with every finished task and overnight.</string>
+    <string name="class_change">Change class</string>
+    <string name="class_change_cost">A change costs %s gold and empties your mana.</string>
+    <string name="class_first_free">The first choice is free.</string>
+    <string name="class_chosen">Your class: %s</string>
+    <string name="skills">Skills</string>
+    <string name="skill_cost">%s MP</string>
+    <string name="skill_unlock">From level %d</string>
+    <string name="skill_active">Active today</string>
+    <string name="skill_no_boss">Needs a boss fight</string>
+    <string name="skill_full_hp">Health is full</string>
+    <string name="skill_mana">Not enough mana</string>
+    <string name="skill_cast_done">%s!</string>
+    <string name="sk_smash">Smash</string>
+    <string name="sk_smash_d">Hits the boss for %s.</string>
+    <string name="sk_battle_cry">Battle cry</string>
+    <string name="sk_battle_cry_d" formatted="false">+15% critical chance until the day ends.</string>
+    <string name="sk_iron_skin">Iron skin</string>
+    <string name="sk_iron_skin_d">Bad habits today and missed dailies tonight hurt half as much.</string>
+    <string name="sk_fireball">Fireball</string>
+    <string name="sk_fireball_d">Hits the boss for %1$s and gives %2$s XP.</string>
+    <string name="sk_arcane_focus">Arcane focus</string>
+    <string name="sk_arcane_focus_d" formatted="false">+30% XP from every task until the day ends.</string>
+    <string name="sk_frost_ward">Frost ward</string>
+    <string name="sk_frost_ward_d">The boss can\'t strike back tonight.</string>
+    <string name="sk_pickpocket">Pickpocket</string>
+    <string name="sk_pickpocket_d">Lifts %s gold from somewhere.</string>
+    <string name="sk_keen_eye">Keen eye</string>
+    <string name="sk_keen_eye_d" formatted="false">+15% item chance and two more finds today.</string>
+    <string name="sk_shadow_step">Shadow step</string>
+    <string name="sk_shadow_step_d">Missed dailies keep their streaks tonight.</string>
+    <string name="sk_heal">Healing light</string>
+    <string name="sk_heal_d">Restores %s health.</string>
+    <string name="sk_renewal">Renewal</string>
+    <string name="sk_renewal_d">Every task finished today heals 2 health.</string>
+    <string name="sk_sanctuary">Sanctuary</string>
+    <string name="sk_sanctuary_d">Bad habits today and missed dailies tonight hurt four times less.</string>
+
+    <!-- Mounts -->
+    <string name="mounts">Mounts</string>
+    <string name="saddle">Saddle</string>
+    <string name="saddle_text">Turns a fully grown pet into a mount: it carries you in the scene and gives its perk in full, on top of your companion\'s.</string>
+    <string name="saddle_up">Saddle up</string>
+    <string name="saddle_need">Needs a saddle: buy one in the shop or find one at the end of the weekend dungeon.</string>
+    <string name="saddled">%s is ready to ride!</string>
+    <string name="ride">Ride</string>
+    <string name="riding">Riding</string>
+    <string name="dismount">Get off</string>
+    <string name="mount_perk">As a mount: %s</string>
+    <string name="mounts_empty">Grow a pet to full size and saddle it to ride it.</string>
+    <plurals name="ach_mounts">
+        <item quantity="one">%d mount</item>
+        <item quantity="other">%d mounts</item>
+    </plurals>
+
+    <!-- Weekend dungeon -->
+    <string name="dungeon">Weekend dungeon</string>
+    <string name="dungeon_text">Open on Saturdays and Sundays. Every finished task is a step deeper (hard ones count twice). Each room pays; the last one hides a chest and a saddle.</string>
+    <plurals name="dungeon_in">
+        <item quantity="one">Opens tomorrow</item>
+        <item quantity="other">Opens in %d days</item>
+    </plurals>
+    <string name="dungeon_room">Room %1$d of %2$d</string>
+    <string name="dungeon_steps">Steps: %1$d / %2$d</string>
+    <string name="dungeon_done">Cleared! A new dungeon opens next weekend.</string>
+    <string name="room_cleared">Room %1$d cleared: +%2$s gold, %3$s</string>
+    <string name="dungeon_done_title">Dungeon cleared!</string>
+    <string name="dungeon_done_text">The keeper of the depths falls. You carry out %1$s gold, a chest and a saddle.</string>
+    <plurals name="ach_dungeons">
+        <item quantity="one">%d dungeon cleared</item>
+        <item quantity="other">%d dungeons cleared</item>
+    </plurals>
+
+    <!-- Task statistics and insights -->
+    <string name="task_stats">Statistics</string>
+    <string name="stats_total">Times done</string>
+    <string name="stats_rate">Last 30 days</string>
+    <string name="stats_best">Streak / best</string>
+    <string name="stats_slips">Slips</string>
+    <string name="stats_value">Strength over 90 days</string>
+    <string name="stats_value_text">Grows with every success and sinks with every miss: red is neglected, blue is mastered.</string>
+    <string name="stats_weekdays">By weekday</string>
+    <string name="stats_month">Last 30 days</string>
+    <string name="stats_done">Done</string>
+    <string name="stats_missed">Missed</string>
+    <string name="stats_empty">Nothing here yet: finish this task a few times and its story appears.</string>
+    <string name="insights">Last 30 days</string>
+    <string name="insights_best">Going strong</string>
+    <string name="insights_worst">Needs care</string>
+    <plurals name="insights_times">
+        <item quantity="one">%d time</item>
+        <item quantity="other">%d times</item>
+    </plurals>
+    <plurals name="insights_misses">
+        <item quantity="one">%d miss</item>
+        <item quantity="other">%d misses</item>
+    </plurals>
+
+    <!-- Journal -->
+    <string name="mood_q">How was today?</string>
+    <string name="mood_1">Hard</string>
+    <string name="mood_2">Meh</string>
+    <string name="mood_3">Okay</string>
+    <string name="mood_4">Good</string>
+    <string name="mood_5">Great</string>
+    <string name="journal">Journal</string>
+    <string name="journal_note_hint">A line about today…</string>
+    <string name="journal_open">Open journal</string>
+    <string name="journal_empty">Pick a mood on the task board once a day. After a few weeks you\'ll see how your mood and your days go together.</string>
+    <string name="journal_corr">On good days you finish %1$s tasks on average, on hard days %2$s.</string>
+    <string name="journal_avg">Average mood over 30 days: %s</string>
+    <string name="journal_tasks">Tasks done: %d</string>
+
+    <!-- Focus -->
+    <string name="focus">Focus</string>
+    <string name="focus_text">Put the phone down and work on one thing. A finished session pays like a task (the longer, the better) and counts as a step in the weekend dungeon. Leaving early pays nothing.</string>
+    <string name="focus_min">%d min</string>
+    <string name="focus_start">Start</string>
+    <string name="focus_give_up">Give up</string>
+    <string name="focus_running">Focusing…</string>
+    <string name="focus_done_title">Session complete!</string>
+    <string name="focus_done_text">%1$d minutes of focus: +%2$s XP and %3$s gold.</string>
+    <string name="focus_give_up_q">Give up the session?</string>
+    <string name="focus_give_up_text">An unfinished session pays nothing.</string>
+    <string name="notif_focus">Focus session complete</string>
+    <string name="notif_focus_text">Come back to collect your reward.</string>
+
+    <!-- Sharing and the tavern -->
+    <string name="share_hero">Share my hero</string>
+    <string name="share_chooser">Share your hero</string>
+    <string name="share_streak">Best streak</string>
+    <string name="share_bosses">Bosses</string>
+    <string name="share_pets">Pets</string>
+    <string name="share_days">Days together</string>
+    <string name="tavern">Tavern</string>
+    <string name="tavern_text" formatted="false">Heroes travel as codes, no account needed. Swap codes with friends: everyone whose card is less than a week old gives +2% XP and gold, up to +10%.</string>
+    <string name="tavern_my_code">Your hero code</string>
+    <string name="tavern_copy">Copy code</string>
+    <string name="tavern_send">Send</string>
+    <string name="tavern_add">Add a friend</string>
+    <string name="tavern_paste_hint">Paste a DQH1: code</string>
+    <string name="tavern_added">%s joined your tavern</string>
+    <string name="tavern_updated">%s\'s card is updated</string>
+    <string name="tavern_bad">That\'s not a hero code</string>
+    <string name="tavern_self">That\'s your own hero</string>
+    <string name="tavern_empty">No one here yet. Send your code to a friend and ask for theirs.</string>
+    <string name="tavern_bonus">Party bonus: +%s XP and gold</string>
+    <string name="tavern_fresh">Card from %s</string>
+    <string name="tavern_stale">The card is over a week old: ask for a fresh one</string>
+    <string name="tavern_remove">Remove</string>
+    <string name="tavern_remove_q">Remove %s from the tavern?</string>
+    <string name="copied">Copied</string>
+    <string name="tip_tavern">Your code changes as your hero grows. Send a fresh one every week or so, and ask friends to do the same: fresh cards keep the party bonus going.</string>
+    <string name="tab_awards">Awards</string>
+    <string name="tab_history">History</string>
+    <string name="friends">Friends</string>
+    <string name="stats_mixed">Both</string>
 </resources>

@@ -88,7 +88,7 @@ fun QuestsScreen(hero: Hero) {
             if (active != null) {
                 Column(Modifier.fillMaxWidth().clip(D.RLg).background(D.c.surface).border(1.dp, D.c.line, D.RLg)) {
                     SceneView(
-                        SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, grown, active, hero.resting, season),
+                        SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, grown, active, hero.resting, season, mount = hero.mount),
                         bursts = fx.bursts, floaters = fx.floaters,
                     )
                     Column(Modifier.padding(16.dp)) {
@@ -103,6 +103,11 @@ fun QuestsScreen(hero: Hero) {
                         Text(stringResource(R.string.quest_hint), style = DType.Sub)
                         Gap(4)
                         Text(stringResource(R.string.quest_strength, gainText(active.str * Difficulty.EASY.mult * 1.5)), style = DType.Muted)
+                        if (app.dayquest.game.Classes.of(hero) != null) {
+                            Gap(10)
+                            Text(stringResource(R.string.skills).uppercase(), style = DType.Eyebrow)
+                            app.dayquest.ui.hero.SkillList(hero)
+                        }
                         Gap(12)
                         SoftButton(stringResource(R.string.quest_abandon), { retreat = true }, color = D.c.hp, soft = D.c.hpSoft)
                     }
@@ -111,6 +116,7 @@ fun QuestsScreen(hero: Hero) {
                 Text(stringResource(R.string.quest_none), style = DType.Sub, modifier = Modifier.padding(horizontal = 4.dp))
             }
         }
+        item(key = "dungeon") { DungeonCard(hero) }
         val o = offers
         if (o != null) {
             o.weekly?.takeIf { it.record != active?.record }?.let { b ->

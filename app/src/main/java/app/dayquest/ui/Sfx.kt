@@ -8,7 +8,7 @@ import android.media.AudioTrack
 import java.util.concurrent.Executors
 import kotlin.random.Random
 
-enum class Sound { DONE, UNDO, HURT, HIT, CRIT, DROP, COIN, JACKPOT, LEVEL, VICTORY, PERFECT, CHEST, CARD, FAINT }
+enum class Sound { DONE, UNDO, HURT, HIT, CRIT, DROP, COIN, JACKPOT, LEVEL, VICTORY, PERFECT, CHEST, CARD, FAINT, SPELL, CHIME }
 
 /**
  * 8-bit sound effects, synthesised once on first use: square, triangle and noise voices, like an
@@ -93,6 +93,10 @@ object Sfx {
                 listOf(Note(570, 400, n("G6"), wave = Wave.TRIANGLE, vol = 0.4))
             Sound.CARD -> listOf(Note(0, 90, 0.0, wave = Wave.NOISE, vol = 0.12)) + seq(80, 70, "A5", "C#6", "E6", "A6", wave = Wave.TRIANGLE, vol = 0.5)
             Sound.FAINT -> seq(0, 200, "G4", "F#4", "F4", vol = 0.35) + listOf(Note(600, 600, n("E4"), 196.0, Wave.SQUARE, 0.35))
+            // A rising shimmer: the skill goes off.
+            Sound.SPELL -> listOf(Note(0, 260, 300.0, 1200.0, Wave.TRIANGLE, 0.35)) + seq(120, 45, "E6", "G#6", "B6", "E7", wave = Wave.PULSE, vol = 0.25)
+            // A soft bell, twice: time is up.
+            Sound.CHIME -> seq(0, 260, "E6", "B5", wave = Wave.TRIANGLE, vol = 0.55) + seq(560, 420, "E6", wave = Wave.TRIANGLE, vol = 0.5)
         }
     )
 

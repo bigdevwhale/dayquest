@@ -643,6 +643,45 @@ object Sprites {
         c.render()
     }
 
+    /**
+     * A saddled pet: the same creature drawn twice as big (shading and outline stay one pixel thin,
+     * so it reads as a larger beast, not a blurry zoom), with a blanket and saddle across its back.
+     */
+    fun mount(s: Species, p: Potion, blink: Boolean = false): Sprite = cached("mount:${s.key}:${p.key}:$blink") {
+        val c = PixelCanvas(PET_W * 2, PET_H * 2)
+        val (main, belly) = petColors(s, p)
+        val mainRamp = Ramps.of(main)
+        val legend = mapOf(
+            'a' to Mat(mainRamp), 'b' to mat(belly), 'd' to Tone(mainRamp, 1),
+            'K' to EYE, 'W' to WHITE, 'n' to Flat(Color.mix(main, 0xFF3A2030.toInt(), 0.7f)),
+            'c' to mat(if (s == Species.OWL) 0xFFF2A03D.toInt() else belly), 'B' to Tone(mainRamp, 1),
+        )
+        val rows = PETS.getValue(s).let { r -> if (blink) r.map { it.replace('W', 'B') } else r }
+        val big = rows.flatMap { row -> row.map { "$it$it" }.joinToString("").let { listOf(it, it) } }
+        c.grid(big, legend, dy = 2)
+        // Each 2×2 pupil gets a catch-light in its top-left corner, so the bigger face stays alive.
+        val shines = (0 until c.h).flatMap { y -> (0 until c.w).map { x -> x to y } }
+            .filter { (x, y) -> c[x, y] === EYE && c[x - 1, y] !== EYE && c[x, y - 1] !== EYE }
+        shines.forEach { (x, y) -> c.set(x, y, WHITE) }
+        // The saddle sits on the back: just below the head for most, on top of the shell for the turtle.
+        val top = if (s == Species.TURTLE) 10 else 20
+        val blanket = mat(0xFFC8553D.toInt())
+        val trim = mat(0xFFF2C14E.toInt())
+        val leather = mat(0xFF7A4A2A.toInt())
+        val xs = (0 until c.w).filter { c[it, top] != null && c[it, top + 2] != null }
+        if (xs.isNotEmpty()) {
+            val l = xs.first() + 2
+            val r = xs.last() - 2
+            for (x in l..r) {
+                c.set(x, top, blanket); c.set(x, top + 1, blanket); c.set(x, top + 2, trim)
+            }
+            val mid = (l + r) / 2
+            c.rect(mid - 3, top - 2, mid + 3, top - 1, leather)
+            c.rect(mid - 4, top - 3, mid - 3, top - 2, leather); c.rect(mid + 3, top - 3, mid + 4, top - 2, leather)
+        }
+        c.render()
+    }
+
     /** A dark silhouette for pets not hatched yet: the collection shows what is still out there. */
     fun petSilhouette(s: Species, dark: Boolean): Sprite = cached("sil:${s.key}:$dark") {
         val base = pet(s, Potion.BASE)

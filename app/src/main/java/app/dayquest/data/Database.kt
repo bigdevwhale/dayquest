@@ -72,7 +72,7 @@ data class CheckItem(
     val position: Int = 0,
 )
 
-enum class LogKind { UP, DOWN, DAILY, TODO, REWARD, BUY, MISSED, BOSS, POTION, VICTORY, ACHIEVEMENT, CHEST, EVENT }
+enum class LogKind { UP, DOWN, DAILY, TODO, REWARD, BUY, MISSED, BOSS, POTION, VICTORY, ACHIEVEMENT, CHEST, EVENT, SKILL, FOCUS, DUNGEON }
 
 /**
  * One scored action and exactly what it changed, so it can be undone to the cent.
@@ -93,6 +93,12 @@ data class LogEntry(
     /** Inventory key of a drop this action gave, or "". */
     val drop: String = "",
     val undone: Boolean = false,
+    /** Mana this action gave (or, negative, spent). */
+    @ColumnInfo(defaultValue = "0")
+    val mp: Double = 0.0,
+    /** Steps it took through the weekend dungeon. */
+    @ColumnInfo(defaultValue = "0")
+    val step: Int = 0,
 )
 
 /** The one and only hero (id 1). Sets are stored as comma-separated keys. */
@@ -148,6 +154,25 @@ data class Hero(
     /** The day whose card bounty was paid. */
     @ColumnInfo(defaultValue = "-1")
     val bountyDay: Long = -1,
+    /** [app.dayquest.game.HeroClass] name, "" until one is chosen. */
+    @ColumnInfo(defaultValue = "")
+    val heroClass: String = "",
+    @ColumnInfo(defaultValue = "0")
+    val mp: Double = 0.0,
+    /** Skills cast on a day, "battle_cry=20410,keen_eye=20410": active until that day closes. */
+    @ColumnInfo(defaultValue = "")
+    val buffs: String = "",
+    /** The pet the hero rides, "" when none. */
+    @ColumnInfo(defaultValue = "")
+    val mount: String = "",
+    /** The weekend dungeon run, "year:week:room:steps"; "" when none started. */
+    @ColumnInfo(defaultValue = "")
+    val dungeon: String = "",
+    @ColumnInfo(defaultValue = "0")
+    val dungeonsCleared: Int = 0,
+    /** A random id that tells this hero apart in friends' taverns. */
+    @ColumnInfo(defaultValue = "")
+    val uid: String = "",
 ) {
     fun owns(gear: String) = gear in ownedGear.split(',')
     fun ownsScene(key: String) = key in ownedScenes.split(',')
@@ -171,7 +196,22 @@ data class Item(@PrimaryKey val key: String, val count: Int)
 
 /** A hatched pet, "fox:frost". Growth 0..100; at 100 it is fully grown. */
 @Entity(tableName = "pets")
-data class Pet(@PrimaryKey val key: String, val growth: Int = 0, val hatchedAt: Long = System.currentTimeMillis())
+data class Pet(
+    @PrimaryKey val key: String,
+    val growth: Int = 0,
+    val hatchedAt: Long = System.currentTimeMillis(),
+    /** Saddled: a fully grown pet that can now be ridden. */
+    @ColumnInfo(defaultValue = "0")
+    val mount: Boolean = false,
+)
+
+/** One line in the journal: how the day felt (1 hard .. 5 great) and a short note. */
+@Entity(tableName = "journal")
+data class JournalEntry(@PrimaryKey val day: Long, val mood: Int, val note: String = "")
+
+/** A friend's hero card ([code] is their "DQH1:" hero code), shown in the tavern. */
+@Entity(tableName = "friends")
+data class Friend(@PrimaryKey val uid: String, val code: String, val addedAt: Long = System.currentTimeMillis())
 
 data class Snapshot(
     val hero: Hero?,
@@ -180,6 +220,8 @@ data class Snapshot(
     val log: List<LogEntry>,
     val items: List<Item>,
     val pets: List<Pet>,
+    val journal: List<JournalEntry> = emptyList(),
+    val friends: List<Friend> = emptyList(),
 )
 
 @Dao
@@ -312,7 +354,59 @@ abstract class GameDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun savePet(pet: Pet)
 
+    /** Everything that ever happened to one task, oldest first: its statistics. */
+    @Query("SELECT * FROM log WHERE taskId = :taskId AND undone = 0 ORDER BY id")
+    abstract fun observeTaskLog(taskId: Long): Flow<List<LogEntry>>
+
+    /** Finished, slipped and missed tasks since a day: the insights. */
+    @Query("SELECT * FROM log WHERE undone = 0 AND day >= :from AND kind IN ('UP', 'DOWN', 'DAILY', 'TODO', 'MISSED')")
+    abstract fun observeTaskEventsSince(from: Long): Flow<List<LogEntry>>
+
+    @Query("SELECT COUNT(*) FROM pets WHERE mount = 1")
+    abstract suspend fun mountCount(): Int
+
+    // Journal
+    @Query("SELECT * FROM journal ORDER BY day DESC")
+    abstract fun observeJournal(): Flow<List<JournalEntry>>
+
+    @Query("SELECT * FROM journal WHERE day = :day")
+    abstract fun observeJournalDay(day: Long): Flow<JournalEntry?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun saveJournal(entry: JournalEntry)
+
+    @Query("DELETE FROM journal WHERE day = :day")
+    abstract suspend fun deleteJournal(day: Long)
+
+    // Friends
+    @Query("SELECT * FROM friends ORDER BY addedAt")
+    abstract fun observeFriends(): Flow<List<Friend>>
+
+    @Query("SELECT * FROM friends")
+    abstract suspend fun friends(): List<Friend>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun saveFriend(friend: Friend)
+
+    @Query("DELETE FROM friends WHERE uid = :uid")
+    abstract suspend fun deleteFriend(uid: String)
+
     // Backup
+    @Query("SELECT * FROM journal")
+    protected abstract suspend fun allJournal(): List<JournalEntry>
+
+    @Query("DELETE FROM journal")
+    protected abstract suspend fun clearJournal()
+
+    @Query("DELETE FROM friends")
+    protected abstract suspend fun clearFriends()
+
+    @Insert
+    protected abstract suspend fun insertJournal(items: List<JournalEntry>)
+
+    @Insert
+    protected abstract suspend fun insertFriends(items: List<Friend>)
+
     @Query("SELECT * FROM checklist")
     protected abstract suspend fun allChecklist(): List<CheckItem>
 
@@ -356,31 +450,36 @@ abstract class GameDao {
     protected abstract suspend fun insertPets(items: List<Pet>)
 
     @Transaction
-    open suspend fun snapshot() = Snapshot(hero(), tasks(), allChecklist(), allLog(), allItems(), allPets())
+    open suspend fun snapshot() = Snapshot(hero(), tasks(), allChecklist(), allLog(), allItems(), allPets(), allJournal(), friends())
 
     /** Replaces everything with a backup (checklists cascade away with their tasks). */
     @Transaction
     open suspend fun replaceAll(s: Snapshot) {
-        clearTasks(); clearLog(); clearItems(); clearPets(); clearHero()
+        clearTasks(); clearLog(); clearItems(); clearPets(); clearHero(); clearJournal(); clearFriends()
         s.hero?.let { saveHero(it) }
         insertTasks(s.tasks)
         insertChecklist(s.checklist)
         insertLogs(s.log)
         insertItems(s.items)
         insertPets(s.pets)
+        insertJournal(s.journal)
+        insertFriends(s.friends)
     }
 }
 
 data class DayKind(val day: Long, val kind: LogKind)
 
-@Database(entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class], version = 3)
+@Database(
+    entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class, JournalEntry::class, Friend::class],
+    version = 4,
+)
 abstract class GameDatabase : RoomDatabase() {
     abstract fun game(): GameDao
 
     companion object {
         fun create(context: Context): GameDatabase =
             Room.databaseBuilder(context.applicationContext, GameDatabase::class.java, "dayquest.db")
-                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS)
+                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS, CLASSES_AND_FRIENDS)
                 .build()
 
         private val ACHIEVEMENTS_AND_HOME = object : Migration(1, 2) {
@@ -399,6 +498,23 @@ abstract class GameDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE hero ADD COLUMN chests INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE hero ADD COLUMN eventDay INTEGER NOT NULL DEFAULT -1")
                 db.execSQL("ALTER TABLE hero ADD COLUMN bountyDay INTEGER NOT NULL DEFAULT -1")
+            }
+        }
+
+        private val CLASSES_AND_FRIENDS = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE hero ADD COLUMN heroClass TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE hero ADD COLUMN mp REAL NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE hero ADD COLUMN buffs TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE hero ADD COLUMN mount TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE hero ADD COLUMN dungeon TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE hero ADD COLUMN dungeonsCleared INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE hero ADD COLUMN uid TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE pets ADD COLUMN mount INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE log ADD COLUMN mp REAL NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE log ADD COLUMN step INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `journal` (`day` INTEGER NOT NULL, `mood` INTEGER NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`day`))")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `friends` (`uid` TEXT NOT NULL, `code` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`uid`))")
             }
         }
     }
