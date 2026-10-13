@@ -135,6 +135,14 @@ fun bossName(b: app.dayquest.game.Boss): String {
     }
 }
 
+/** The hour the player's day starts at (for the logical "today"). */
+@Composable
+fun rememberDayStart(): Int {
+    val c = androidx.compose.ui.platform.LocalContext.current.let { (it.applicationContext as app.dayquest.DayquestApp).container }
+    val s by androidx.compose.runtime.remember { c.settings.settings }.collectAsState(initial = null)
+    return s?.dayStart ?: 0
+}
+
 /** The real-calendar season, flipped for the southern hemisphere when the player asked. */
 @Composable
 fun rememberSeason(): app.dayquest.game.Season {

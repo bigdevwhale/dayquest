@@ -72,7 +72,7 @@ data class CheckItem(
     val position: Int = 0,
 )
 
-enum class LogKind { UP, DOWN, DAILY, TODO, REWARD, BUY, MISSED, BOSS, POTION, VICTORY, ACHIEVEMENT }
+enum class LogKind { UP, DOWN, DAILY, TODO, REWARD, BUY, MISSED, BOSS, POTION, VICTORY, ACHIEVEMENT, CHEST, EVENT }
 
 /**
  * One scored action and exactly what it changed, so it can be undone to the cent.
@@ -136,6 +136,18 @@ data class Hero(
     val wallpaper: String = "wp_plain",
     @ColumnInfo(defaultValue = "fl_planks")
     val floor: String = "fl_planks",
+    /** The last day every daily was done: a perfect day pays one chest. */
+    @ColumnInfo(defaultValue = "-1")
+    val perfectDay: Long = -1,
+    /** Chests earned but not opened yet. */
+    @ColumnInfo(defaultValue = "0")
+    val chests: Int = 0,
+    /** The day whose morning card was opened (its gift handed out). */
+    @ColumnInfo(defaultValue = "-1")
+    val eventDay: Long = -1,
+    /** The day whose card bounty was paid. */
+    @ColumnInfo(defaultValue = "-1")
+    val bountyDay: Long = -1,
 ) {
     fun owns(gear: String) = gear in ownedGear.split(',')
     fun ownsScene(key: String) = key in ownedScenes.split(',')
@@ -244,6 +256,13 @@ abstract class GameDao {
 
     @Query("SELECT COUNT(*) FROM log WHERE undone = 0 AND kind IN ('UP', 'DAILY', 'TODO')")
     abstract suspend fun doneCount(): Int
+
+    /** Tasks finished on one day: the morning card's bounties count these. */
+    @Query("SELECT COUNT(*) FROM log WHERE undone = 0 AND day = :day AND kind IN ('UP', 'DAILY', 'TODO')")
+    abstract suspend fun doneOn(day: Long): Int
+
+    @Query("SELECT COUNT(*) FROM log WHERE undone = 0 AND day = :day AND kind IN ('UP', 'DAILY', 'TODO')")
+    abstract fun observeDoneOn(day: Long): Flow<Int>
 
     @Query("SELECT COUNT(DISTINCT day) FROM log WHERE undone = 0 AND kind IN ('UP', 'DAILY', 'TODO')")
     abstract suspend fun activeDays(): Int
@@ -354,14 +373,14 @@ abstract class GameDao {
 
 data class DayKind(val day: Long, val kind: LogKind)
 
-@Database(entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class], version = 2)
+@Database(entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class], version = 3)
 abstract class GameDatabase : RoomDatabase() {
     abstract fun game(): GameDao
 
     companion object {
         fun create(context: Context): GameDatabase =
             Room.databaseBuilder(context.applicationContext, GameDatabase::class.java, "dayquest.db")
-                .addMigrations(ACHIEVEMENTS_AND_HOME)
+                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS)
                 .build()
 
         private val ACHIEVEMENTS_AND_HOME = object : Migration(1, 2) {
@@ -371,6 +390,15 @@ abstract class GameDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE hero ADD COLUMN ownedDecor TEXT NOT NULL DEFAULT 'wp_plain,fl_planks'")
                 db.execSQL("ALTER TABLE hero ADD COLUMN wallpaper TEXT NOT NULL DEFAULT 'wp_plain'")
                 db.execSQL("ALTER TABLE hero ADD COLUMN floor TEXT NOT NULL DEFAULT 'fl_planks'")
+            }
+        }
+
+        private val CHESTS_AND_EVENTS = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE hero ADD COLUMN perfectDay INTEGER NOT NULL DEFAULT -1")
+                db.execSQL("ALTER TABLE hero ADD COLUMN chests INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE hero ADD COLUMN eventDay INTEGER NOT NULL DEFAULT -1")
+                db.execSQL("ALTER TABLE hero ADD COLUMN bountyDay INTEGER NOT NULL DEFAULT -1")
             }
         }
     }

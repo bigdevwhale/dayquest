@@ -191,7 +191,7 @@ private fun HatchCard(eggs: List<Item>, potions: List<Item>, pets: Map<String, P
         else PrimaryButton(stringResource(R.string.hatch), {
             c.scope.launch {
                 val ok = c.game.hatch(species, pot)
-                withContext(Dispatchers.Main) { if (ok) { fb.thud(); fb.show(hatched) } }
+                withContext(Dispatchers.Main) { if (ok) { fb.thud(); app.dayquest.ui.Sfx.play(app.dayquest.ui.Sound.DROP); fb.show(hatched) } }
             }
         }, Modifier.fillMaxWidth())
     }
@@ -227,13 +227,13 @@ private fun PetDialog(pet: Pet, hero: Hero, food: List<Item>, onDismiss: () -> U
                         food.forEach { f ->
                             val kind = Food.of(f.key.substringAfter(':')) ?: return@forEach
                             val fav = kind == s.favorite
-                            val grewText = stringResource(R.string.grew, if (fav) app.dayquest.game.Rules.FAVORITE_FOOD else app.dayquest.game.Rules.OTHER_FOOD)
+                            val ctx = LocalContext.current
                             Column(
                                 Modifier.clip(D.RSm).background(if (fav) D.c.xpSoft else D.c.surface).border(1.dp, D.c.line, D.RSm)
                                     .clickable {
                                         c.scope.launch {
                                             val n = c.game.feed(pet.key, kind)
-                                            withContext(Dispatchers.Main) { if (n > 0) { fb.tap(); fb.show(grewText) } }
+                                            withContext(Dispatchers.Main) { if (n > 0) { fb.tap(); app.dayquest.ui.Sfx.play(app.dayquest.ui.Sound.DONE); fb.show(ctx.getString(R.string.grew, n)) } }
                                         }
                                     }
                                     .padding(8.dp),

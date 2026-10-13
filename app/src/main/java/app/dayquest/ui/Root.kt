@@ -74,13 +74,17 @@ import app.dayquest.data.Task
 import app.dayquest.data.TaskType
 import app.dayquest.game.Boss
 import app.dayquest.game.Catalog
+import app.dayquest.game.DayEvent
 import app.dayquest.game.DayReport
+import app.dayquest.game.Rules
 import app.dayquest.notify.Reminders
 import app.dayquest.pixel.Look
 import app.dayquest.pixel.Sprites
 import app.dayquest.ui.components.Gap
 import app.dayquest.ui.components.PrimaryButton
 import app.dayquest.ui.edit.EditTaskScreen
+import app.dayquest.ui.events.ChestDialog
+import app.dayquest.ui.events.EventCardDialog
 import app.dayquest.ui.hero.HeroScreen
 import app.dayquest.ui.onboarding.OnboardingScreen
 import app.dayquest.ui.pixel.PixelImage
@@ -108,6 +112,12 @@ class Feedback(private val host: SnackbarHostState, private val scope: Coroutine
             val r = host.showSnackbar(message, actionLabel = undoLabel, duration = SnackbarDuration.Short, withDismissAction = false)
             if (r == SnackbarResult.ActionPerformed && undoLog > 0) onUndo(undoLog)
         }
+    }
+
+    /** A purchase went through: a tap and a coin. */
+    fun buy() {
+        tap()
+        Sfx.play(Sound.COIN)
     }
 
     fun tap() {
@@ -139,8 +149,9 @@ fun DayquestRoot(settings: Settings) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
-    val feedback = remember { Feedback(snackbar, scope, haptic) { id -> c.launch { c.game.undo(id) } } }
+    val feedback = remember { Feedback(snackbar, scope, haptic) { id -> Sfx.play(Sound.UNDO); c.launch { c.game.undo(id) } } }
     feedback.haptics = settings.haptics
+    Sfx.enabled = settings.sounds
 
     CompositionLocalProvider(LocalFeedback provides feedback) {
         Box(Modifier.fillMaxSize().background(D.c.bg)) {
@@ -200,12 +211,26 @@ private fun Main(hero: Hero, settings: Settings) {
         if (fresh.isNotEmpty()) withContext(kotlinx.coroutines.Dispatchers.Main) { unlocked.addAll(fresh) }
     }
     LaunchedEffect(hero.level, hero.questsDone, hero.ownedDecor) { c.scope.launch { checkAchievements() } }
+    // ---- Perfect day chest and the morning card ----
+    var chest by remember { mutableStateOf(false) }
+    var chestPerfect by remember { mutableStateOf(false) }
+    var cardOpened by remember { mutableStateOf(-1L) }
+
     LaunchedEffect(Unit) {
         c.game.fx.collect { o ->
             c.scope.launch { checkAchievements() }
             if (o.fainted) fainted = true
             o.bossDefeated?.let { victory = it }
             if (o.levelUp > 0 && !o.fainted) levelUp = o.levelUp
+            soundOf(o)?.let { Sfx.play(it) }
+            if (o.perfect) launch {
+                // Let the fireworks go off over the scene before the chest covers it.
+                delay(450)
+                Sfx.play(Sound.PERFECT)
+                delay(1600)
+                chestPerfect = true
+                chest = true
+            }
         }
     }
 
@@ -222,6 +247,7 @@ private fun Main(hero: Hero, settings: Settings) {
                         when (t) {
                             Tab.TASKS -> TasksScreen(
                                 hero = hero,
+                                onChest = { chestPerfect = false; chest = true },
                                 onEdit = { nav.navigate("edit/$it") },
                                 onNew = { type, title -> nav.navigate("new/${type.name}?title=${android.net.Uri.encode(title)}") },
                                 onSettings = { nav.navigate("settings") },
@@ -299,6 +325,20 @@ private fun Main(hero: Hero, settings: Settings) {
             stringResource(R.string.hooray), pixel = 6,
         ) { unlocked.clear() }
     }
+    val today = Rules.logicalDay(java.time.LocalDateTime.now(), settings.dayStart)
+    val calm = recap == null && report == null && !fainted && levelUp == 0 && victory == null && unlocked.isEmpty()
+    if (calm && !chest && hero.lastDay == today && hero.eventDay != today && cardOpened != today) {
+        EventCardDialog(DayEvent.of(today)) {
+            cardOpened = today
+            c.launch { c.game.openEvent() }
+        }
+    }
+    if (calm && chest) {
+        ChestDialog(chestPerfect, hero.chests) { loot ->
+            chest = false
+            if (loot != null && loot.levelUp > 0) levelUp = loot.levelUp
+        }
+    }
     victory?.let { b ->
         val loot = b.rewards.map { (k, n) -> "${itemName(k)} ×$n" }.joinToString(", ")
         MomentDialog(
@@ -307,6 +347,20 @@ private fun Main(hero: Hero, settings: Settings) {
             stringResource(R.string.hooray), pixel = 4,
         ) { victory = null }
     }
+}
+
+/** The one sound an outcome makes: the biggest moment wins. */
+private fun soundOf(o: app.dayquest.game.Outcome): Sound? = when {
+    o.fainted -> Sound.FAINT
+    o.bossDefeated != null -> Sound.VICTORY
+    o.levelUp > 0 -> Sound.LEVEL
+    o.jackpot || o.bounty -> Sound.JACKPOT
+    o.crit -> Sound.CRIT
+    o.hp < 0 -> Sound.HURT
+    o.drop.isNotEmpty() -> Sound.DROP
+    o.xp > 0 -> Sound.DONE
+    o.gold != 0.0 || o.hp > 0 -> Sound.COIN
+    else -> null
 }
 
 @Composable

@@ -1,6 +1,7 @@
 package app.dayquest.data
 
 import android.util.Base64
+import app.dayquest.game.Challenge
 import app.dayquest.game.Difficulty
 import org.json.JSONArray
 import org.json.JSONObject
@@ -35,7 +36,7 @@ object Backup {
         .put("pets", JSONArray(s.pets.map { JSONObject().put("key", it.key).put("growth", it.growth).put("hatchedAt", it.hatchedAt) }))
         .put("settings", settings?.let {
             JSONObject().put("theme", it.theme.name).put("dayStart", it.dayStart).put("reminders", it.reminders)
-                .put("evening", it.evening).put("haptics", it.haptics).put("southern", it.southern).put("tips", JSONArray(it.tips.toList()))
+                .put("evening", it.evening).put("haptics", it.haptics).put("southern", it.southern).put("sounds", it.sounds).put("challenge", it.challenge.name).put("tips", JSONArray(it.tips.toList()))
         } ?: JSONObject.NULL)
         .toString()
 
@@ -47,6 +48,7 @@ object Backup {
         .put("quest", h.quest).put("questHp", h.questHp).put("questsDone", h.questsDone)
         .put("dropsToday", h.dropsToday).put("deaths", h.deaths).put("resting", h.resting).put("createdAt", h.createdAt)
         .put("achievements", h.achievements).put("home", h.home).put("ownedDecor", h.ownedDecor).put("wallpaper", h.wallpaper).put("floor", h.floor)
+        .put("perfectDay", h.perfectDay).put("chests", h.chests).put("eventDay", h.eventDay).put("bountyDay", h.bountyDay)
 
     private fun task(t: Task) = JSONObject()
         .put("id", t.id).put("type", t.type.name).put("title", t.title).put("notes", t.notes).put("difficulty", t.difficulty.name)
@@ -74,6 +76,7 @@ object Backup {
                     createdAt = optLong("createdAt", System.currentTimeMillis()),
                     achievements = optString("achievements"), home = optString("home"),
                     ownedDecor = optString("ownedDecor", "wp_plain,fl_planks"), wallpaper = optString("wallpaper", "wp_plain"), floor = optString("floor", "fl_planks"),
+                    perfectDay = optLong("perfectDay", -1), chests = optInt("chests"), eventDay = optLong("eventDay", -1), bountyDay = optLong("bountyDay", -1),
                 )
             }
         }
@@ -107,6 +110,8 @@ object Backup {
                 theme = runCatching { ThemeMode.valueOf(it.optString("theme")) }.getOrDefault(ThemeMode.SYSTEM),
                 dayStart = it.optInt("dayStart"), reminders = it.optBoolean("reminders", true),
                 evening = it.optInt("evening", 20 * 60), haptics = it.optBoolean("haptics", true), southern = it.optBoolean("southern"),
+                sounds = it.optBoolean("sounds", true),
+                challenge = runCatching { Challenge.valueOf(it.optString("challenge")) }.getOrDefault(Challenge.NORMAL),
                 tips = it.optJSONArray("tips")?.let { a -> (0 until a.length()).map { i -> a.getString(i) }.toSet() } ?: emptySet(),
             )
         }

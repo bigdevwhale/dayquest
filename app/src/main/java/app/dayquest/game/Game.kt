@@ -6,7 +6,7 @@ import app.dayquest.data.Hero
 import app.dayquest.data.LogEntry
 import app.dayquest.data.LogKind
 import app.dayquest.data.Pet
-import app.dayquest.data.SettingsStore
+import app.dayquest.data.Settings
 import app.dayquest.data.Task
 import app.dayquest.data.TaskType
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,7 +31,19 @@ data class Outcome(
     val fainted: Boolean = false,
     val bossDefeated: Boss? = null,
     val logId: Long = 0,
+    /** Every daily due today is done: fireworks and a chest. */
+    val perfect: Boolean = false,
+    /** Gold rolled the morning card's 5x jackpot. */
+    val jackpot: Boolean = false,
+    /** The morning card's bounty just paid out. */
+    val bounty: Boolean = false,
+    val bountyGold: Double = 0.0,
+    /** Items from a bounty or a card's gift. */
+    val items: List<String> = emptyList(),
 )
+
+/** What a chest held. */
+data class Loot(val gold: Double, val xp: Double, val items: List<String>, val levelUp: Int)
 
 /** The day that just ended: what was missed, and what it cost. */
 data class Offers(val main: List<Boss>, val seasonal: List<Boss>, val weekly: Boss?, val season: Season)
@@ -45,14 +57,20 @@ data class DayReport(
     val resting: Boolean,
 )
 
-class Game(private val db: GameDao, private val settings: SettingsStore, private val random: Random = Random.Default) {
+/** All the rules that touch the database. [prefs] reads the current settings (a function, so tests need no Android). */
+class Game(private val db: GameDao, private val prefs: suspend () -> Settings, private val random: Random = Random.Default) {
     private val mutex = Mutex()
     private val _fx = MutableSharedFlow<Outcome>(extraBufferCapacity = 16)
     val fx: SharedFlow<Outcome> = _fx
 
-    suspend fun today(): Long = Rules.logicalDay(LocalDateTime.now(), settings.now().dayStart)
+    suspend fun today(): Long = Rules.logicalDay(LocalDateTime.now(), prefs().dayStart)
 
-    suspend fun season(): Season = Season.of(LocalDate.ofEpochDay(today()), settings.now().southern)
+    suspend fun season(): Season = Season.of(LocalDate.ofEpochDay(today()), prefs().southern)
+
+    private suspend fun challenge(): Challenge = prefs().challenge
+
+    /** Today's health potion price: the merchant's card halves it. */
+    suspend fun potionCost(): Double = Rules.HEALTH_POTION_COST * DayEvent.of(today()).potion
 
     fun stats(h: Hero): Stats {
         val base = Stats(h.level / 2, h.level / 2, h.level / 2, h.level / 2)
@@ -97,12 +115,18 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
         val d = day ?: today()
         if (done && t.doneDay != d) {
             val delta = Rules.delta(t.value, true)
-            val bonus = Rules.streakBonus(t.streak) * checklistBonus(db.checklist(t.id))
+            val streakBonus = 1.0 + (Rules.streakBonus(t.streak) - 1.0) * DayEvent.of(d).streak
+            val bonus = streakBonus * checklistBonus(db.checklist(t.id))
             val (h2, o) = gain(hero(), t.difficulty, delta, bonus, t.id, LogKind.DAILY, d)
             db.saveHero(h2)
             val streak = t.streak + 1
             db.update(t.copy(doneDay = d, streak = streak, bestStreak = maxOf(t.bestStreak, streak), value = t.value + delta))
-            emit(o)
+            // Undoing the last daily keeps the chest, but a day pays only one.
+            val h3 = hero()
+            if (d == today() && h3.perfectDay != d && isPerfect(d)) {
+                db.saveHero(h3.copy(perfectDay = d, chests = h3.chests + 1))
+                emit(o.copy(perfect = true))
+            } else emit(o)
         } else if (!done && t.doneDay == d) {
             val entry = db.lastLog(t.id, LogKind.DAILY)
             if (entry != null) revert(entry)
@@ -140,11 +164,63 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
 
     suspend fun buyHealthPotion(): Outcome? = mutex.withLock {
         val h = hero()
-        if (h.gold + 1e-9 < Rules.HEALTH_POTION_COST || h.hp >= Rules.MAX_HP) return null
+        val cost = potionCost()
+        if (h.gold + 1e-9 < cost || h.hp >= Rules.MAX_HP) return null
         val heal = minOf(Rules.HEALTH_POTION_HP, Rules.MAX_HP - h.hp)
-        db.saveHero(h.copy(gold = h.gold - Rules.HEALTH_POTION_COST, hp = h.hp + heal))
-        val id = db.insertLog(LogEntry(day = today(), kind = LogKind.POTION, gold = -Rules.HEALTH_POTION_COST, hp = heal))
-        emit(Outcome(gold = -Rules.HEALTH_POTION_COST, hp = heal, logId = id))
+        db.saveHero(h.copy(gold = h.gold - cost, hp = h.hp + heal))
+        val id = db.insertLog(LogEntry(day = today(), kind = LogKind.POTION, gold = -cost, hp = heal))
+        emit(Outcome(gold = -cost, hp = heal, logId = id))
+    }
+
+    /** All dailies due on [day] (that existed then) are done. */
+    private suspend fun isPerfect(day: Long): Boolean {
+        val dayStart = prefs().dayStart
+        val due = db.tasks().filter { it.type == TaskType.DAILY && Rules.isDue(it, day) && existedOn(it, day, dayStart) }
+        return due.isNotEmpty() && due.all { it.doneDay == day }
+    }
+
+    private fun existedOn(t: Task, day: Long, dayStart: Int) =
+        Rules.logicalDay(LocalDateTime.ofInstant(Instant.ofEpochMilli(t.createdAt), ZoneId.systemDefault()), dayStart) <= day
+
+    /** Opens one earned chest: gold, a little XP and two or three items. */
+    suspend fun openChest(): Loot? = mutex.withLock {
+        val h = hero()
+        if (h.chests <= 0) return null
+        val season = season()
+        val gold = kotlin.math.round(10 + h.level * 1.5 + random.nextInt(11))
+        val xp = kotlin.math.round(Rules.xpToNext(h.level) * 0.1)
+        val items = List(if (random.nextDouble() < 0.25) 3 else 2) { pickItem(h, season) }
+        items.forEach { db.addItem(it, 1) }
+        val next = levelUp(h.copy(chests = h.chests - 1, gold = h.gold + gold, xp = h.xp + xp))
+        db.saveHero(next)
+        db.insertLog(LogEntry(day = today(), kind = LogKind.CHEST, gold = gold, xp = xp))
+        Loot(gold, xp, items, if (next.level > h.level) next.level else 0)
+    }
+
+    /** Opens today's morning card: hands out its gift (or the goblin's theft) once. */
+    suspend fun openEvent(): Outcome? = mutex.withLock {
+        val h = hero()
+        val day = today()
+        if (h.eventDay == day) return null
+        val ev = DayEvent.of(day)
+        val items = giftItems(ev.gift)
+        items.forEach { db.addItem(it, 1) }
+        val gold = if (ev.giftGold < 0) -minOf(-ev.giftGold, h.gold) else ev.giftGold
+        val heal = minOf(ev.heal, Rules.MAX_HP - h.hp).coerceAtLeast(0.0)
+        db.saveHero(h.copy(eventDay = day, gold = h.gold + gold, hp = h.hp + heal))
+        if (gold != 0.0 || heal > 0) db.insertLog(LogEntry(day = day, kind = LogKind.EVENT, gold = gold, hp = heal))
+        if (gold == 0.0 && heal == 0.0 && items.isEmpty()) null
+        else emit(Outcome(gold = gold, hp = heal, drop = items.firstOrNull().orEmpty(), items = items))
+    }
+
+    private suspend fun giftItems(g: Gift): List<String> = when (g) {
+        Gift.NONE -> emptyList()
+        Gift.EGG -> listOf("egg:" + Catalog.basicEggs().let { it[random.nextInt(it.size)] }.key)
+        Gift.POTION -> listOf(
+            if (random.nextInt(4) == 0) "potion:" + Potion.of(season()).key
+            else "potion:" + Catalog.basicPotions().let { it[random.nextInt(it.size)] }.key
+        )
+        Gift.FOODS -> List(3) { "food:" + Food.entries[random.nextInt(Food.entries.size)].key }
     }
 
     /** Takes back one action exactly as it was logged. */
@@ -187,15 +263,27 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
 
     private suspend fun gain(h: Hero, d: Difficulty, delta: Double, bonus: Double, taskId: Long, kind: LogKind, day: Long): Pair<Hero, Outcome> {
         val s = stats(h)
-        val xp = Rules.xpGain(delta, d, s, bonus)
-        val gold = Rules.goldGain(delta, d, s, bonus)
+        val ev = DayEvent.of(day)
+        val doneBefore = db.doneOn(day)
+        val mult = bonus * ev.reward(kind, d, isFirst = doneBefore == 0) * challenge().reward
+        val jackpot = ev.jackpot > 0 && random.nextDouble() < ev.jackpot
+        val xp = Rules.xpGain(delta, d, s, mult) * ev.xp
+        val gold = Rules.goldGain(delta, d, s, mult) * ev.gold * (if (jackpot) 5.0 else 1.0)
         val boss = Catalog.boss(h.quest)
-        val crit = boss != null && random.nextDouble() < Rules.critChance(s)
-        val hit = if (boss != null) Rules.bossDamage(delta, d, s, crit) else 0.0
-        val drop = rollDrop(h, d, s, season())
+        val crit = boss != null && random.nextDouble() < Rules.critChance(s) + ev.crit
+        val hit = if (boss != null) Rules.bossDamage(delta, d, s, crit) * ev.boss else 0.0
+        val drop = rollDrop(h, d, s, season(), ev)
         if (drop.isNotEmpty()) db.addItem(drop, 1)
 
         var next = h.copy(xp = h.xp + xp, gold = h.gold + gold, questHp = h.questHp - hit, dropsToday = h.dropsToday + if (drop.isNotEmpty()) 1 else 0)
+        // The card's bounty pays once, the moment the day's count reaches it (undoing later keeps it).
+        val bounty = ev.bounty > 0 && h.bountyDay != day && doneBefore + 1 >= ev.bounty
+        val bountyItems = if (bounty) giftItems(ev.bountyGift) else emptyList()
+        if (bounty) {
+            bountyItems.forEach { db.addItem(it, 1) }
+            next = next.copy(gold = next.gold + ev.bountyGold, bountyDay = day)
+            db.insertLog(LogEntry(day = day, kind = LogKind.EVENT, gold = ev.bountyGold))
+        }
         var defeated: Boss? = null
         if (boss != null && next.questHp <= 0) {
             defeated = boss
@@ -206,14 +294,18 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
         val before = next.level
         next = levelUp(next)
         val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, xp = xp, gold = gold, valueDelta = delta, boss = hit, drop = drop))
-        return next to Outcome(xp = xp, gold = gold, boss = hit, crit = crit, drop = drop, levelUp = if (next.level > before) next.level else 0, bossDefeated = defeated, logId = id)
+        return next to Outcome(
+            xp = xp, gold = gold, boss = hit, crit = crit, drop = drop, levelUp = if (next.level > before) next.level else 0, bossDefeated = defeated, logId = id,
+            jackpot = jackpot, bounty = bounty, bountyGold = if (bounty) ev.bountyGold else 0.0, items = bountyItems,
+        )
     }
 
     private suspend fun hurt(h: Hero, d: Difficulty, delta: Double, taskId: Long, kind: LogKind, day: Long): Pair<Hero, Outcome> {
-        val dmg = Rules.damage(delta, d, stats(h))
+        val challenge = challenge()
+        val dmg = Rules.damage(delta, d, stats(h)) * DayEvent.of(day).hurt * challenge.hurt
         val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, hp = -dmg, valueDelta = delta))
         val hurt = h.copy(hp = h.hp - dmg)
-        return if (hurt.hp <= 0) faint(hurt) to Outcome(hp = -dmg, fainted = true, logId = id)
+        return if (hurt.hp <= 0) faint(hurt, challenge) to Outcome(hp = -dmg, fainted = true, logId = id)
         else hurt to Outcome(hp = -dmg, logId = id)
     }
 
@@ -225,15 +317,22 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
         return x
     }
 
-    /** Fainting costs a level, the purse and the boss fight's progress; gear and pets are kept. */
-    private fun faint(h: Hero) = h.copy(
+    /** Fainting costs a level, the purse and the boss fight's progress; gear and pets are kept. Relaxed: only half the purse. */
+    private fun faint(h: Hero, c: Challenge) = if (c == Challenge.RELAXED) h.copy(
+        gold = h.gold / 2, hp = Rules.MAX_HP, deaths = h.deaths + 1, questHp = Catalog.boss(h.quest)?.hp ?: 0.0,
+    ) else h.copy(
         level = (h.level - 1).coerceAtLeast(1), xp = 0.0, gold = 0.0, hp = Rules.MAX_HP, deaths = h.deaths + 1,
         questHp = Catalog.boss(h.quest)?.hp ?: 0.0,
     )
 
-    private fun rollDrop(h: Hero, d: Difficulty, s: Stats, season: Season): String {
-        if (h.dropsToday >= Rules.dropCap(h.level)) return ""
-        if (random.nextDouble() >= Rules.dropChance(d, s)) return ""
+    private fun rollDrop(h: Hero, d: Difficulty, s: Stats, season: Season, ev: DayEvent): String {
+        if (h.dropsToday >= Rules.dropCap(h.level) + ev.dropCap) return ""
+        if (random.nextDouble() >= (Rules.dropChance(d, s) + ev.drop).coerceAtMost(0.65)) return ""
+        return pickItem(h, season)
+    }
+
+    /** One random egg, hatching potion or food, with a small chance of a boss-only rarity. */
+    private fun pickItem(h: Hero, season: Season): String {
         val rares = Catalog.bosses.filter { h.defeated(it.key) }.flatMap { b -> b.rewards.map { it.first } }
             .filter { k -> k.startsWith("egg:") && Species.of(k.substringAfter(':'))?.questOnly == true || k.startsWith("potion:") && Potion.of(k.substringAfter(':'))?.questOnly == true }
         if (rares.isNotEmpty() && random.nextDouble() < 0.08) return rares[random.nextInt(rares.size)]
@@ -263,11 +362,8 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
     }
 
     private suspend fun missedOn(day: Long): List<Task> {
-        val dayStart = settings.now().dayStart
-        return db.tasks().filter {
-            it.type == TaskType.DAILY && Rules.isDue(it, day) && it.doneDay != day &&
-                Rules.logicalDay(LocalDateTime.ofInstant(Instant.ofEpochMilli(it.createdAt), ZoneId.systemDefault()), dayStart) <= day
-        }
+        val dayStart = prefs().dayStart
+        return db.tasks().filter { it.type == TaskType.DAILY && Rules.isDue(it, day) && it.doneDay != day && existedOn(it, day, dayStart) }
     }
 
     /** Closes the last played day: missed dailies hurt (unless resting), streaks break, a new day begins. */
@@ -281,14 +377,16 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
         var hp = 0.0
         var bossHit = 0.0
         val boss = Catalog.boss(h.quest)
+        val challenge = challenge()
+        val hurt = DayEvent.of(day).hurt * challenge.hurt
         val tasks = db.tasks()
         val updated = tasks.mapNotNull { t ->
             when (t.type) {
                 TaskType.DAILY -> if (t in missed && !h.resting) {
                     val delta = Rules.delta(t.value, false)
-                    val dmg = Rules.damage(delta, t.difficulty, s)
+                    val dmg = Rules.damage(delta, t.difficulty, s) * hurt
                     hp += dmg
-                    if (boss != null) bossHit += boss.str * t.difficulty.mult.coerceAtLeast(0.5) * 1.5 * Rules.defense(s)
+                    if (boss != null) bossHit += boss.str * t.difficulty.mult.coerceAtLeast(0.5) * 1.5 * Rules.defense(s) * hurt
                     db.insertLog(LogEntry(taskId = t.id, day = day, kind = LogKind.MISSED, hp = -dmg, valueDelta = delta))
                     t.copy(value = t.value + delta, streak = 0)
                 } else null
@@ -305,7 +403,7 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
         if (bossHit > 0) db.insertLog(LogEntry(day = day, kind = LogKind.BOSS, hp = -bossHit))
         var next = h.copy(hp = h.hp - hp - bossHit, lastDay = today, dropsToday = 0)
         val fainted = next.hp <= 0
-        if (fainted) next = faint(next)
+        if (fainted) next = faint(next, challenge)
         db.saveHero(next)
         if (hp + bossHit > 0) _fx.tryEmit(Outcome(hp = -(hp + bossHit), fainted = fainted))
         DayReport(day, missed.size, hp, bossHit, fainted, h.resting)
@@ -377,7 +475,7 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
         val pet = db.pet(petKey) ?: return 0
         if (pet.growth >= 100 || (db.item("food:${food.key}")?.count ?: 0) < 1) return 0
         val species = Catalog.petParts(petKey)?.first ?: return 0
-        val grow = if (species.favorite == food) Rules.FAVORITE_FOOD else Rules.OTHER_FOOD
+        val grow = ((if (species.favorite == food) Rules.FAVORITE_FOOD else Rules.OTHER_FOOD) * DayEvent.of(today()).feed).toInt()
         db.addItem("food:${food.key}", -1)
         db.savePet(pet.copy(growth = (pet.growth + grow).coerceAtMost(100)))
         grow
@@ -390,7 +488,7 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
     /** The fights on offer right now: the next rank of each main boss, this season's boss and this week's. */
     suspend fun offers(h: Hero): Offers {
         val date = LocalDate.ofEpochDay(today())
-        val southern = settings.now().southern
+        val southern = prefs().southern
         val s = Season.of(date, southern)
         val (wy, wk) = Catalog.weekOf(date)
         return Offers(
@@ -450,7 +548,7 @@ class Game(private val db: GameDao, private val settings: SettingsStore, private
     suspend fun facts(h: Hero): Facts {
         val pets = db.pets()
         val wins = h.wins
-        val created = Rules.logicalDay(LocalDateTime.ofInstant(Instant.ofEpochMilli(h.createdAt), ZoneId.systemDefault()), settings.now().dayStart)
+        val created = Rules.logicalDay(LocalDateTime.ofInstant(Instant.ofEpochMilli(h.createdAt), ZoneId.systemDefault()), prefs().dayStart)
         return Facts(
             streak = db.bestStreak(),
             together = (today() - created).toInt(),

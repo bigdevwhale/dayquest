@@ -93,7 +93,7 @@ fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
     val poor = stringResource(R.string.not_enough_gold)
 
     fun spend(ok: Boolean, msg: String) {
-        if (ok) fb.tap() else fb.show(poor)
+        if (ok) fb.buy() else fb.show(poor)
         if (ok && msg.isNotEmpty()) fb.show(msg)
     }
 
@@ -124,13 +124,15 @@ fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
         when (aisle) {
             Aisle.REWARDS -> {
                 item {
+                    val today = Rules.logicalDay(java.time.LocalDateTime.now(), app.dayquest.ui.rememberDayStart())
+                    val cost = Rules.HEALTH_POTION_COST * app.dayquest.game.DayEvent.of(today).potion
                     val bought = stringResource(R.string.snack_healed, goldText(Rules.HEALTH_POTION_HP))
                     ShopRow(
                         icon = { PixelImage(Sprites.healthPotion, pixel = 4.dp) },
                         title = stringResource(R.string.health_potion),
                         sub = stringResource(R.string.health_potion_text, goldText(Rules.HEALTH_POTION_HP)),
                     ) {
-                        PriceButton(Rules.HEALTH_POTION_COST, hero.gold >= Rules.HEALTH_POTION_COST && hero.hp < Rules.MAX_HP, {
+                        PriceButton(cost, hero.gold >= cost && hero.hp < Rules.MAX_HP, {
                             c.scope.launch {
                                 val o = c.game.buyHealthPotion()
                                 withContext(Dispatchers.Main) { if (o != null) spend(true, bought) else if (hero.hp < Rules.MAX_HP) spend(false, "") }
@@ -225,7 +227,7 @@ private fun RewardRow(r: Task, hero: Hero, onEdit: () -> Unit) {
             c.scope.launch {
                 val o = c.game.buyReward(r.id)
                 withContext(Dispatchers.Main) {
-                    if (o == null) fb.show(poor) else { fb.tap(); fb.show(enjoy, undo, o.logId) }
+                    if (o == null) fb.show(poor) else { fb.buy(); fb.show(enjoy, undo, o.logId) }
                 }
             }
         })
@@ -294,7 +296,7 @@ private fun GearRow(g: Gear, hero: Hero) {
             else -> PriceButton(g.price, hero.gold >= g.price, {
                 c.scope.launch {
                     val ok = c.game.buyGear(g)
-                    withContext(Dispatchers.Main) { if (ok) fb.tap() else fb.show(poor) }
+                    withContext(Dispatchers.Main) { if (ok) fb.buy() else fb.show(poor) }
                 }
             })
         }
@@ -330,7 +332,7 @@ private fun SceneCard(sc: SceneDef, hero: Hero, modifier: Modifier) {
             .clickable {
                 c.scope.launch {
                     val ok = c.game.buyScene(sc)
-                    withContext(Dispatchers.Main) { if (ok) fb.tap() else fb.show(poor) }
+                    withContext(Dispatchers.Main) { if (ok) fb.buy() else fb.show(poor) }
                 }
             },
     ) {

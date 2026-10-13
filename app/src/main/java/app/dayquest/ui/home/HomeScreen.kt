@@ -185,7 +185,7 @@ fun HomeScreen(hero: Hero, onBack: () -> Unit) {
                         else PriceButton(area.price, hero.gold >= area.price, {
                             c.scope.launch {
                                 val ok = c.game.buyArea(area)
-                                withContext(Dispatchers.Main) { if (ok) fb.tap() else fb.show(poor) }
+                                withContext(Dispatchers.Main) { if (ok) fb.buy() else fb.show(poor) }
                             }
                         })
                     }
@@ -308,7 +308,7 @@ private fun DecorPicker(hero: Hero, type: DecorType, spot: Spot?, onDismiss: () 
                                 c.scope.launch {
                                     val ok = c.game.buyDecor(d)
                                     if (ok) c.game.place(spot, d)
-                                    withContext(Dispatchers.Main) { if (ok) { fb.tap(); onDismiss() } else fb.show(poor) }
+                                    withContext(Dispatchers.Main) { if (ok) { fb.buy(); onDismiss() } else fb.show(poor) }
                                 }
                             })
                         }

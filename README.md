@@ -43,6 +43,10 @@ In Dayquest your habits, dailies and to-dos power a pixel hero. Finish things an
 | 🐾 | **88 pets** | 8 species × 11 hatching potions. Pick an egg and a potion in one card and see who hatches. Feed them their favourite food until they are fully grown and wear a tiny crown. |
 | 🛡️ | **Gear you can see** | Every helmet, robe, sword and shield changes both your stats and your sprite. The shop shows your hero *wearing* an item before you buy it. |
 | ☀️ | **Kind mornings** | Before a new day starts, Dayquest asks which of yesterday's dailies you actually did. Night owls can move the day boundary up to 06:00. *Rest at the inn* pauses damage for holidays and sick days. |
+| 🃏 | **Card of the day** | Every morning a card flips over with a twist on the day's rules: a goblin steals 5 gold until you catch him, a merchant halves potion prices, a blood moon doubles boss damage. 30 cards, and no card repeats within 30 days. |
+| 🎆 | **Perfect day** | Finish every daily due today and fireworks go off over the scene, then a chest wobbles until you tap it open: gold, XP and two or three eggs, potions or treats. |
+| 🎚️ | **Pick your difficulty** | *Relaxed* halves damage and fainting never costs a level; *Heroic* hits 50% harder but pays 25% more. Chosen at the start, changeable any time. |
+| 🔊 | **8-bit sounds** | Chiptune blips for every tick, crit, drop, level-up, victory and chest, synthesised on the phone (no audio files). Silent when the phone is. |
 | 🧭 | **A gentle start** | A five-page guide explains the game with its own art before you create your hero, each tab shows a one-time tip on your first visit, and *Settings → How to play* replays the guide. |
 | ↩️ | **Undo anything** | Every tap shows what it gave (XP, gold, damage, drops) with an *Undo* button that reverts it exactly. |
 | 🔔 | **Reminders** | Per-task reminder times and an evening "dailies still open" nudge. |

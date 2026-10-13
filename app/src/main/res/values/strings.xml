@@ -695,4 +695,89 @@
     <string name="area_unlock">Open the %1$s</string>
     <string name="area_text_garden">A garden behind the cottage under the real sky: it changes with the time of day and the seasons.</string>
     <string name="area_text_attic">A cosy room under the roof with a round window. Furnish it however you like.</string>
+
+    <!-- Morning cards, perfect day chest, sounds, difficulty -->
+    <string name="ok">OK</string>
+    <string name="event_today">CARD OF THE DAY</string>
+    <string name="event_go">Let\'s go!</string>
+    <string name="chest_perfect_title">Perfect day!</string>
+    <string name="chest_perfect_text">Every daily is done. This chest is yours.</string>
+    <string name="chest_title">Treasure chest</string>
+    <string name="chest_text">Unopened chests: %1$d</string>
+    <string name="chest_open">Open</string>
+    <string name="chest_later">Later</string>
+    <string name="chest_loot_title">Inside the chest</string>
+    <string name="chest_gold">%1$s gold</string>
+    <string name="chest_xp">%1$s XP</string>
+    <string name="sounds">8-bit sounds</string>
+    <string name="sounds_text">Quiet when the phone is on silent or vibrate.</string>
+    <string name="challenge">Difficulty</string>
+    <string name="challenge_title">How hard should it be?</string>
+    <string name="challenge_pick_text">It decides how much missed tasks hurt. You can change it any time in settings.</string>
+    <string name="ch_relaxed">Relaxed</string>
+    <string name="ch_relaxed_text">Half the damage. Fainting costs half your gold, never a level.</string>
+    <string name="ch_normal">Normal</string>
+    <string name="ch_normal_text">The classic: misses hurt, fainting costs a level and all your gold.</string>
+    <string name="ch_heroic">Heroic</string>
+    <string name="ch_heroic_text" formatted="false">50% more damage, but 25% more XP and gold.</string>
+    <string name="ev_merchant_t">Travelling merchant</string>
+    <string name="ev_merchant_d">Health potions cost half price today.</string>
+    <string name="ev_gold_rush_t">Gold rush</string>
+    <string name="ev_gold_rush_d">Every task pays double gold today.</string>
+    <string name="ev_full_moon_t">Moon of wisdom</string>
+    <string name="ev_full_moon_d" formatted="false">+50% XP from every task.</string>
+    <string name="ev_goblin_t">Goblin thief</string>
+    <string name="ev_goblin_d">A goblin snatched 5 gold! Finish 3 tasks to catch him and get 15 back.</string>
+    <string name="ev_whetstone_t">Sharpened blade</string>
+    <string name="ev_whetstone_d" formatted="false">Your hits deal +50% damage to the boss.</string>
+    <string name="ev_clover_t">Four-leaf clover</string>
+    <string name="ev_clover_d">Eggs, potions and food drop much more often.</string>
+    <string name="ev_eagle_eye_t">Eagle eye</string>
+    <string name="ev_eagle_eye_d" formatted="false">+15% chance of a critical hit on the boss.</string>
+    <string name="ev_cozy_rain_t">Cozy rain</string>
+    <string name="ev_cozy_rain_d" formatted="false">Perfect weather for routines: dailies pay +50%.</string>
+    <string name="ev_fair_t">Town fair</string>
+    <string name="ev_fair_d" formatted="false">+50% gold from every task.</string>
+    <string name="ev_healer_t">Wandering healer</string>
+    <string name="ev_healer_d">A healer passes by and restores 15 health.</string>
+    <string name="ev_guardian_t">Guardian spirit</string>
+    <string name="ev_guardian_d">Bad habits and today\'s missed dailies hurt half as much.</string>
+    <string name="ev_echo_t">Echo cave</string>
+    <string name="ev_echo_d">Habits pay double today.</string>
+    <string name="ev_treasure_map_t">Treasure map</string>
+    <string name="ev_treasure_map_d">Finish 5 tasks to dig up 25 gold.</string>
+    <string name="ev_picnic_t">Pet picnic</string>
+    <string name="ev_picnic_d">Food makes pets grow twice as fast.</string>
+    <string name="ev_small_steps_t">Small steps</string>
+    <string name="ev_small_steps_d">Trivial tasks pay triple today.</string>
+    <string name="ev_dragon_fire_t">Dragon fire</string>
+    <string name="ev_dragon_fire_d" formatted="false">Hard tasks pay +50% today.</string>
+    <string name="ev_bonfire_t">Bonfire</string>
+    <string name="ev_bonfire_d">Streak bonuses on dailies are doubled.</string>
+    <string name="ev_bard_t">Bard\'s song</string>
+    <string name="ev_bard_d">Your first task today pays triple.</string>
+    <string name="ev_stork_t">Stork delivery</string>
+    <string name="ev_stork_d">A stork drops off a mystery egg.</string>
+    <string name="ev_alchemist_t">Alchemist\'s gift</string>
+    <string name="ev_alchemist_d">An alchemist leaves you a hatching potion.</string>
+    <string name="ev_basket_t">Farmer\'s basket</string>
+    <string name="ev_basket_d">Three treats for your pets.</string>
+    <string name="ev_fog_t">Mysterious fog</string>
+    <string name="ev_fog_d" formatted="false">+40% XP, but −20% gold.</string>
+    <string name="ev_blood_moon_t">Blood moon</string>
+    <string name="ev_blood_moon_d" formatted="false">Double damage to the boss, but bad habits hurt 50% more.</string>
+    <string name="ev_ink_quill_t">Ink and quill</string>
+    <string name="ev_ink_quill_d">To-dos pay double today.</string>
+    <string name="ev_early_bird_t">Early bird</string>
+    <string name="ev_early_bird_d">Finish 3 tasks to find a mystery egg.</string>
+    <string name="ev_lucky_coin_t">Lucky coin</string>
+    <string name="ev_lucky_coin_d" formatted="false">Every task has a 15% chance to pay 5× gold.</string>
+    <string name="ev_mentor_t">Old mentor</string>
+    <string name="ev_mentor_d" formatted="false">+25% XP and gold from every task.</string>
+    <string name="ev_coin_rain_t">Coin rain</string>
+    <string name="ev_coin_rain_d">10 gold fell from the sky right into your purse.</string>
+    <string name="ev_champion_t">Champion\'s trial</string>
+    <string name="ev_champion_d">Finish 8 tasks: 40 gold and a hatching potion.</string>
+    <string name="ev_steady_t">Steady pace</string>
+    <string name="ev_steady_d" formatted="false">Medium tasks pay +50% today.</string>
 </resources>

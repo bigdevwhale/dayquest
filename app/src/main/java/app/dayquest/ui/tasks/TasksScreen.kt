@@ -63,6 +63,7 @@ import app.dayquest.data.Hero
 import app.dayquest.data.Task
 import app.dayquest.data.TaskType
 import app.dayquest.game.Catalog
+import app.dayquest.game.DayEvent
 import app.dayquest.game.Outcome
 import app.dayquest.game.Rules
 import app.dayquest.pixel.Burst
@@ -70,11 +71,16 @@ import app.dayquest.pixel.SceneState
 import app.dayquest.pixel.Sprites
 import app.dayquest.ui.Feedback
 import app.dayquest.ui.LocalFeedback
+import app.dayquest.ui.MomentDialog
+import app.dayquest.ui.Sfx
+import app.dayquest.ui.Sound
 import app.dayquest.ui.components.DTextField
 import app.dayquest.ui.components.Gap
 import app.dayquest.ui.components.Segmented
 import app.dayquest.ui.components.Tip
 import app.dayquest.ui.dayLabel
+import app.dayquest.ui.events.EventBanner
+import app.dayquest.ui.events.eventSprite
 import app.dayquest.ui.gainText
 import app.dayquest.ui.goldText
 import app.dayquest.ui.itemLabel
@@ -113,6 +119,9 @@ class SceneFx {
         if (o.drop.isNotEmpty()) bursts.tryEmit(Burst.DROP)
         if (o.levelUp > 0) bursts.tryEmit(Burst.LEVEL)
         if (o.bossDefeated != null) bursts.tryEmit(Burst.VICTORY)
+        if (o.perfect) bursts.tryEmit(Burst.FIREWORKS)
+        if (o.jackpot) floaters.tryEmit(Floater("JACKPOT ×5", goldC))
+        if (o.bounty) { bursts.tryEmit(Burst.GOLD); floaters.tryEmit(Floater("+${goldText(o.bountyGold)}", goldC)) }
     }
 }
 
@@ -130,7 +139,7 @@ fun rememberSceneFx(): SceneFx {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TasksScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit) {
+fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit) {
     val context = LocalContext.current
     val c = context.container
     val fb = LocalFeedback.current
@@ -138,6 +147,8 @@ fun TasksScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (TaskType, String) ->
     val checklist by remember { c.db.game().observeChecklist().map { l -> l.groupBy { it.taskId } } }.collectAsStateWithLifecycle(initialValue = emptyMap())
     val settings by c.settings.settings.collectAsStateWithLifecycle(initialValue = null)
     val today = Rules.logicalDay(LocalDateTime.now(), settings?.dayStart ?: 0)
+    val doneToday by remember(today) { c.db.game().observeDoneOn(today) }.collectAsStateWithLifecycle(initialValue = 0)
+    var cardOpen by remember { mutableStateOf(false) }
     var board by rememberSaveable { mutableStateOf(Board.DAILIES) }
     val expanded = remember { mutableStateListOf<Long>() }
     var showDone by rememberSaveable { mutableStateOf(false) }
@@ -152,7 +163,7 @@ fun TasksScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (TaskType, String) ->
     val actions = remember(fb) { Actions(c, fb, context) }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item(key = "header") { HeroHeader(hero, fx, onSettings) }
+        item(key = "header") { HeroHeader(hero, fx, onSettings, onChest) }
         stickyHeader(key = "tabs") {
             Column(Modifier.fillMaxWidth().background(D.c.bg).padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Segmented(
@@ -168,6 +179,11 @@ fun TasksScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (TaskType, String) ->
             }
         }
         item(key = "tip") { Tip("tasks", stringResource(R.string.tip_tasks), Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
+        if (hero.eventDay == today) item(key = "event") {
+            val ev = DayEvent.of(today)
+            EventBanner(ev, doneToday, hero.bountyDay == today, { cardOpen = true }, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            if (cardOpen) MomentDialog(eventSprite(ev.icon), stringResource(ev.title), stringResource(ev.text), stringResource(R.string.ok)) { cardOpen = false }
+        }
         item(key = "quick-$board") {
             QuickAdd(
                 hint = stringResource(
@@ -251,11 +267,13 @@ class Actions(private val c: app.dayquest.AppContainer, private val fb: Feedback
 
     fun daily(t: Task, done: Boolean) {
         fb.tap()
+        if (!done) Sfx.play(Sound.UNDO)
         c.launch { report(c.game.setDaily(t.id, done)) }
     }
 
     fun todo(t: Task, done: Boolean) {
         fb.tap()
+        if (!done) Sfx.play(Sound.UNDO)
         c.launch { report(c.game.setTodo(t.id, done)) }
     }
 
@@ -284,7 +302,7 @@ private fun LazyListScope.taskItems(
 // ---- Header ------------------------------------------------------------------------------
 
 @Composable
-private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit) {
+private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest: () -> Unit) {
     val boss = Catalog.boss(hero.quest)
     val db = LocalContext.current.container.db.game()
     val pet by remember(hero.pet) { db.observePets().map { l -> l.firstOrNull { it.key == hero.pet } } }
@@ -295,7 +313,21 @@ private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit) {
                 SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, (pet?.growth ?: 0) >= 100, boss, hero.resting, app.dayquest.ui.rememberSeason()),
                 bursts = fx.bursts, floaters = fx.floaters,
             )
-            Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp), horizontalArrangement = Arrangement.End) {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Unopened chests wait here until tapped.
+                if (hero.chests > 0) {
+                    Row(
+                        Modifier.height(40.dp).clip(D.RSm).background(Color(0x55000000)).clickable(onClick = onChest).padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        PixelImage(Sprites.chest, pixel = 1.75.dp)
+                        if (hero.chests > 1) {
+                            Spacer(Modifier.width(6.dp))
+                            Text("×${hero.chests}", style = DType.Number.copy(color = Color.White, fontSize = 14.sp))
+                        }
+                    }
+                }
+                Spacer(Modifier.weight(1f))
                 IconButton(onClick = onSettings, modifier = Modifier.size(40.dp).clip(D.RSm).background(Color(0x55000000))) {
                     Icon(Icons.Rounded.Settings, stringResource(R.string.settings), tint = Color.White)
                 }

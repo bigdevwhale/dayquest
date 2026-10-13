@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 class AppContainer(private val context: Context) {
     val db = GameDatabase.create(context)
     val settings = SettingsStore(context)
-    val game = Game(db.game(), settings)
+    val game = Game(db.game(), settings::now)
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     /** Fire-and-forget so a write survives the screen being closed right after tapping. */
@@ -34,6 +34,7 @@ class DayquestApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         Reminders.ensureChannel(this)
+        app.dayquest.ui.Sfx.init(this)
         // Re-arm on every start: OEM task killers (HyperOS & co.) silently drop alarms.
         container.scope.launch {
             Reminders.reschedule(this@DayquestApp)

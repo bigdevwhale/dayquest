@@ -12,6 +12,8 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -45,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -57,7 +61,9 @@ import app.dayquest.R
 import app.dayquest.container
 import app.dayquest.data.Backup
 import app.dayquest.data.ThemeMode
+import app.dayquest.game.Challenge
 import app.dayquest.notify.Reminders
+import app.dayquest.pixel.Sprites
 import app.dayquest.ui.Language
 import app.dayquest.ui.components.Chip
 import app.dayquest.ui.components.ConfirmDialog
@@ -68,14 +74,15 @@ import app.dayquest.ui.components.SectionTitle
 import app.dayquest.ui.components.SoftButton
 import app.dayquest.ui.components.TimeDialog
 import app.dayquest.ui.components.TopBar
+import app.dayquest.ui.pixel.PixelImage
 import app.dayquest.ui.theme.D
 import app.dayquest.ui.theme.DType
 import app.dayquest.ui.timeLabel
+import java.io.File
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.time.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -108,6 +115,9 @@ fun SettingsScreen(settings: app.dayquest.data.Settings, onBack: () -> Unit, onG
                 Chip("Русский", current == Language.RU, { Language.set(Language.RU) })
             }
 
+            SectionTitle(stringResource(R.string.challenge))
+            ChallengePicker(settings.challenge) { ch -> c.scope.launch { c.settings.setChallenge(ch) } }
+
             SectionTitle(stringResource(R.string.set_game))
             DCard {
                 Text(stringResource(R.string.day_start), style = DType.Strong)
@@ -119,6 +129,12 @@ fun SettingsScreen(settings: app.dayquest.data.Settings, onBack: () -> Unit, onG
                 }
                 HorizontalDivider(Modifier.padding(vertical = 12.dp), color = D.c.line)
                 Toggle(stringResource(R.string.haptics), null, settings.haptics) { v -> c.scope.launch { c.settings.setHaptics(v) } }
+                HorizontalDivider(Modifier.padding(vertical = 12.dp), color = D.c.line)
+                Toggle(stringResource(R.string.sounds), stringResource(R.string.sounds_text), settings.sounds) { v ->
+                    app.dayquest.ui.Sfx.enabled = v
+                    if (v) app.dayquest.ui.Sfx.play(app.dayquest.ui.Sound.DONE)
+                    c.scope.launch { c.settings.setSounds(v) }
+                }
                 HorizontalDivider(Modifier.padding(vertical = 12.dp), color = D.c.line)
                 Toggle(stringResource(R.string.southern), stringResource(R.string.southern_text), settings.southern) { v -> c.scope.launch { c.settings.setSouthern(v) } }
             }
@@ -170,6 +186,49 @@ fun SettingsScreen(settings: app.dayquest.data.Settings, onBack: () -> Unit, onG
     }
 
     if (pickEvening) TimeDialog(if (settings.evening >= 0) settings.evening else 20 * 60, { pickEvening = false }) { m -> c.launch { c.settings.setEvening(m) } }
+}
+
+/** Relaxed, normal or heroic: one card each, the chosen one outlined. */
+@Composable
+fun ChallengePicker(selected: Challenge, onSelect: (Challenge) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Challenge.entries.forEach { ch ->
+            val on = ch == selected
+            Row(
+                Modifier.fillMaxWidth().clip(D.RMd).background(if (on) D.c.accentSoft else D.c.surface)
+                    .border(if (on) 2.dp else 1.dp, if (on) D.c.accent else D.c.line, D.RMd)
+                    .clickable { onSelect(ch) }.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PixelImage(
+                    when (ch) {
+                        Challenge.RELAXED -> Sprites.heart
+                        Challenge.NORMAL -> Sprites.star
+                        Challenge.HEROIC -> Sprites.flame
+                    },
+                    pixel = 3.dp,
+                )
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(ch.label), style = DType.Strong.copy(color = if (on) D.c.accent else D.c.ink))
+                    Gap(2)
+                    Text(stringResource(ch.text), style = DType.Muted)
+                }
+            }
+        }
+    }
+}
+
+private val Challenge.label get() = when (this) {
+    Challenge.RELAXED -> R.string.ch_relaxed
+    Challenge.NORMAL -> R.string.ch_normal
+    Challenge.HEROIC -> R.string.ch_heroic
+}
+
+private val Challenge.text get() = when (this) {
+    Challenge.RELAXED -> R.string.ch_relaxed_text
+    Challenge.NORMAL -> R.string.ch_normal_text
+    Challenge.HEROIC -> R.string.ch_heroic_text
 }
 
 @Composable

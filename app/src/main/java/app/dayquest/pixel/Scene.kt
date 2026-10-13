@@ -34,7 +34,7 @@ private class Particle(
 )
 
 /** Kinds of moments the scene reacts to. */
-enum class Burst { GOLD, XP, HIT, CRIT, HURT, LEVEL, DROP, HEAL, VICTORY }
+enum class Burst { GOLD, XP, HIT, CRIT, HURT, LEVEL, DROP, HEAL, VICTORY, FIREWORKS }
 
 class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
     val buffer = PixelBuffer(w, h)
@@ -95,6 +95,21 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
                 repeat(36) {
                     val a = it / 36f * 2 * PI.toFloat()
                     particles += Particle(hx, hy, cos(a) * 2.2f, sin(a) * 2.2f - 0.6f, 0f, 1.3f, colors[it % colors.size], gravity = 1.2f, glow = true)
+                }
+            }
+            Burst.FIREWORKS -> {
+                levelUntil = now + 1400
+                val colors = intArrayOf(0xFFFFE17A.toInt(), 0xFFFF6B8B.toInt(), 0xFF5EC8FF.toInt(), 0xFF7CFFB2.toInt(), 0xFFB79CFF.toInt(), 0xFFFFB347.toInt())
+                // Shells burst at once across the sky, in rings of different sizes.
+                repeat(6) { shell ->
+                    val cx = w * (0.12f + 0.76f * rnd.nextFloat())
+                    val cy = h * (0.12f + 0.3f * rnd.nextFloat())
+                    val col = colors[(shell + rnd.nextInt(colors.size)) % colors.size]
+                    val speed = 1.2f + rnd.nextFloat() * 1.3f
+                    repeat(22) {
+                        val a = it / 22f * 2 * PI.toFloat()
+                        particles += Particle(cx, cy, cos(a) * speed, sin(a) * speed, 0f, 1.1f + rnd.nextFloat() * 0.6f, if (it % 4 == 0) 0xFFFFFFFF.toInt() else col, gravity = 0.9f, glow = true)
+                    }
                 }
             }
             Burst.DROP -> repeat(12) {

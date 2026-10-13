@@ -705,4 +705,89 @@
     <string name="area_unlock">Открыть: %1$s</string>
     <string name="area_text_garden">Сад у домика под настоящим небом: он меняется со временем суток и сезонами.</string>
     <string name="area_text_attic">Уютная комната под крышей с круглым окном. Обставь её как хочешь.</string>
+
+    <!-- Morning cards, perfect day chest, sounds, difficulty -->
+    <string name="ok">Понятно</string>
+    <string name="event_today">КАРТА ДНЯ</string>
+    <string name="event_go">Вперёд!</string>
+    <string name="chest_perfect_title">Идеальный день!</string>
+    <string name="chest_perfect_text">Все ежедневки выполнены. Этот сундук твой.</string>
+    <string name="chest_title">Сундук с сокровищами</string>
+    <string name="chest_text">Не открыто сундуков: %1$d</string>
+    <string name="chest_open">Открыть</string>
+    <string name="chest_later">Позже</string>
+    <string name="chest_loot_title">В сундуке</string>
+    <string name="chest_gold">%1$s золота</string>
+    <string name="chest_xp">%1$s опыта</string>
+    <string name="sounds">8-битные звуки</string>
+    <string name="sounds_text">Молчат, когда телефон на беззвучном или вибрации.</string>
+    <string name="challenge">Сложность</string>
+    <string name="challenge_title">Насколько сложно?</string>
+    <string name="challenge_pick_text">От этого зависит, как сильно ранят пропуски. Поменять можно в любой момент в настройках.</string>
+    <string name="ch_relaxed">Спокойно</string>
+    <string name="ch_relaxed_text">Половина урона. Обморок забирает половину золота, но не уровень.</string>
+    <string name="ch_normal">Обычно</string>
+    <string name="ch_normal_text">Классика: пропуски ранят, обморок стоит уровня и всего золота.</string>
+    <string name="ch_heroic">Героически</string>
+    <string name="ch_heroic_text" formatted="false">Урон на 50% выше, зато опыта и золота на 25% больше.</string>
+    <string name="ev_merchant_t">Странствующий торговец</string>
+    <string name="ev_merchant_d">Зелья здоровья сегодня за полцены.</string>
+    <string name="ev_gold_rush_t">Золотая лихорадка</string>
+    <string name="ev_gold_rush_d">Сегодня каждая задача приносит вдвое больше золота.</string>
+    <string name="ev_full_moon_t">Луна мудрости</string>
+    <string name="ev_full_moon_d" formatted="false">+50% опыта за каждую задачу.</string>
+    <string name="ev_goblin_t">Гоблин-воришка</string>
+    <string name="ev_goblin_d">Гоблин стащил 5 золота! Выполни 3 задачи, чтобы поймать его и вернуть 15.</string>
+    <string name="ev_whetstone_t">Заточенный клинок</string>
+    <string name="ev_whetstone_d" formatted="false">Удары по боссу наносят на 50% больше урона.</string>
+    <string name="ev_clover_t">Четырёхлистный клевер</string>
+    <string name="ev_clover_d">Яйца, зелья и еда выпадают гораздо чаще.</string>
+    <string name="ev_eagle_eye_t">Орлиный глаз</string>
+    <string name="ev_eagle_eye_d" formatted="false">+15% к шансу критического удара по боссу.</string>
+    <string name="ev_cozy_rain_t">Уютный дождь</string>
+    <string name="ev_cozy_rain_d" formatted="false">Идеальная погода для рутины: ежедневки дают +50%.</string>
+    <string name="ev_fair_t">Городская ярмарка</string>
+    <string name="ev_fair_d" formatted="false">+50% золота за каждую задачу.</string>
+    <string name="ev_healer_t">Странствующий лекарь</string>
+    <string name="ev_healer_d">Мимо проходит лекарь и восстанавливает 15 здоровья.</string>
+    <string name="ev_guardian_t">Дух-хранитель</string>
+    <string name="ev_guardian_d">Плохие привычки и пропущенные сегодня ежедневки ранят вдвое слабее.</string>
+    <string name="ev_echo_t">Пещера эха</string>
+    <string name="ev_echo_d">Привычки сегодня приносят вдвое больше.</string>
+    <string name="ev_treasure_map_t">Карта сокровищ</string>
+    <string name="ev_treasure_map_d">Выполни 5 задач и откопай 25 золота.</string>
+    <string name="ev_picnic_t">Пикник питомцев</string>
+    <string name="ev_picnic_d">От еды питомцы растут вдвое быстрее.</string>
+    <string name="ev_small_steps_t">Маленькие шаги</string>
+    <string name="ev_small_steps_d">Пустяковые задачи сегодня приносят втрое больше.</string>
+    <string name="ev_dragon_fire_t">Драконий огонь</string>
+    <string name="ev_dragon_fire_d" formatted="false">Сложные задачи сегодня дают +50%.</string>
+    <string name="ev_bonfire_t">Костёр</string>
+    <string name="ev_bonfire_d">Бонусы за серии ежедневок удвоены.</string>
+    <string name="ev_bard_t">Песня барда</string>
+    <string name="ev_bard_d">Первая задача за сегодня приносит втрое больше.</string>
+    <string name="ev_stork_t">Аист с посылкой</string>
+    <string name="ev_stork_d">Аист приносит загадочное яйцо.</string>
+    <string name="ev_alchemist_t">Подарок алхимика</string>
+    <string name="ev_alchemist_d">Алхимик оставляет тебе инкубационное зелье.</string>
+    <string name="ev_basket_t">Корзинка фермера</string>
+    <string name="ev_basket_d">Три угощения для питомцев.</string>
+    <string name="ev_fog_t">Таинственный туман</string>
+    <string name="ev_fog_d" formatted="false">+40% опыта, но −20% золота.</string>
+    <string name="ev_blood_moon_t">Кровавая луна</string>
+    <string name="ev_blood_moon_d" formatted="false">Двойной урон по боссу, но плохие привычки ранят на 50% сильнее.</string>
+    <string name="ev_ink_quill_t">Перо и чернила</string>
+    <string name="ev_ink_quill_d">Дела сегодня приносят вдвое больше.</string>
+    <string name="ev_early_bird_t">Ранняя пташка</string>
+    <string name="ev_early_bird_d">Выполни 3 задачи и найди загадочное яйцо.</string>
+    <string name="ev_lucky_coin_t">Счастливая монетка</string>
+    <string name="ev_lucky_coin_d" formatted="false">Каждая задача с шансом 15% приносит в 5 раз больше золота.</string>
+    <string name="ev_mentor_t">Старый наставник</string>
+    <string name="ev_mentor_d" formatted="false">+25% опыта и золота за каждую задачу.</string>
+    <string name="ev_coin_rain_t">Монетный дождь</string>
+    <string name="ev_coin_rain_d">10 золотых упали с неба прямо в кошелёк.</string>
+    <string name="ev_champion_t">Испытание чемпиона</string>
+    <string name="ev_champion_d">Выполни 8 задач: 40 золота и инкубационное зелье.</string>
+    <string name="ev_steady_t">Ровный темп</string>
+    <string name="ev_steady_d" formatted="false">Средние задачи сегодня дают +50%.</string>
 </resources>

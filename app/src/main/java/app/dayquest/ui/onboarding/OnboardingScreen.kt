@@ -37,6 +37,7 @@ import app.dayquest.R
 import app.dayquest.container
 import app.dayquest.data.Task
 import app.dayquest.data.TaskType
+import app.dayquest.game.Challenge
 import app.dayquest.game.Difficulty
 import app.dayquest.game.SceneKind
 import app.dayquest.pixel.Look
@@ -47,6 +48,7 @@ import app.dayquest.ui.components.SectionTitle
 import app.dayquest.ui.components.TopBar
 import app.dayquest.ui.hero.LookEditor
 import app.dayquest.ui.pixel.SceneView
+import app.dayquest.ui.settings.ChallengePicker
 import app.dayquest.ui.settings.TransferCard
 import app.dayquest.ui.tasks.CheckBoxPixel
 import app.dayquest.ui.theme.D
@@ -79,9 +81,17 @@ fun OnboardingScreen() {
     var name by rememberSaveable { mutableStateOf("") }
     var look by remember { mutableStateOf(Look(1, 0, 1, "wooden_sword", "tunic", "", "")) }
     val picked = remember { mutableStateListOf<Int>().apply { starters.forEachIndexed { i, s -> if (s.on) add(i) } } }
+    var challenge by rememberSaveable { mutableStateOf(Challenge.NORMAL) }
 
-    // Steps: 0 welcome, 5 how it works, 1 hero, 2 starter tasks, 3 import.
-    BackHandler(enabled = step > 0) { step = if (step == 3 || step == 5) 0 else step - 1 }
+    // Steps: 0 welcome, 5 how it works, 1 hero, 4 difficulty, 2 starter tasks, 3 import.
+    BackHandler(enabled = step > 0) {
+        step = when (step) {
+            3, 5 -> 0
+            4 -> 1
+            2 -> 4
+            else -> step - 1
+        }
+    }
 
     Column(Modifier.fillMaxSize().background(D.c.bg)) {
         when (step) {
@@ -108,11 +118,23 @@ fun OnboardingScreen() {
                     LookEditor(name, look) { n, l -> name = n; look = l }
                 }
                 Column(Modifier.padding(18.dp).navigationBarsPadding()) {
+                    PrimaryButton(stringResource(R.string.next), { step = 4 }, Modifier.fillMaxWidth())
+                }
+            }
+            4 -> {
+                Column(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.challenge_title), onBack = { step = 1 }) }
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
+                    Text(stringResource(R.string.challenge_pick_text), style = DType.Sub)
+                    Gap(14)
+                    ChallengePicker(challenge) { challenge = it }
+                    Gap(16)
+                }
+                Column(Modifier.padding(18.dp).navigationBarsPadding()) {
                     PrimaryButton(stringResource(R.string.next), { step = 2 }, Modifier.fillMaxWidth())
                 }
             }
             2 -> {
-                Column(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.starter_title), onBack = { step = 1 }) }
+                Column(Modifier.statusBarsPadding()) { TopBar(stringResource(R.string.starter_title), onBack = { step = 4 }) }
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 18.dp)) {
                     Text(stringResource(R.string.starter_text), style = DType.Sub)
                     listOf(TaskType.HABIT to R.string.tab_habits, TaskType.DAILY to R.string.tab_dailies, TaskType.TODO to R.string.tab_todos, TaskType.REWARD to R.string.shop_rewards)
@@ -137,7 +159,9 @@ fun OnboardingScreen() {
                     PrimaryButton(stringResource(R.string.starter_go), {
                         val chosen = picked.sorted().map { starters[it] }.map { s -> s to context.getString(s.title) }
                         val heroName = name.trim().ifEmpty { defaultName }
+                        val pickedChallenge = challenge
                         c.launch {
+                            c.settings.setChallenge(pickedChallenge)
                             val today = c.game.today()
                             val db = c.db.game()
                             chosen.forEachIndexed { i, (s, title) ->

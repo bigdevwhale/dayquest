@@ -9,6 +9,15 @@ import kotlin.math.roundToInt
 
 enum class Difficulty(val mult: Double) { TRIVIAL(0.1), EASY(1.0), MEDIUM(1.5), HARD(2.0) }
 
+/** The player's chosen difficulty: how hard misses hit and how well the game pays. */
+enum class Challenge(val hurt: Double, val reward: Double) {
+    /** Half damage, and fainting keeps your level. */
+    RELAXED(0.5, 1.0),
+    NORMAL(1.0, 1.0),
+    /** Half as much damage again, a quarter more XP and gold. */
+    HEROIC(1.5, 1.25),
+}
+
 data class Stats(val str: Int = 0, val int: Int = 0, val con: Int = 0, val per: Int = 0) {
     operator fun plus(o: Stats) = Stats(str + o.str, int + o.int, con + o.con, per + o.per)
 }

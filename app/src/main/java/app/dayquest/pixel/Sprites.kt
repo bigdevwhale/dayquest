@@ -814,6 +814,22 @@ object Sprites {
         c.render()
     }
 
+    /** The chest with its lid thrown back and light pouring out. */
+    val chestOpen: Sprite get() = cached("chest_open") {
+        val c = PixelCanvas(16, 15)
+        val wood = mat(0xFFA0643A.toInt())
+        val gold = mat(0xFFF2C14E.toInt(), glows = true)
+        val light = mat(0xFFFFF3B0.toInt(), glows = true)
+        c.rect(1, 0, 14, 3, wood)
+        c.rect(1, 2, 14, 3, gold)
+        c.rect(3, 0, 4, 3, gold); c.rect(11, 0, 12, 3, gold)
+        c.rect(1, 4, 14, 6, light)
+        c.rect(0, 7, 15, 14, wood)
+        c.rect(0, 7, 15, 8, gold)
+        c.rect(3, 7, 4, 14, gold); c.rect(11, 7, 12, 14, gold)
+        c.render()
+    }
+
     // ---- UI glyphs -----------------------------------------------------------------------
 
     private fun glyph(key: String, rows: List<String>) = cached("glyph:$key") {

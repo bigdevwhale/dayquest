@@ -1,6 +1,7 @@
 package app.dayquest.data
 
 import android.content.Context
+import app.dayquest.game.Challenge
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -25,6 +26,10 @@ data class Settings(
     val haptics: Boolean = true,
     /** Seasons flip for the southern hemisphere. */
     val southern: Boolean = false,
+    /** 8-bit sound effects (silent anyway when the phone is on silent). */
+    val sounds: Boolean = true,
+    /** How hard missed tasks hit, picked at the start. */
+    val challenge: Challenge = Challenge.NORMAL,
     /** First-visit tips already dismissed. */
     val tips: Set<String> = emptySet(),
 )
@@ -40,6 +45,8 @@ class SettingsStore(context: Context) {
             evening = it[EVENING] ?: (20 * 60),
             haptics = it[HAPTICS] ?: true,
             southern = it[SOUTHERN] ?: false,
+            sounds = it[SOUNDS] ?: true,
+            challenge = it[CHALLENGE]?.let { c -> runCatching { Challenge.valueOf(c) }.getOrNull() } ?: Challenge.NORMAL,
             tips = it[TIPS] ?: emptySet(),
         )
     }
@@ -52,6 +59,8 @@ class SettingsStore(context: Context) {
     suspend fun setEvening(minutes: Int) = store.edit { it[EVENING] = minutes }
     suspend fun setHaptics(on: Boolean) = store.edit { it[HAPTICS] = on }
     suspend fun setSouthern(on: Boolean) = store.edit { it[SOUTHERN] = on }
+    suspend fun setSounds(on: Boolean) = store.edit { it[SOUNDS] = on }
+    suspend fun setChallenge(c: Challenge) = store.edit { it[CHALLENGE] = c.name }
     suspend fun seeTip(key: String) = store.edit { it[TIPS] = (it[TIPS] ?: emptySet()) + key }
 
     suspend fun restore(s: Settings) = store.edit {
@@ -61,6 +70,8 @@ class SettingsStore(context: Context) {
         it[EVENING] = s.evening
         it[HAPTICS] = s.haptics
         it[SOUTHERN] = s.southern
+        it[SOUNDS] = s.sounds
+        it[CHALLENGE] = s.challenge.name
         it[TIPS] = s.tips
     }
 
@@ -71,6 +82,8 @@ class SettingsStore(context: Context) {
         val EVENING = intPreferencesKey("evening")
         val HAPTICS = booleanPreferencesKey("haptics")
         val SOUTHERN = booleanPreferencesKey("southern")
+        val SOUNDS = booleanPreferencesKey("sounds")
+        val CHALLENGE = stringPreferencesKey("challenge")
         val TIPS = stringSetPreferencesKey("tips")
     }
 }
