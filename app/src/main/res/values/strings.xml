@@ -150,7 +150,20 @@
     <string name="egg_name">%s egg</string>
     <string name="potion_name">%s potion</string>
     <string name="grew">+%d%% growth</string>
-    <string name="no_food">No food yet</string>
+    <string name="no_food">No food yet: find it on tasks or buy it in the shop</string>
+    <string name="perk_gold">+%s gold from tasks</string>
+    <string name="perk_xp">+%s XP from tasks</string>
+    <string name="perk_drop">+%s chance to find items</string>
+    <string name="perk_guard">Missed dailies hurt %s less</string>
+    <string name="perk_heal">Heals %s HP for every finished task</string>
+    <string name="perk_boss">+%s damage to bosses</string>
+    <string name="perk_crit">+%s critical hit chance</string>
+    <string name="perk_grown">Fully grown: %s</string>
+    <string name="found_title">A gift from your companion</string>
+    <string name="report_found">%1$s brought back: %2$s</string>
+    <string name="shop_food">Pet food</string>
+    <string name="shop_food_text">Feed pets to grow them: a grown companion helps twice as much. Their favourite food grows them faster.</string>
+    <string name="food_fans">Favourite of: %s</string>
 
     <!-- Quests -->
     <string name="quest_active">Current fight</string>
@@ -559,8 +572,8 @@
     <!-- First-visit tips -->
     <string name="tip_ok">Got it</string>
     <string name="tip_tasks">Tap the square when a daily or to-do is done, and + or − on habits. Each tap shows what it gave and can be undone. Missed dailies cost health when a new day starts.</string>
-    <string name="tip_shop">Gold buys three things here: your own real-life rewards, gear that raises your stats (try it on first), and new places for your hero.</string>
-    <string name="tip_stable">Eggs and hatching potions drop from finished tasks. Pick one of each to hatch a pet, take it along and feed it until it is fully grown.</string>
+    <string name="tip_shop">Gold buys three things here: your own real-life rewards, gear that raises your stats (try it on first), food for your pets, and new places for your hero.</string>
+    <string name="tip_stable">Eggs and hatching potions drop from finished tasks. Pick one of each to hatch a pet and take it along: every companion helps in its own way and sometimes brings back food overnight. Feed it until it is fully grown to double its help.</string>
     <string name="tip_quests">Start a fight: from then on every task you finish hits the boss, and every daily you miss lets it hit back. A new boss of the week comes every Monday.</string>
     <string name="tip_hero">Change your look, swap gear, furnish your home and follow your achievements. Rest at the inn pauses damage when life gets in the way.</string>
     <string name="sc_grove">Blossom Grove</string>

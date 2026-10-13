@@ -52,6 +52,7 @@ import app.dayquest.data.Hero
 import app.dayquest.data.Task
 import app.dayquest.data.TaskType
 import app.dayquest.game.Catalog
+import app.dayquest.game.Food
 import app.dayquest.game.Forge
 import app.dayquest.game.Gear
 import app.dayquest.game.Rules
@@ -79,7 +80,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private enum class Aisle { REWARDS, GEAR, SCENES }
+private enum class Aisle { REWARDS, GEAR, FOOD, SCENES }
 
 @Composable
 fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
@@ -88,6 +89,7 @@ fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
     val fb = LocalFeedback.current
     val tasks by remember { c.db.game().observeTasks() }.collectAsStateWithLifecycle(initialValue = emptyList())
     val rewards = tasks.filter { it.type == TaskType.REWARD }
+    val bag by remember { c.db.game().observeItems() }.collectAsStateWithLifecycle(initialValue = emptyList())
     var aisle by rememberSaveable { mutableStateOf(Aisle.REWARDS) }
     val season = app.dayquest.ui.rememberSeason()
     val poor = stringResource(R.string.not_enough_gold)
@@ -112,6 +114,7 @@ fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
                         when (it) {
                             Aisle.REWARDS -> R.string.shop_rewards
                             Aisle.GEAR -> R.string.shop_gear
+                            Aisle.FOOD -> R.string.shop_food
                             Aisle.SCENES -> R.string.shop_scenes
                         }
                     )
@@ -181,6 +184,10 @@ fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
                     items(Slot.entries.map { Forge.item(t, it) }, key = { it.key }) { g -> GearRow(g, hero) }
                 }
             }
+            Aisle.FOOD -> {
+                item(key = "food-text") { Text(stringResource(R.string.shop_food_text), style = DType.Muted, modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)) }
+                items(Food.entries.toList(), key = { it.key }) { f -> FoodRow(f, hero, bag.firstOrNull { it.key == "food:${f.key}" }?.count ?: 0) }
+            }
             Aisle.SCENES -> items(Catalog.scenes.chunked(2)) { pair ->
                 Row(Modifier.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     pair.forEach { sc -> SceneCard(sc, hero, Modifier.weight(1f)) }
@@ -229,6 +236,28 @@ private fun RewardRow(r: Task, hero: Hero, onEdit: () -> Unit) {
                 withContext(Dispatchers.Main) {
                     if (o == null) fb.show(poor) else { fb.buy(); fb.show(enjoy, undo, o.logId) }
                 }
+            }
+        })
+    }
+}
+
+@Composable
+private fun FoodRow(f: Food, hero: Hero, count: Int) {
+    val c = LocalContext.current.container
+    val fb = LocalFeedback.current
+    val poor = stringResource(R.string.not_enough_gold)
+    val ctx = LocalContext.current
+    val fans = app.dayquest.game.Species.entries.filter { it.favorite == f }.joinToString(", ") { ctx.getString(it.label) }
+    val cost = Rules.foodPrice(f)
+    ShopRow(
+        icon = { PixelImage(Sprites.food(f), pixel = 4.dp) },
+        title = stringResource(f.label) + if (count > 0) "  ×$count" else "",
+        sub = stringResource(R.string.food_fans, fans),
+    ) {
+        PriceButton(cost, hero.gold >= cost, {
+            c.scope.launch {
+                val ok = c.game.buyFood(f)
+                withContext(Dispatchers.Main) { if (ok) fb.buy() else fb.show(poor) }
             }
         })
     }

@@ -12,6 +12,10 @@ import app.dayquest.data.Settings
 import app.dayquest.data.Task
 import app.dayquest.data.TaskType
 import app.dayquest.game.Challenge
+import app.dayquest.game.Companions
+import app.dayquest.game.Food
+import app.dayquest.game.Perk
+import app.dayquest.game.Species
 import app.dayquest.game.DayEvent
 import app.dayquest.game.Game
 import app.dayquest.game.Rules
@@ -120,6 +124,48 @@ class GameTest {
         assertNull(g.openEvent())
         assertEquals(after, db.hero)
     }
+
+    @Test
+    fun foodCanBeBought() = runBlocking {
+        val db = FakeDao()
+        val g = game(db)
+        db.saveHero(Hero(name = "x", lastDay = g.today(), gold = 10.0))
+        assertTrue(g.buyFood(Food.FISH))
+        assertEquals(10.0 - Rules.foodPrice(Food.FISH), db.hero!!.gold, 1e-9)
+        assertEquals(1, db.items["food:fish"]!!.count)
+        assertFalse(g.buyFood(Food.CAKE))
+    }
+
+    @Test
+    fun aGrownCompanionHelpsTwiceAsMuch() {
+        val young = Pet("fox:base", growth = 40)
+        assertEquals(Perk.GOLD, Companions.perk(Species.FOX))
+        assertEquals(0.05, Companions.boost(young).gold, 1e-9)
+        assertEquals(0.10, Companions.boost(young.copy(growth = 100)).gold, 1e-9)
+        assertEquals(0.0, Companions.boost(null).gold, 1e-9)
+    }
+
+    @Test
+    fun aFoxCompanionEarnsMoreGold() = runBlocking {
+        fun earned(pet: String) = runBlocking {
+            val db = FakeDao()
+            val g = game(db)
+            db.saveHero(Hero(name = "x", lastDay = g.today(), pet = pet))
+            db.savePet(Pet("fox:base", growth = 100))
+            val id = db.insert(Task(type = TaskType.TODO, title = "t"))
+            g.setTodo(id, true)!!.gold
+        }
+        assertEquals(earned("") * 1.10, earned("fox:base"), 1e-9)
+    }
+
+    @Test
+    fun anOwlCompanionCanBringFoodOvernight() {
+        val r = Random(3)
+        val finds = List(200) { Companions.forage(Pet("owl:base", growth = 100), r) }.filter { it.isNotEmpty() }
+        assertTrue(finds.size in 90..150)
+        assertTrue(finds.all { it.startsWith("food:") })
+        assertTrue(finds.count { it == "food:meat" } > finds.size / 2)
+    }
 }
 
 /** An in-memory stand-in for Room, enough for the game rules. */
@@ -128,6 +174,7 @@ private class FakeDao : GameDao() {
     val log = linkedMapOf<Long, LogEntry>()
     var hero: Hero? = null
     val items = mutableMapOf<String, Item>()
+    val pets = mutableMapOf<String, Pet>()
     private var next = 1L
 
     override fun observeTasks(): Flow<List<Task>> = TODO()
@@ -165,9 +212,9 @@ private class FakeDao : GameDao() {
     override suspend fun item(key: String) = items[key]
     override suspend fun saveItem(item: Item) { items[item.key] = item }
     override fun observePets(): Flow<List<Pet>> = TODO()
-    override suspend fun pet(key: String): Pet? = null
-    override suspend fun pets() = emptyList<Pet>()
-    override suspend fun savePet(pet: Pet) = Unit
+    override suspend fun pet(key: String): Pet? = pets[key]
+    override suspend fun pets() = pets.values.toList()
+    override suspend fun savePet(pet: Pet) { pets[pet.key] = pet }
     override suspend fun allChecklist() = emptyList<CheckItem>()
     override suspend fun allLog() = log.values.toList()
     override suspend fun allItems() = items.values.toList()

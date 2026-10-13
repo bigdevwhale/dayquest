@@ -42,6 +42,7 @@ import app.dayquest.data.Hero
 import app.dayquest.data.Item
 import app.dayquest.data.Pet
 import app.dayquest.game.Catalog
+import app.dayquest.game.Companions
 import app.dayquest.game.Food
 import app.dayquest.game.Potion
 import app.dayquest.game.Species
@@ -197,6 +198,22 @@ private fun HatchCard(eggs: List<Item>, potions: List<Item>, pets: Map<String, P
     }
 }
 
+/** The companion's perk: what it gives now, and what it will give once grown. */
+@Composable
+private fun PerkLine(pet: Pet, s: Species) {
+    val perk = Companions.perk(s)
+    val now = Companions.amount(pet)
+    val grown = Companions.amount(pet.copy(growth = 100))
+    fun fmt(v: Double) = if (perk == app.dayquest.game.Perk.HEAL) app.dayquest.ui.goldText(v) else "${kotlin.math.round(v * 100).toInt()}%"
+    Box(Modifier.clip(D.RXs).background(D.c.accentSoft).padding(horizontal = 8.dp, vertical = 4.dp)) {
+        Text(stringResource(perk.text, fmt(now)), style = DType.Small.copy(color = D.c.accent), textAlign = TextAlign.Center)
+    }
+    if (pet.growth < 100) {
+        Gap(2)
+        Text(stringResource(R.string.perk_grown, fmt(grown)), style = DType.Small, textAlign = TextAlign.Center)
+    }
+}
+
 @Composable
 private fun PetDialog(pet: Pet, hero: Hero, food: List<Item>, onDismiss: () -> Unit) {
     val c = LocalContext.current.container
@@ -213,6 +230,8 @@ private fun PetDialog(pet: Pet, hero: Hero, food: List<Item>, onDismiss: () -> U
                 PixelImage(Sprites.pet(s, p, grown), pixel = 7.dp)
                 Gap(10)
                 Text(petName(pet.key), style = DType.Title, textAlign = TextAlign.Center)
+                Gap(6)
+                PerkLine(pet, s)
                 Gap(10)
                 if (grown) Text(stringResource(R.string.fully_grown), style = DType.Pixel.copy(color = D.c.gold))
                 else {
@@ -222,7 +241,7 @@ private fun PetDialog(pet: Pet, hero: Hero, food: List<Item>, onDismiss: () -> U
                     Gap(4)
                     Text(stringResource(R.string.loves, stringResource(s.favorite.label)), style = DType.Muted)
                     Gap(12)
-                    if (food.isEmpty()) Text(stringResource(R.string.no_food), style = DType.Muted)
+                    if (food.isEmpty()) Text(stringResource(R.string.no_food), style = DType.Muted, textAlign = TextAlign.Center)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         food.forEach { f ->
                             val kind = Food.of(f.key.substringAfter(':')) ?: return@forEach

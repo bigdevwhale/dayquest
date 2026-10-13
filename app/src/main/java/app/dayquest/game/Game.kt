@@ -55,6 +55,8 @@ data class DayReport(
     val bossHit: Double,
     val fainted: Boolean,
     val resting: Boolean,
+    /** What the companion brought home overnight, or "". */
+    val found: String = "",
 )
 
 /** All the rules that touch the database. [prefs] reads the current settings (a function, so tests need no Android). */
@@ -71,6 +73,9 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
 
     /** Today's health potion price: the merchant's card halves it. */
     suspend fun potionCost(): Double = Rules.HEALTH_POTION_COST * DayEvent.of(today()).potion
+
+    /** What the hero's companion adds right now. */
+    private suspend fun boost(h: Hero): Boost = if (h.pet.isEmpty()) Boost() else Companions.boost(db.pet(h.pet))
 
     fun stats(h: Hero): Stats {
         val base = Stats(h.level / 2, h.level / 2, h.level / 2, h.level / 2)
@@ -264,18 +269,21 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
     private suspend fun gain(h: Hero, d: Difficulty, delta: Double, bonus: Double, taskId: Long, kind: LogKind, day: Long): Pair<Hero, Outcome> {
         val s = stats(h)
         val ev = DayEvent.of(day)
+        val pet = boost(h)
         val doneBefore = db.doneOn(day)
         val mult = bonus * ev.reward(kind, d, isFirst = doneBefore == 0) * challenge().reward
         val jackpot = ev.jackpot > 0 && random.nextDouble() < ev.jackpot
-        val xp = Rules.xpGain(delta, d, s, mult) * ev.xp
-        val gold = Rules.goldGain(delta, d, s, mult) * ev.gold * (if (jackpot) 5.0 else 1.0)
+        val xp = Rules.xpGain(delta, d, s, mult) * ev.xp * (1 + pet.xp)
+        val gold = Rules.goldGain(delta, d, s, mult) * ev.gold * (if (jackpot) 5.0 else 1.0) * (1 + pet.gold)
         val boss = Catalog.boss(h.quest)
-        val crit = boss != null && random.nextDouble() < Rules.critChance(s) + ev.crit
-        val hit = if (boss != null) Rules.bossDamage(delta, d, s, crit) * ev.boss else 0.0
-        val drop = rollDrop(h, d, s, season(), ev)
+        val crit = boss != null && random.nextDouble() < Rules.critChance(s) + ev.crit + pet.crit
+        val hit = if (boss != null) Rules.bossDamage(delta, d, s, crit) * ev.boss * (1 + pet.boss) else 0.0
+        val drop = rollDrop(h, d, s, season(), ev, pet.drop)
         if (drop.isNotEmpty()) db.addItem(drop, 1)
+        // A healing companion patches the hero up a little with every finished task.
+        val heal = minOf(pet.heal, Rules.MAX_HP - h.hp).coerceAtLeast(0.0)
 
-        var next = h.copy(xp = h.xp + xp, gold = h.gold + gold, questHp = h.questHp - hit, dropsToday = h.dropsToday + if (drop.isNotEmpty()) 1 else 0)
+        var next = h.copy(xp = h.xp + xp, gold = h.gold + gold, hp = h.hp + heal, questHp = h.questHp - hit, dropsToday = h.dropsToday + if (drop.isNotEmpty()) 1 else 0)
         // The card's bounty pays once, the moment the day's count reaches it (undoing later keeps it).
         val bounty = ev.bounty > 0 && h.bountyDay != day && doneBefore + 1 >= ev.bounty
         val bountyItems = if (bounty) giftItems(ev.bountyGift) else emptyList()
@@ -293,16 +301,16 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         }
         val before = next.level
         next = levelUp(next)
-        val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, xp = xp, gold = gold, valueDelta = delta, boss = hit, drop = drop))
+        val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, xp = xp, gold = gold, hp = heal, valueDelta = delta, boss = hit, drop = drop))
         return next to Outcome(
-            xp = xp, gold = gold, boss = hit, crit = crit, drop = drop, levelUp = if (next.level > before) next.level else 0, bossDefeated = defeated, logId = id,
+            xp = xp, gold = gold, hp = heal, boss = hit, crit = crit, drop = drop, levelUp = if (next.level > before) next.level else 0, bossDefeated = defeated, logId = id,
             jackpot = jackpot, bounty = bounty, bountyGold = if (bounty) ev.bountyGold else 0.0, items = bountyItems,
         )
     }
 
     private suspend fun hurt(h: Hero, d: Difficulty, delta: Double, taskId: Long, kind: LogKind, day: Long): Pair<Hero, Outcome> {
         val challenge = challenge()
-        val dmg = Rules.damage(delta, d, stats(h)) * DayEvent.of(day).hurt * challenge.hurt
+        val dmg = Rules.damage(delta, d, stats(h)) * DayEvent.of(day).hurt * challenge.hurt * (1 - boost(h).guard)
         val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, hp = -dmg, valueDelta = delta))
         val hurt = h.copy(hp = h.hp - dmg)
         return if (hurt.hp <= 0) faint(hurt, challenge) to Outcome(hp = -dmg, fainted = true, logId = id)
@@ -325,9 +333,9 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         questHp = Catalog.boss(h.quest)?.hp ?: 0.0,
     )
 
-    private fun rollDrop(h: Hero, d: Difficulty, s: Stats, season: Season, ev: DayEvent): String {
+    private fun rollDrop(h: Hero, d: Difficulty, s: Stats, season: Season, ev: DayEvent, petDrop: Double): String {
         if (h.dropsToday >= Rules.dropCap(h.level) + ev.dropCap) return ""
-        if (random.nextDouble() >= (Rules.dropChance(d, s) + ev.drop).coerceAtMost(0.65)) return ""
+        if (random.nextDouble() >= (Rules.dropChance(d, s) + ev.drop + petDrop).coerceAtMost(0.65)) return ""
         return pickItem(h, season)
     }
 
@@ -378,7 +386,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         var bossHit = 0.0
         val boss = Catalog.boss(h.quest)
         val challenge = challenge()
-        val hurt = DayEvent.of(day).hurt * challenge.hurt
+        val hurt = DayEvent.of(day).hurt * challenge.hurt * (1 - boost(h).guard)
         val tasks = db.tasks()
         val updated = tasks.mapNotNull { t ->
             when (t.type) {
@@ -406,7 +414,10 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         if (fainted) next = faint(next, challenge)
         db.saveHero(next)
         if (hp + bossHit > 0) _fx.tryEmit(Outcome(hp = -(hp + bossHit), fainted = fainted))
-        DayReport(day, missed.size, hp, bossHit, fainted, h.resting)
+        // The companion wanders off overnight and sometimes brings something back.
+        val found = if (h.pet.isEmpty()) "" else Companions.forage(db.pet(h.pet), random)
+        if (found.isNotEmpty()) db.addItem(found, 1)
+        DayReport(day, missed.size, hp, bossHit, fainted, h.resting, found)
     }
 
     suspend fun setResting(rest: Boolean) = mutex.withLock { db.saveHero(hero().copy(resting = rest)) }
@@ -467,6 +478,17 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         db.savePet(Pet(key))
         val h = hero()
         if (h.pet.isEmpty()) db.saveHero(h.copy(pet = key))
+        true
+    }
+
+    /** Buys one portion of pet food. */
+    suspend fun buyFood(food: Food): Boolean = mutex.withLock {
+        val h = hero()
+        val cost = Rules.foodPrice(food)
+        if (h.gold + 1e-9 < cost) return false
+        db.saveHero(h.copy(gold = h.gold - cost))
+        db.addItem("food:${food.key}", 1)
+        db.insertLog(LogEntry(day = today(), kind = LogKind.BUY, gold = -cost))
         true
     }
 

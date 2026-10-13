@@ -190,7 +190,7 @@ private fun Main(hero: Hero, settings: Settings) {
         if (pending.second.isNotEmpty() && !h.resting) withContext(kotlinx.coroutines.Dispatchers.Main) { recap = pending }
         else {
             val r = c.game.startNewDay()
-            if (r != null && (r.hp + r.bossHit > 0 || r.fainted)) withContext(kotlinx.coroutines.Dispatchers.Main) { report = r }
+            if (r != null && (r.hp + r.bossHit > 0 || r.fainted || r.found.isNotEmpty())) withContext(kotlinx.coroutines.Dispatchers.Main) { report = r }
         }
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { c.scope.launch { checkDay() } }
@@ -287,17 +287,20 @@ private fun Main(hero: Hero, settings: Settings) {
             c.scope.launch {
                 checked.forEach { c.game.setDaily(it, true, day) }
                 val r = c.game.startNewDay()
-                if (r != null && (r.hp + r.bossHit > 0 || r.fainted)) withContext(kotlinx.coroutines.Dispatchers.Main) { report = r }
+                if (r != null && (r.hp + r.bossHit > 0 || r.fainted || r.found.isNotEmpty())) withContext(kotlinx.coroutines.Dispatchers.Main) { report = r }
             }
         }
     }
     report?.takeIf { !it.fainted }?.let { r ->
+        val hurt = r.hp + r.bossHit > 0
         MomentDialog(
-            sprite = Sprites.heart, title = stringResource(R.string.recap_title),
-            text = buildString {
-                append(stringResource(R.string.report_hurt, gainText(r.hp)))
-                if (r.bossHit > 0) append("\n").append(stringResource(R.string.report_boss, gainText(r.bossHit)))
-            },
+            sprite = if (hurt) Sprites.heart else itemSprite(r.found) ?: Sprites.heart,
+            title = stringResource(if (hurt) R.string.recap_title else R.string.found_title),
+            text = listOfNotNull(
+                stringResource(R.string.report_hurt, gainText(r.hp)).takeIf { r.hp > 0 },
+                stringResource(R.string.report_boss, gainText(r.bossHit)).takeIf { r.bossHit > 0 },
+                stringResource(R.string.report_found, petName(hero.pet), itemName(r.found)).takeIf { r.found.isNotEmpty() },
+            ).joinToString("\n"),
             button = stringResource(R.string.next),
         ) { report = null }
     }

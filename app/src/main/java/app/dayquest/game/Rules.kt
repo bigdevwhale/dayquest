@@ -30,6 +30,14 @@ object Rules {
     const val FAVORITE_FOOD = 20
     const val OTHER_FOOD = 8
 
+    /** Pet food in the shop: about a week of finished tasks grows a pet on its favourite. */
+    fun foodPrice(f: Food) = when (f) {
+        Food.BERRY -> 5.0
+        Food.FISH -> 6.0
+        Food.MEAT -> 7.0
+        Food.CAKE -> 9.0
+    }
+
     /** Habitica's curve: 150 XP for level 2, then a little more each level. */
     fun xpToNext(level: Int): Int = (((0.25 * level * level + 10 * level + 139.75) / 10).roundToInt() * 10)
 
