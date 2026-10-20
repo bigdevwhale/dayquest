@@ -984,4 +984,210 @@
     <string name="tab_history">История</string>
     <string name="friends">Друзья</string>
     <string name="stats_mixed">И то, и другое</string>
+    <!-- Друзья-питомцы: характер, дружба, наряды, формы, коллекции, записки, альбом -->
+    <string name="trait_glutton">Обжора</string>
+    <string name="trait_glutton_text">Еда растит его в полтора раза быстрее.</string>
+    <string name="trait_sleepy">Соня</string>
+    <string name="trait_sleepy_text">Чаще приносит находки по ночам.</string>
+    <string name="trait_brave">Храбрец</string>
+    <string name="trait_brave_text" formatted="false">Как спутник: +5% урона по боссам.</string>
+    <string name="trait_curious">Любопытный</string>
+    <string name="trait_curious_text" formatted="false">Как спутник: +2% к шансу находок.</string>
+    <string name="trait_cheerful">Весельчак</string>
+    <string name="trait_cheerful_text" formatted="false">Как спутник: +3% опыта за задачи.</string>
+    <string name="trait_loyal">Верный</string>
+    <string name="trait_loyal_text">Дружба растёт в полтора раза быстрее.</string>
+    <string name="trait_line">Характер: %s</string>
+
+    <string name="form_star">Звёздная форма</string>
+    <string name="form_star_text">За 30 дней вместе в роли спутника, в каждый из них сделана хотя бы одна задача. Шёрстка цвета ночного неба, полная звёзд.</string>
+    <string name="form_battle">Боевая форма</string>
+    <string name="form_battle_text">За 10 боссов, побеждённых вместе в роли спутника. Боевая раскраска и брюшко в латах.</string>
+    <string name="evolve_title">Эволюция</string>
+    <string name="evolve_text">Взрослый питомец может эволюционировать один раз, по одной из двух дорог. После эволюции он помогает на четверть сильнее.</string>
+    <string name="evolve">Эволюция</string>
+    <string name="evolve_confirm_title">%s?</string>
+    <string name="evolve_confirm_text">Это навсегда: другая дорога для этого питомца закроется.</string>
+    <string name="evolved">Эволюция: %s</string>
+
+    <string name="pet_rename">Имя</string>
+    <string name="pet_rename_text">Дайте питомцу имя. Оставьте пустым, чтобы снова звать его по виду и окрасу.</string>
+    <string name="bond_best">Лучшие друзья. Помощь спутника навсегда сильнее на пятую часть.</string>
+    <string name="bond_next_best">На 10 сердцах: лучшие друзья, и помощь станет сильнее.</string>
+    <string name="bond_next_gift">На 6 сердцах: подарок.</string>
+    <string name="bond_next_trick">На 3 сердцах: новый трюк.</string>
+    <string name="pat">Погладить</string>
+    <string name="patted">+%d к дружбе</string>
+    <string name="patted_today">Сегодня уже гладили. Но в сцене можно тапнуть ещё — за сердечками.</string>
+    <string name="grew_bond">+%1$d%% роста · +%2$d к дружбе</string>
+    <string name="treat_bond">Угощение: +%d к дружбе</string>
+    <string name="tip_friends">Дружба растёт с каждым днём вместе, каждым угощением и каждым боссом, побеждённым бок о бок. Тапните спутника в сцене, чтобы погладить. На трёх сердцах он выучит трюк, на десяти станет лучшим другом.</string>
+
+    <string name="wardrobe">Гардероб</string>
+    <string name="wardrobe_empty">Бантики, шляпки, шарфы и очки для питомцев продаются в лавке.</string>
+    <string name="shop_wear">Одежда для питомцев</string>
+    <string name="shop_wear_text">Покупается один раз, носить может любой питомец: в карточке в конюшне тапните вещь, чтобы надеть или снять.</string>
+    <string name="wear_text">Видно в сцене, дома и в конюшне.</string>
+    <string name="wear_seasonal">Только в этом сезоне.</string>
+    <string name="owned">Есть</string>
+    <string name="w_bow">Бантик</string>
+    <string name="w_flower">Ромашка</string>
+    <string name="w_party_hat">Колпачок</string>
+    <string name="w_top_hat">Цилиндр</string>
+    <string name="w_wreath">Весенний венок</string>
+    <string name="w_straw_hat">Соломенная шляпа</string>
+    <string name="w_witch_hat">Ведьмина шляпа</string>
+    <string name="w_santa_hat">Зимний колпак</string>
+    <string name="w_ribbon">Лента дружбы</string>
+    <string name="w_scarf">Шарф</string>
+    <string name="w_bell">Колокольчик</string>
+    <string name="w_bandana">Бандана</string>
+    <string name="w_bowtie">Бабочка</string>
+    <string name="w_glasses">Очки</string>
+    <string name="w_sunglasses">Тёмные очки</string>
+    <string name="w_monocle">Монокль</string>
+
+    <string name="collections">Коллекции</string>
+    <string name="collections_text">Выведите все окрасы одного вида или все виды в одном окрасе. Собранная коллекция приносит золото и титул, а полный вид ещё и статую для дома.</string>
+    <string name="show_all">Показать все</string>
+    <string name="show_less">Свернуть</string>
+    <string name="set_species">Все окрасы: %s</string>
+    <string name="set_potion">Все виды: %s</string>
+    <string name="set_all">Все 88 питомцев</string>
+    <string name="set_reward_gold">%s золота</string>
+    <string name="set_reward_statue">статуя</string>
+    <string name="claim">Забрать</string>
+    <string name="set_claimed">Коллекция собрана: «%s»</string>
+    <string name="title_fox">Лисий друг</string>
+    <string name="title_cat">Кошачий шептун</string>
+    <string name="title_owl">Совиный хранитель</string>
+    <string name="title_slime">Укротитель слаймов</string>
+    <string name="title_bunny">Кроличий страж</string>
+    <string name="title_wolf">Вожак стаи</string>
+    <string name="title_turtle">Хранитель панцирей</string>
+    <string name="title_dragon">Повелитель драконов</string>
+    <string name="title_potion">Хранитель: %s</string>
+    <string name="title_all">Великий заводчик</string>
+    <string name="title_section">Титул</string>
+    <string name="title_none">Без титула</string>
+    <string name="title_text">Виден под именем героя. Тапните, чтобы сменить.</string>
+    <string name="d_statue_fox">Статуя лиса</string>
+    <string name="d_statue_cat">Статуя кота</string>
+    <string name="d_statue_owl">Статуя совы</string>
+    <string name="d_statue_slime">Статуя слайма</string>
+    <string name="d_statue_bunny">Статуя кролика</string>
+    <string name="d_statue_wolf">Статуя волка</string>
+    <string name="d_statue_turtle">Статуя черепахи</string>
+    <string name="d_statue_dragon">Статуя дракона</string>
+
+    <string name="news_heart">%1$s: %2$d ♥</string>
+    <string name="news_trick_title">Новый трюк!</string>
+    <string name="news_trick">Три сердца. Теперь %s иногда делает сальто в сцене, а если погладить, покажет сразу.</string>
+    <string name="news_gift_title">Подарок дружбы</string>
+    <string name="news_gift">Шесть сердец. %s дарит вам ленту дружбы: её может носить любой питомец (конюшня → гардероб).</string>
+    <string name="news_best_title">Лучшие друзья</string>
+    <string name="news_best">Десять сердец. %s теперь ваш лучший друг, и помощь спутника навсегда сильнее на пятую часть.</string>
+    <string name="news_form_title">Пора эволюционировать</string>
+    <string name="news_form">%s может эволюционировать. Выберите дорогу в карточке питомца в конюшне.</string>
+
+    <string name="note_title">Записка от: %s</string>
+    <string name="note_sign">— %s</string>
+    <string name="note_ok">Доброе утро!</string>
+    <string name="note_also_found">P.S. И ещё подарок: %s.</string>
+    <plurals name="note_missed">
+        <item quantity="one">Тебя не было %d день. Каждый вечер я сижу у двери и грею твоё место. Как хорошо, что ты здесь!</item>
+        <item quantity="few">Тебя не было %d дня. Без тебя скучно, но теперь ты снова здесь, и это главное!</item>
+        <item quantity="many">Тебя не было %d дней. Без тебя скучно, но теперь ты снова здесь, и это главное!</item>
+        <item quantity="other">Тебя не было %d дня. Без тебя скучно, но теперь ты снова здесь, и это главное!</item>
+    </plurals>
+    <string-array name="note_found">
+        <item>Этой ночью %2$s нашлось кое-что для тебя: %1$s!</item>
+        <item>Смотри, что лежало %2$s: %1$s! Теперь это твоё.</item>
+        <item>Утренняя прогулка %2$s, и вот: %1$s. Это тебе!</item>
+        <item>%1$s! Нашлось %2$s, несу прямо тебе.</item>
+    </string-array>
+    <string-array name="note_places">
+        <item>у ручья</item>
+        <item>под старым дубом</item>
+        <item>в высокой траве</item>
+        <item>за камнем с мхом</item>
+        <item>за холмом</item>
+        <item>в кустах</item>
+        <item>у садовой ограды</item>
+        <item>на тропинке</item>
+    </string-array>
+    <string-array name="note_bond">
+        <item>Кажется, мы становимся ближе. Вчера был хороший день вместе.</item>
+        <item>Вчера столько всего сделано! Мне нравится идти рядом с тобой.</item>
+        <item>Ещё одно сердечко! Мы отличная команда.</item>
+    </string-array>
+    <string-array name="note_rain">
+        <item>Всю ночь шёл дождь. А под большим листом сухо и уютно, и капли так славно стучат.</item>
+        <item>Дождь барабанил по крыше, а мне снилось солнце.</item>
+        <item>С утра везде лужи! Попрыгаем по ним потом?</item>
+    </string-array>
+    <string-array name="note_snow">
+        <item>Ночью выпал снег! Вокруг дома теперь мои маленькие следы.</item>
+        <item>Снаружи всё белое. Снежинка прямо на носу!</item>
+    </string-array>
+    <string-array name="note_glutton">
+        <item>Мне снилась гора тортов. У нас есть торт?</item>
+        <item>Доброе утро! Уже завтрак? По ощущениям уже завтрак.</item>
+        <item>От ягод осталось совсем чуть-чуть. Ну, почти ничего.</item>
+    </string-array>
+    <string-array name="note_sleepy">
+        <item>Весь вечер сплю. И утром ещё немножко. Можно ещё пять минут?</item>
+        <item>М-м… уже утро? Я пойду с тобой, только медленно.</item>
+        <item>Мне снился самый уютный сон. Там все твои задачи были сделаны.</item>
+    </string-array>
+    <string-array name="note_brave">
+        <item>Всю ночь на посту. Ни один монстр не сунулся: они знают, что я рядом.</item>
+        <item>Новый день? Вперёд! Что бы ни случилось, я прикрою.</item>
+        <item>Рычать на тени у меня получается всё лучше и лучше.</item>
+    </string-array>
+    <string-array name="note_curious">
+        <item>А под крыльцом, оказывается, живёт жук! Теперь мы друзья.</item>
+        <item>У забора появился новый запах. Сегодня обязательно выясню, откуда.</item>
+        <item>Что у нас сегодня в списке? Хочу всё увидеть!</item>
+    </string-array>
+    <string-array name="note_cheerful">
+        <item>Доброе утро! Сегодня будет отличный день, я чувствую!</item>
+        <item>Солнце встало, и я тоже. Вперёд!</item>
+        <item>С утра маленький танец! Попробуй тоже.</item>
+    </string-array>
+    <string-array name="note_loyal">
+        <item>Всю ночь прямо у твоей двери. Вдруг я понадоблюсь.</item>
+        <item>Куда бы сегодня ни лежал путь, я с тобой.</item>
+        <item>Ты мой самый любимый человек. Вот и всё. Доброе утро.</item>
+    </string-array>
+
+    <plurals name="visit_streak">
+        <item quantity="one">%d-й день подряд</item>
+        <item quantity="few">%d-й день подряд</item>
+        <item quantity="many">%d-й день подряд</item>
+        <item quantity="other">%d-й день подряд</item>
+    </plurals>
+    <string name="visit_gold">+%s золота</string>
+
+    <string name="album">Альбом</string>
+    <string name="album_text">Большие моменты сохраняют картинку сцены такой, какой она была: вылупления, победы, идеальные дни, лучшие друзья.</string>
+    <string name="album_empty">Пока пусто. Выведите питомца или победите босса, и появится первая картинка.</string>
+    <string name="album_share">Поделиться</string>
+    <string name="close">Закрыть</string>
+    <plurals name="album_count">
+        <item quantity="one">%d момент</item>
+        <item quantity="few">%d момента</item>
+        <item quantity="many">%d моментов</item>
+        <item quantity="other">%d момента</item>
+    </plurals>
+    <string name="m_hatch">Вылупление: %s</string>
+    <string name="m_grown">Взросление: %s</string>
+    <string name="m_victory">Победа: %s</string>
+    <string name="m_perfect">Идеальный день</string>
+    <string name="m_level">Уровень %s</string>
+    <string name="m_dungeon">Пройдено подземелий: %s</string>
+    <string name="m_ride">Первая поездка: %s</string>
+    <string name="m_friend">Лучшие друзья: %s</string>
+    <string name="m_evolve">Эволюция: %s</string>
+    <string name="m_collection">Коллекция собрана: «%s»</string>
 </resources>

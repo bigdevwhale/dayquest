@@ -79,6 +79,58 @@ class SpritePreviewTest {
     }
 
     @Test
+    fun petClothesAndForms() {
+        val kinds = listOf(Species.FOX, Species.BUNNY, Species.OWL, Species.SLIME, Species.TURTLE, Species.DRAGON, Species.WOLF, Species.CAT)
+        val dressed = kinds.flatMap { s -> app.dayquest.game.PetWear.entries.map { w -> Sprites.pet(s, Potion.BASE, grown = true, wear = w.key) } }
+        sheet("pet_clothes", dressed, scale = 6, cols = app.dayquest.game.PetWear.entries.size)
+        val outfits = kinds.map { Sprites.pet(it, Potion.ROSE, grown = true, wear = "top_hat,bowtie,monocle") } +
+            kinds.map { Sprites.pet(it, Potion.MOSS, wear = "straw_hat,scarf,sunglasses") }
+        sheet("pet_outfits", outfits, scale = 8, cols = 8)
+        val forms = kinds.flatMap { s -> listOf(Sprites.pet(s, Potion.BASE, true), Sprites.pet(s, Potion.BASE, true, form = "star"), Sprites.pet(s, Potion.BASE, true, form = "battle")) }
+        sheet("pet_forms", forms, scale = 8, cols = 6)
+        sheet("statues", Species.entries.map { Sprites.statue(it) } + listOf(Sprites.umbrella, Sprites.leaf), scale = 8, cols = 5)
+    }
+
+    @Test
+    fun weatherAndResidents() {
+        val dir = out ?: return
+        val look = Look(1, 0, 2, "flame_blade", "chainmail", "wizard_hat", "kite_shield")
+        val residents = listOf(app.dayquest.pixel.PetLook("cat:rose", true, wear = "bow"), app.dayquest.pixel.PetLook("owl:golden", wear = "glasses"), app.dayquest.pixel.PetLook("slime:base", true, "star"))
+        val frames = app.dayquest.game.Weather.entries.map { w ->
+            SceneState(SceneKind.MEADOW, 13f, look, "fox:base", true, season = app.dayquest.game.Season.SUMMER, weather = w, petWear = "scarf", petTrick = true)
+        } + listOf(
+            SceneState(SceneKind.MEADOW, 12f, look, "wolf:base", true, season = app.dayquest.game.Season.SPRING, garden = mapOf(S.G_BIG_L to "apple_tree"), residents = residents),
+            SceneState(SceneKind.MEADOW, 23f, look, "wolf:base", true, season = app.dayquest.game.Season.SPRING, garden = mapOf(S.G_BIG_L to "apple_tree"), residents = residents),
+        )
+        val scale = 4
+        val r = SceneRenderer(180, 72)
+        val img = Img(180 * scale, 72 * scale * frames.size)
+        frames.forEachIndexed { i, s ->
+            repeat(30) { k -> r.render(s, 5_000L + i * 1000 + k * 70) }
+            for (y in 0 until r.h) for (x in 0 until r.w) {
+                val c = r.buffer.px[y * r.w + x] or (0xFF shl 24)
+                for (dy in 0 until scale) for (dx in 0 until scale) img.setRGB(x * scale + dx, (i * r.h + y) * scale + dy, c)
+            }
+        }
+        dir.mkdirs()
+        img.save(File(dir, "weather_scenes.png"))
+        // The room with pets about, by day and by night.
+        val rr = app.dayquest.pixel.RoomRenderer(180, 84)
+        val rooms = listOf(12f, 23f).map { h ->
+            app.dayquest.pixel.RoomState(look, "fox:base", true, mapOf(S.WALL_C to "window", S.SMALL_R to "pet_bed", S.SMALL_L to "statue_fox"), hour = h, residents = residents, petWear = "bow", weather = app.dayquest.game.Weather.RAIN)
+        }
+        val img2 = Img(180 * scale, 84 * scale * rooms.size)
+        rooms.forEachIndexed { i, s ->
+            repeat(10) { k -> rr.render(s, 5_000L + k * 900) }
+            for (y in 0 until rr.h) for (x in 0 until rr.w) {
+                val c = rr.buffer.px[y * rr.w + x] or (0xFF shl 24)
+                for (dy in 0 until scale) for (dx in 0 until scale) img2.setRGB(x * scale + dx, (i * rr.h + y) * scale + dy, c)
+            }
+        }
+        img2.save(File(dir, "room_residents.png"))
+    }
+
+    @Test
     fun items() {
         val list = Species.entries.map { Sprites.egg(it) } + Potion.entries.map { Sprites.potion(it) } + Food.entries.map { Sprites.food(it) } +
             listOf(Sprites.coin, Sprites.heart, Sprites.star, Sprites.gem, Sprites.healthPotion, Sprites.tombstone, Sprites.chest) +

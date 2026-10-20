@@ -5,12 +5,18 @@ import app.dayquest.game.Catalog
 import app.dayquest.game.SceneKind
 import app.dayquest.game.Season
 import app.dayquest.game.Species
+import app.dayquest.game.Weather
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
+
+/** How one pet looks: its kind and colour, its crown, its evolved form and what it wears. */
+data class PetLook(val key: String, val grown: Boolean = false, val form: String = "", val wear: String = "") {
+    fun sprite(blink: Boolean = false): Sprite? = Catalog.petParts(key)?.let { (s, p) -> Sprites.pet(s, p, grown, blink, form, wear) }
+}
 
 /** Everything the scene shows; the renderer animates it. */
 data class SceneState(
@@ -28,15 +34,59 @@ data class SceneState(
     val garden: Map<app.dayquest.game.Spot, String>? = null,
     /** The saddled pet the hero rides: a big beast standing behind them. */
     val mount: String = "",
+    /** The companion's evolved form and clothes. */
+    val petForm: String = "",
+    val petWear: String = "",
+    /** Three hearts of friendship: now and then the companion does a flip. */
+    val petTrick: Boolean = false,
+    val mountForm: String = "",
+    /** Pets living at home, wandering about the garden. */
+    val residents: List<PetLook> = emptyList(),
+    val weather: Weather = Weather.CLEAR,
 )
 
 private class Particle(
     var x: Float, var y: Float, var vx: Float, var vy: Float,
     var life: Float, val max: Float, val color: Int, val gravity: Float = 0f, val size: Int = 1, val glow: Boolean = false,
+    val heart: Boolean = false,
 )
 
-/** Kinds of moments the scene reacts to. */
-enum class Burst { GOLD, XP, HIT, CRIT, HURT, LEVEL, DROP, HEAL, VICTORY, FIREWORKS }
+/** Kinds of moments the scene reacts to. LOVE is a pat on the companion. */
+enum class Burst { GOLD, XP, HIT, CRIT, HURT, LEVEL, DROP, HEAL, VICTORY, FIREWORKS, LOVE }
+
+/** A tiny pixel heart, 3 wide. */
+private fun PixelBuffer.heart(x: Int, y: Int, c: Int) {
+    plot(x - 1, y, c); plot(x + 1, y, c)
+    plot(x - 1, y + 1, c); plot(x, y + 1, c); plot(x + 1, y + 1, c)
+    plot(x, y + 2, c)
+}
+
+/**
+ * Pets at home stroll back and forth, stopping now and then; at night they sleep where they are.
+ * [left]..[right] is the stretch they walk, [y] where their feet touch.
+ */
+internal fun PixelBuffer.wander(residents: List<PetLook>, left: Int, right: Int, y: Int, now: Long, asleep: Boolean) {
+    residents.forEachIndexed { i, r ->
+        val period = 11000.0 + i * 2700
+        val a = now / period * 2 * PI + i * 1.9
+        // sin³ lingers at both ends: a stroll with pauses.
+        val p = sin(a).let { it * it * it }
+        val spr = r.sprite(blink = (now + i * 700) % (3900 + i * 300) < 140) ?: return@forEachIndexed
+        val x = (left + (right - left - spr.w) * (0.5 + 0.5 * if (asleep) sin(i * 2.3) else p)).roundToInt()
+        val moving = !asleep && abs(cos(a)) > 0.35
+        val hop = if (moving && (now / 260 + i) % 4 == 0L) 1 else 0
+        for (sx in x + 2 until x + spr.w - 2) plot(sx, y + 1, 0x40000018)
+        blit(spr, x, y - spr.h + 2 - hop, flip = !asleep && cos(a) > 0, glowAlpha = if (r.grown) 120 else 0)
+        if (asleep) {
+            val z = ((now / 700 + i) % 3).toInt()
+            for (k in 0..z) {
+                val zx = x + spr.w - 4 + k * 3
+                val zy = y - spr.h - 1 - k * 3
+                plot(zx, zy, 0xC0FFFFFF.toInt()); plot(zx + 1, zy, 0xC0FFFFFF.toInt()); plot(zx + 1, zy + 1, 0xC0FFFFFF.toInt()); plot(zx, zy + 2, 0xC0FFFFFF.toInt()); plot(zx + 1, zy + 2, 0xC0FFFFFF.toInt())
+            }
+        }
+    }
+}
 
 /** How far above the mount's highest pixel the rider's sprite starts: head and shoulders show, the rest hides behind. */
 private const val RIDER_LIFT = 14
@@ -56,7 +106,14 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
     private var attackUntil = 0L
     private var bossFlashUntil = 0L
     private var levelUntil = 0L
+    private var loveUntil = 0L
     private var lastT = 0L
+    /** Where the companion was last drawn (x, y, w, h), for taps. */
+    private val petBox = IntArray(4)
+
+    /** True when (x, y), in scene pixels, lands on the companion (with a little slack for fingers). */
+    fun hitPet(x: Float, y: Float): Boolean =
+        petBox[2] > 0 && x >= petBox[0] - 3 && x <= petBox[0] + petBox[2] + 3 && y >= petBox[1] - 4 && y <= petBox[1] + petBox[3] + 2
 
     val groundY = h - ground
 
@@ -127,6 +184,14 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
                 val a = rnd.nextFloat() * 2 * PI.toFloat()
                 particles += Particle(hx, hy - 8, cos(a) * 1.4f, sin(a) * 1.4f, 0f, 0.8f, 0xFFB79CFF.toInt(), glow = true)
             }
+            Burst.LOVE -> {
+                loveUntil = now + 700
+                val px = petBox[0] + petBox[2] / 2f
+                val py = petBox[1].toFloat()
+                repeat(5) {
+                    particles += Particle(px + rnd.nextFloat() * 10 - 5, py, rnd.nextFloat() * 0.6f - 0.3f, -0.7f - rnd.nextFloat() * 0.5f, 0f, 1.3f, if (it % 2 == 0) 0xFFFF6B8B.toInt() else 0xFFF28DB2.toInt(), heart = true)
+                }
+            }
         }
     }
 
@@ -141,18 +206,150 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
         heroX = if (s.garden != null) (w * 0.55f).roundToInt() - Sprites.HERO_W / 2 else if (s.boss != null) (w * 0.27f).roundToInt() - Sprites.HERO_W / 2 else (w * 0.46f).roundToInt() - Sprites.HERO_W / 2
         bossX = (w * 0.74f).roundToInt()
 
+        val weather = if (s.kind == SceneKind.CAVE) Weather.CLEAR else s.weather
         drawSky(s, now, night)
+        weatherSky(weather, now, night)
         drawFar(s, now, night)
         drawGround(s, now)
         if (s.garden != null) drawGarden(s.garden, now, night) else drawDecor(s, now, night)
-        rays(s, now, night)
-        drawActors(s, now)
+        if (weather == Weather.FOG) fog(night, 0.55f)
+        if (weather.wet || weather == Weather.SNOW) wetGround(weather)
+        if (!weather.wet && weather != Weather.FOG) rays(s, now, night)
+        if (s.garden != null && s.residents.isNotEmpty()) {
+            buffer.wander(s.residents, (w * 0.26f).roundToInt(), w - 2, standY, now, night > 0.6f)
+        }
+        drawActors(s, now, weather)
         foreground(s, now)
         grade(s)
         if (night > 0f && s.kind != SceneKind.CAVE) shade(night)
         if (s.garden != null && night > 0f) gardenLights(s.garden, night)
         drawAmbient(s, now, dt, night)
+        precipitation(weather, now, night)
+        if (weather == Weather.FOG) fog(night, 0.16f)
         drawParticles(dt)
+    }
+
+    // ---- Weather -------------------------------------------------------------------------
+
+    /** Grey skies (darker the wetter it gets), heavy clouds, and a rainbow after the rain. */
+    private fun weatherSky(weather: Weather, now: Long, night: Float) {
+        val b = buffer
+        val k = when (weather) {
+            Weather.CLOUDY -> 0.3f
+            Weather.RAIN -> 0.5f
+            Weather.STORM -> 0.64f
+            Weather.SNOW -> 0.42f
+            Weather.FOG -> 0.36f
+            else -> 0f
+        }
+        if (k > 0f) {
+            val grey = Color.mix(0xFFA3ABBD.toInt(), 0xFF141A30.toInt(), night)
+            for (y in 0 until groundY) for (x in 0 until w) {
+                val i = y * w + x
+                b.px[i] = Color.mix(b.px[i], grey, k)
+            }
+            if (weather != Weather.FOG) {
+                val tint = Color.withAlpha(Color.mix(0xFF7E879C.toInt(), 0xFF0E1226.toInt(), night), 150)
+                for (j in 0 until 6) {
+                    val spr = Scenery.cloud(j % 4)
+                    val span = w + spr.w
+                    val x = (((now / (400 + j * 40)) + j * 37) % span).toInt() - spr.w
+                    b.blit(spr, x, -3 + (j % 3) * 4, tint = tint, alpha = 220)
+                }
+            }
+        }
+        if (weather == Weather.RAINBOW) {
+            val cx = w * 0.62f
+            val cy = groundY + 10f
+            val r0 = w * 0.42f
+            val bands = intArrayOf(0xFFFF5A5A.toInt(), 0xFFFFA24A.toInt(), 0xFFFFE066.toInt(), 0xFF7CE07A.toInt(), 0xFF5EC8FF.toInt(), 0xFF9B82FF.toInt())
+            for (y in 0 until groundY) for (x in 0 until w) {
+                val d = kotlin.math.sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy))
+                val band = (r0 - d).toInt()
+                if (band !in bands.indices) continue
+                // Fades toward its feet, where it meets the haze.
+                val fade = ((cy - y) / (cy * 0.9f)).coerceIn(0f, 1f)
+                b.plot(x, y, Color.withAlpha(bands[band], (110 * fade * (1f - night)).toInt()))
+            }
+        }
+    }
+
+    /** Rain darkens the ground and makes it shine a little. */
+    private fun wetGround(weather: Weather) {
+        val k = if (weather == Weather.SNOW) 0.06f else 0.14f
+        val tint = if (weather == Weather.SNOW) 0xFFDDE6F5.toInt() else 0xFF2A3350.toInt()
+        for (y in groundY until h) for (x in 0 until w) {
+            val i = y * w + x
+            buffer.px[i] = Color.mix(buffer.px[i], tint, k)
+        }
+    }
+
+    /** A soft veil, thickest just above the ground, drifting slowly. */
+    private fun fog(night: Float, strength: Float) {
+        val c = Color.mix(0xFFE6EAF2.toInt(), 0xFF2A3050.toInt(), night)
+        val mid = groundY - 6f
+        for (y in 0 until h) {
+            val d = (y - mid) / 16f
+            val band = kotlin.math.exp(-d * d)
+            for (x in 0 until w) {
+                val drift = smoothNoise((x + lastT / 180f) / 14f, y / 5)
+                val a = strength * band * (0.6f + 0.6f * drift)
+                if (a > Bayer.at(x, y) * 0.6f) {
+                    val i = y * w + x
+                    buffer.px[i] = Color.mix(buffer.px[i], c, a.coerceAtMost(0.8f))
+                }
+            }
+        }
+    }
+
+    /** Rain streaks (and splashes), snowflakes, and the storm's lightning. Drawn from time alone, so nothing is kept. */
+    private fun precipitation(weather: Weather, now: Long, night: Float) {
+        val b = buffer
+        when (weather) {
+            Weather.RAIN, Weather.STORM -> {
+                val n = if (weather == Weather.STORM) w else (w * 0.6f).toInt()
+                val c = Color.withAlpha(Color.mix(0xFFC8D8F0.toInt(), 0xFF8A9AC0.toInt(), night), 150)
+                for (i in 0 until n) {
+                    val seed = noise(i, 71)
+                    val speed = 0.11f + noise(i, 73) * 0.05f
+                    val fall = h + 12
+                    val y = ((now * speed + seed * fall * 7) % fall) - 6
+                    val x = Math.floorMod((seed * w * 3 - y * 0.35f).toInt(), w)
+                    for (t in 0..2) b.plot(x + (t * 0.35f).toInt(), (y - t).toInt(), c)
+                    if (y > groundY + 2 && y < groundY + 4 + seed * (h - groundY - 4)) {
+                        b.plot(x - 1, groundY + 1 + (seed * (h - groundY - 2)).toInt(), Color.withAlpha(c, 90))
+                    }
+                }
+                if (weather == Weather.STORM) {
+                    val cycle = now % 8300
+                    if (cycle < 140) {
+                        val flash = Color.withAlpha(0xFFFFFFFF.toInt(), if (cycle < 60) 120 else 60)
+                        for (i in b.px.indices) b.px[i] = Color.over(b.px[i], flash)
+                        // The bolt: a jagged line from the clouds down toward the hills.
+                        val r = Random(now / 8300)
+                        var x = w * (0.15f + 0.7f * r.nextFloat())
+                        var y = 0f
+                        while (y < groundY - 6) {
+                            b.plot(x.toInt(), y.toInt(), 0xFFFFF8DC.toInt()); b.plot(x.toInt() + 1, y.toInt(), 0x80FFF8DC.toInt())
+                            y += 1f
+                            x += r.nextFloat() * 2.4f - 1.2f
+                        }
+                    }
+                }
+            }
+            Weather.SNOW -> {
+                val n = (w * 0.5f).toInt()
+                for (i in 0 until n) {
+                    val seed = noise(i, 79)
+                    val speed = 0.012f + noise(i, 83) * 0.01f
+                    val y = ((now * speed + seed * h * 5) % (h + 4)) - 2
+                    val x = Math.floorMod((seed * w * 5 + sin(now / 900.0 + i) * 3).toInt(), w)
+                    b.plot(x, y.toInt(), 0xF0FFFFFF.toInt())
+                    if (i % 5 == 0) b.plot(x + 1, y.toInt(), 0xA0FFFFFF.toInt())
+                }
+            }
+            else -> Unit
+        }
     }
 
     // ---- Sky -----------------------------------------------------------------------------
@@ -701,7 +898,7 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
         }
     }
 
-    private fun drawActors(s: SceneState, now: Long) {
+    private fun drawActors(s: SceneState, now: Long, weather: Weather) {
         val b = buffer
         val look = s.look ?: return
         val bob = if ((now / 520) % 2 == 1L) 1 else 0
@@ -718,7 +915,7 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
         val mounted = Catalog.petParts(s.mount)
         // Riding: the beast stands where the hero would, and the hero sits on it, seen from the front:
         // head and shoulders above the beast's head, legs hidden behind it.
-        val mount = mounted?.let { (sp, po) -> Sprites.mount(sp, po, blink = (now + 1700) % 5300 < 160) }
+        val mount = mounted?.let { (sp, po) -> Sprites.mount(sp, po, blink = (now + 1700) % 5300 < 160, form = s.mountForm) }
         val hx = heroX + lunge + hurtShake
         val mx = mount?.let { hx + hero.w / 2 - it.w / 2 } ?: 0
         val my = mount?.let { standY - it.h + 3 + bob } ?: 0
@@ -726,16 +923,27 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
         // The companion trots alongside, beside the hero or the beast.
         val right = if (mount != null) mx + mount.w - 5 else hx + hero.w - 2
         val parts = Catalog.petParts(s.pet)
+        val wet = weather.wet
         if (parts != null) {
             val (sp, po) = parts
-            val pet = Sprites.pet(sp, po, s.petGrown, blink = (now + 900) % 4100 < 140)
+            val pet = Sprites.pet(sp, po, s.petGrown, blink = (now + 900) % 4100 < 140, form = s.petForm, wear = s.petWear)
             val hopT = (now % 2600)
-            val hop = if (hopT < 300) (sin(hopT / 300.0 * PI) * 3).roundToInt() else 0
+            // A trick: a high leap with a spin (the sprite turns at the top), every few seconds or after a pat.
+            val trickT = if (now < loveUntil) 1f - (loveUntil - now) / 700f else if (s.petTrick && now % 9000 < 700) (now % 9000) / 700f else -1f
+            val hop = when {
+                trickT >= 0f -> (sin(trickT * PI) * if (s.petTrick) 9 else 4).roundToInt()
+                hopT < 300 -> (sin(hopT / 300.0 * PI) * 3).roundToInt()
+                else -> 0
+            }
+            val spin = s.petTrick && trickT in 0.3f..0.7f
             val px = if (s.boss != null && mount == null) hx - pet.w + 3 else right
             val py = standY - pet.h + 2 - hop
+            petBox[0] = px; petBox[1] = py; petBox[2] = pet.w; petBox[3] = pet.h
             shadow(px + pet.w / 2, 8)
-            b.blit(pet, px, py, flip = s.boss == null, glowAlpha = if (s.petGrown) (140 + 60 * sin(now / 400.0)).toInt() else 0)
-        }
+            b.blit(pet, px, py, flip = (s.boss == null) != spin, glowAlpha = if (s.petGrown) (140 + 60 * sin(now / 400.0)).toInt() else 0)
+            // In the rain the pet holds a big leaf over its head.
+            if (wet) b.blit(Sprites.leaf, px + pet.w / 2 - Sprites.leaf.w / 2, py - 2)
+        } else petBox[2] = 0
         if (mount != null) {
             shadow(mx + mount.w / 2, 20)
             b.blit(hero, hx, hy, tint = tint, glowAlpha = glow)
@@ -743,6 +951,15 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
         } else {
             shadow(hx + hero.w / 2, 10)
             b.blit(hero, hx, hy, tint = tint, glowAlpha = glow)
+        }
+        if (wet && s.boss == null) {
+            // An umbrella held in the front hand: the canopy above the head, the handle down to the hand.
+            val u = Sprites.umbrella
+            val ux = hx + hero.w - 5
+            val top = hy + 1
+            for (y in top + u.h - 1..hy + 17) b.plot(ux, y, 0xFF3A2A30.toInt())
+            b.plot(ux - 1, hy + 17, 0xFF3A2A30.toInt())
+            b.blit(u, ux - u.w / 2, top)
         }
         if (s.resting) {
             val z = (now / 600) % 3
@@ -851,6 +1068,10 @@ class SceneRenderer(val w: Int, val h: Int, ground: Int = 14) {
             p.y += p.vy * dt * 14
             val a = (255 * (1 - p.life / p.max * p.life / p.max)).toInt()
             val c = Color.withAlpha(p.color, a)
+            if (p.heart) {
+                buffer.heart(p.x.toInt(), p.y.toInt(), c)
+                continue
+            }
             if (p.glow) {
                 val gc = Color.withAlpha(p.color, a / 4)
                 buffer.plot(p.x.toInt() - 1, p.y.toInt(), gc); buffer.plot(p.x.toInt() + 1, p.y.toInt(), gc)

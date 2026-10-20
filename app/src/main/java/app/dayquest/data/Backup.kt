@@ -33,7 +33,14 @@ object Backup {
                 .put("drop", it.drop).put("undone", it.undone).put("mp", it.mp).put("step", it.step)
         }))
         .put("items", JSONArray(s.items.map { JSONObject().put("key", it.key).put("count", it.count) }))
-        .put("pets", JSONArray(s.pets.map { JSONObject().put("key", it.key).put("growth", it.growth).put("hatchedAt", it.hatchedAt).put("mount", it.mount) }))
+        .put("pets", JSONArray(s.pets.map {
+            JSONObject().put("key", it.key).put("growth", it.growth).put("hatchedAt", it.hatchedAt).put("mount", it.mount)
+                .put("name", it.name).put("bond", it.bond).put("pattedDay", it.pattedDay).put("days", it.days).put("wins", it.wins)
+                .put("form", it.form).put("wear", it.wear)
+        }))
+        .put("moments", JSONArray(s.moments.map {
+            JSONObject().put("id", it.id).put("at", it.at).put("day", it.day).put("kind", it.kind).put("subject", it.subject).put("scene", it.scene)
+        }))
         .put("journal", JSONArray(s.journal.map { JSONObject().put("day", it.day).put("mood", it.mood).put("note", it.note) }))
         .put("friends", JSONArray(s.friends.map { JSONObject().put("uid", it.uid).put("code", it.code).put("addedAt", it.addedAt) }))
         .put("settings", settings?.let {
@@ -53,6 +60,8 @@ object Backup {
         .put("perfectDay", h.perfectDay).put("chests", h.chests).put("eventDay", h.eventDay).put("bountyDay", h.bountyDay)
         .put("heroClass", h.heroClass).put("mp", h.mp).put("buffs", h.buffs).put("mount", h.mount)
         .put("dungeon", h.dungeon).put("dungeonsCleared", h.dungeonsCleared).put("uid", h.uid)
+        .put("ownedWear", h.ownedWear).put("visitDay", h.visitDay).put("visitStreak", h.visitStreak)
+        .put("collections", h.collections).put("title", h.title)
 
     private fun task(t: Task) = JSONObject()
         .put("id", t.id).put("type", t.type.name).put("title", t.title).put("notes", t.notes).put("difficulty", t.difficulty.name)
@@ -83,6 +92,8 @@ object Backup {
                     perfectDay = optLong("perfectDay", -1), chests = optInt("chests"), eventDay = optLong("eventDay", -1), bountyDay = optLong("bountyDay", -1),
                     heroClass = optString("heroClass"), mp = optDouble("mp", 0.0), buffs = optString("buffs"), mount = optString("mount"),
                     dungeon = optString("dungeon"), dungeonsCleared = optInt("dungeonsCleared"), uid = optString("uid"),
+                    ownedWear = optString("ownedWear"), visitDay = optLong("visitDay", -1), visitStreak = optInt("visitStreak"),
+                    collections = optString("collections"), title = optString("title"),
                 )
             }
         }
@@ -110,9 +121,16 @@ object Backup {
                 )
             },
             items = root.list("items") { Item(getString("key"), getInt("count")) },
-            pets = root.list("pets") { Pet(getString("key"), optInt("growth"), optLong("hatchedAt"), optBoolean("mount")) },
+            pets = root.list("pets") {
+                Pet(
+                    getString("key"), optInt("growth"), optLong("hatchedAt"), optBoolean("mount"),
+                    name = optString("name"), bond = optInt("bond"), pattedDay = optLong("pattedDay", -1), days = optInt("days"), wins = optInt("wins"),
+                    form = optString("form"), wear = optString("wear"),
+                )
+            },
             journal = root.list("journal") { JournalEntry(getLong("day"), getInt("mood"), optString("note")) },
             friends = root.list("friends") { Friend(getString("uid"), getString("code"), optLong("addedAt")) },
+            moments = root.list("moments") { Moment(getLong("id"), optLong("at"), getLong("day"), getString("kind"), optString("subject"), optString("scene")) },
         )
         val settings = root.optJSONObject("settings")?.let {
             Settings(

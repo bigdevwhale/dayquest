@@ -49,7 +49,8 @@ enum class DecorType(@StringRes val label: Int) {
     GARDEN_BIG(R.string.decor_garden_big), GARDEN_SMALL(R.string.decor_garden_small), FENCE(R.string.decor_fence), PATH(R.string.decor_path),
 }
 
-data class Decor(val key: String, val type: DecorType, val price: Double, @StringRes val name: Int, val level: Int = 1)
+/** [reward] pieces aren't sold: they come from completing a pet collection. */
+data class Decor(val key: String, val type: DecorType, val price: Double, @StringRes val name: Int, val level: Int = 1, val reward: Boolean = false)
 
 /** The hero's home: a gold sink that never runs dry and a place to make the game your own. */
 object HomeCatalog {
@@ -138,7 +139,19 @@ object HomeCatalog {
         Decor("path_dirt", DecorType.PATH, 40.0, R.string.d_path_dirt),
         Decor("path_stone", DecorType.PATH, 120.0, R.string.d_path_stone),
         Decor("path_brick", DecorType.PATH, 200.0, R.string.d_path_brick, 8),
-    )
+    ) + Species.entries.map { Decor("statue_${it.key}", DecorType.SMALL, 0.0, statueName(it), reward = true) }
+
+    @StringRes
+    private fun statueName(s: Species) = when (s) {
+        Species.FOX -> R.string.d_statue_fox
+        Species.CAT -> R.string.d_statue_cat
+        Species.OWL -> R.string.d_statue_owl
+        Species.SLIME -> R.string.d_statue_slime
+        Species.BUNNY -> R.string.d_statue_bunny
+        Species.WOLF -> R.string.d_statue_wolf
+        Species.TURTLE -> R.string.d_statue_turtle
+        Species.DRAGON -> R.string.d_statue_dragon
+    }
 
     fun item(key: String) = items.firstOrNull { it.key == key }
 

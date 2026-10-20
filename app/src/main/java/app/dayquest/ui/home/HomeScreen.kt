@@ -88,6 +88,7 @@ import kotlin.math.max
 /** The room, rendered like the scene: small bitmap, whole-number scale, ~12 fps. */
 @Composable
 fun RoomView(state: RoomState, modifier: Modifier = Modifier, virtualHeight: Int = 84) {
+    val season = rememberSeason()
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val widthPx = constraints.maxWidth
         val scale = max(2, widthPx / 172)
@@ -105,7 +106,9 @@ fun RoomView(state: RoomState, modifier: Modifier = Modifier, virtualHeight: Int
                 if (now - last < 80) continue
                 last = now
                 val t = LocalTime.now()
-                renderer.render(current.copy(hour = t.hour + t.minute / 60f), now)
+                val hour = if (app.dayquest.BuildConfig.DEMO) 11.5f else t.hour + t.minute / 60f
+                val weather = app.dayquest.game.Weather.at(java.time.LocalDate.now().toEpochDay(), hour, season, app.dayquest.game.SceneKind.MEADOW)
+                renderer.render(current.copy(hour = hour, weather = weather), now)
                 bitmap.setPixels(renderer.buffer.px, 0, vw, 0, 0, vw, virtualHeight)
                 frame = now
             }
@@ -143,8 +146,8 @@ private fun HomeArea.types() = when (this) {
 fun HomeScreen(hero: Hero, onBack: () -> Unit) {
     val c = LocalContext.current.container
     val fb = LocalFeedback.current
-    val grown by remember(hero.pet) { c.db.game().observePets().map { l -> (l.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100 } }
-        .collectAsStateWithLifecycle(initialValue = false)
+    val pets = app.dayquest.ui.pets.rememberPets()
+    val grown = (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100
     var picking by remember { mutableStateOf<Pair<DecorType, Spot?>?>(null) }
     var area by remember { mutableStateOf(HomeArea.ROOM) }
     val placement = HomeCatalog.placement(hero.home)
@@ -161,11 +164,14 @@ fun HomeScreen(hero: Hero, onBack: () -> Unit) {
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             when (area) {
-                HomeArea.ROOM -> RoomView(roomState(hero, grown))
-                HomeArea.ATTIC -> RoomView(atticState(hero, grown))
+                HomeArea.ROOM -> RoomView(app.dayquest.ui.pets.roomState(hero, pets, roomState(hero, grown)))
+                HomeArea.ATTIC -> RoomView(app.dayquest.ui.pets.roomState(hero, pets, atticState(hero, grown)))
                 HomeArea.GARDEN -> SceneView(
-                    SceneState(SceneKind.MEADOW, 12f, hero.look(), hero.pet, grown, season = season, garden = placement.filterKeys { it.area == HomeArea.GARDEN }),
-                    virtualHeight = 84, ground = 30,
+                    app.dayquest.ui.pets.heroScene(hero.copy(mount = ""), pets).copy(
+                        kind = SceneKind.MEADOW, boss = null, resting = false, garden = placement.filterKeys { it.area == HomeArea.GARDEN },
+                        residents = app.dayquest.ui.pets.residents(hero, pets),
+                    ),
+                    virtualHeight = 84, ground = 30, onPet = app.dayquest.ui.pets.rememberPat(hero).takeIf { hero.pet.isNotEmpty() },
                 )
             }
             Column(Modifier.padding(horizontal = 16.dp).navigationBarsPadding()) {
@@ -284,7 +290,8 @@ private fun DecorPicker(hero: Hero, type: DecorType, spot: Spot?, onDismiss: () 
         title = { Text(stringResource(type.label), style = DType.Heading) },
         text = {
             Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
-                HomeCatalog.items.filter { it.type == type }.forEach { d ->
+                // Statues show up only once a collection has earned them.
+                HomeCatalog.items.filter { it.type == type && (!it.reward || hero.ownsDecor(it.key)) }.forEach { d ->
                     val owned = hero.ownsDecor(d.key)
                     val locked = hero.level < d.level
                     val here = when {

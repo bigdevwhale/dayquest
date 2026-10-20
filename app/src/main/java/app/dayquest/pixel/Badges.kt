@@ -203,4 +203,15 @@ object Badges {
         c.set(8, 9, mat(0xFFF2C14E.toInt()))
         c.render()
     }
+
+    /** A little cottage: the way home from the task board. */
+    val house: Sprite get() = Sprites.cached("badge:house") {
+        val c = PixelCanvas(14, 13)
+        c.rect(2, 6, 11, 12, mat(0xFFEDE2CF.toInt()))
+        c.tri(-0.5f, 7f, 7f, 0f, 14.5f, 7f, mat(0xFFC8553D.toInt()))
+        c.rect(10, 1, 11, 3, mat(0xFF9AA0B5.toInt()))
+        c.rect(5, 8, 7, 12, mat(0xFF8A5A36.toInt()))
+        c.rect(9, 8, 10, 9, mat(0xFFFFD27A.toInt(), glows = true))
+        c.render()
+    }
 }

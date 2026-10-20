@@ -188,6 +188,11 @@ fun ShopScreen(hero: Hero, onEdit: (Long) -> Unit, onNew: (String) -> Unit) {
                 item(key = "food-text") { Text(stringResource(R.string.shop_food_text), style = DType.Muted, modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)) }
                 items(Food.entries.toList(), key = { it.key }) { f -> FoodRow(f, hero, bag.firstOrNull { it.key == "food:${f.key}" }?.count ?: 0) }
                 item(key = "saddle") { SaddleRow(hero, bag.firstOrNull { it.key == Rules.SADDLE }?.count ?: 0) }
+                item(key = "wear") {
+                    SectionTitle(stringResource(R.string.shop_wear))
+                    Text(stringResource(R.string.shop_wear_text), style = DType.Muted, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                }
+                items(app.dayquest.game.PetWear.entries.filter { !it.gift && (it.season == null || it.season == season) }, key = { "wear-" + it.key }) { w -> WearRow(w, hero) }
             }
             Aisle.SCENES -> items(Catalog.scenes.chunked(2)) { pair ->
                 Row(Modifier.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -261,6 +266,34 @@ private fun FoodRow(f: Food, hero: Hero, count: Int) {
                 withContext(Dispatchers.Main) { if (ok) fb.buy() else fb.show(poor) }
             }
         })
+    }
+}
+
+@Composable
+private fun WearRow(w: app.dayquest.game.PetWear, hero: Hero) {
+    val c = LocalContext.current.container
+    val fb = LocalFeedback.current
+    val poor = stringResource(R.string.not_enough_gold)
+    val owned = w.key in hero.ownedWear.split(',')
+    val locked = hero.level < w.level
+    ShopRow(
+        icon = { PixelImage(app.dayquest.ui.stable.wearIcon(w), pixel = 3.dp) },
+        title = stringResource(w.label),
+        sub = when {
+            w.season != null -> stringResource(R.string.wear_seasonal)
+            else -> stringResource(R.string.wear_text)
+        },
+    ) {
+        when {
+            owned -> Text(stringResource(R.string.owned), style = DType.Small.copy(color = D.c.good))
+            locked -> Text(stringResource(R.string.from_level, w.level), style = DType.Small)
+            else -> PriceButton(w.price, hero.gold >= w.price, {
+                c.scope.launch {
+                    val ok = c.game.buyWear(w)
+                    withContext(Dispatchers.Main) { if (ok) fb.buy() else fb.show(poor) }
+                }
+            })
+        }
     }
 }
 

@@ -109,7 +109,7 @@ fun EventBanner(ev: DayEvent, done: Int, claimed: Boolean, onClick: () -> Unit, 
 
 /** The morning card: flips in, says what today is about, hands out its gift on "Let's go". */
 @Composable
-fun EventCardDialog(ev: DayEvent, onOpen: () -> Unit) {
+fun EventCardDialog(ev: DayEvent, visit: Pair<Int, app.dayquest.game.VisitGift>? = null, onOpen: () -> Unit) {
     val flip = remember { Animatable(90f) }
     LaunchedEffect(ev) {
         Sfx.play(Sound.CARD)
@@ -132,6 +132,11 @@ fun EventCardDialog(ev: DayEvent, onOpen: () -> Unit) {
                 Text(stringResource(ev.title), style = DType.Title, textAlign = TextAlign.Center)
                 Gap(8)
                 Text(stringResource(ev.text), style = DType.Sub, textAlign = TextAlign.Center)
+                // The day's visit gift comes with the card.
+                visit?.let { (streak, gift) ->
+                    Gap(16)
+                    app.dayquest.ui.pets.VisitStrip(streak, gift)
+                }
                 Gap(20)
                 PrimaryButton(stringResource(R.string.event_go), onOpen, Modifier.fillMaxWidth())
             }

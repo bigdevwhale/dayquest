@@ -2,6 +2,7 @@ package app.dayquest.pixel
 
 import app.dayquest.game.Catalog
 import app.dayquest.game.Spot
+import app.dayquest.game.Weather
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -17,6 +18,12 @@ data class RoomState(
     val hour: Float = 12f,
     /** Under the roof: slanted beams, a round window, wall spots moved inward. */
     val attic: Boolean = false,
+    val petForm: String = "",
+    val petWear: String = "",
+    /** Other pets that live at home and wander about. */
+    val residents: List<PetLook> = emptyList(),
+    /** What the windows show: rain streaks or snow. */
+    val weather: Weather = Weather.CLEAR,
 )
 
 /** The hero's room, side view: wallpaper, floor, furniture in fixed spots, warm lights at night. */
@@ -49,7 +56,7 @@ class RoomRenderer(val w: Int, val h: Int) {
         val night = nightness(s.hour)
         drawWall(s.wallpaper, now)
         drawFloor(s.floor)
-        if (s.attic) drawAttic(s.hour, now)
+        if (s.attic) drawAttic(s.hour, now, s.weather)
         // Baseboard
         for (x in 0 until w) {
             b.px[(floorY - 2) * w + x] = 0xFF7A5034.toInt()
@@ -67,7 +74,7 @@ class RoomRenderer(val w: Int, val h: Int) {
             val (cx, by) = anchor(spot, s.attic)
             val x = cx - spr.w / 2
             val y = by - spr.h
-            if (key == "window") drawSky(x + 3, y + 3, spr.w - 6, spr.h - 6, s.hour, now)
+            if (key == "window") drawSky(x + 3, y + 3, spr.w - 6, spr.h - 6, s.hour, now, s.weather)
             b.blit(spr, x, y)
         }
         s.placement[Spot.RUG]?.let { key ->
@@ -97,6 +104,9 @@ class RoomRenderer(val w: Int, val h: Int) {
         }
         if (s.attic && night < 0.5f) lights += Triple(w / 2, 12, 26)
 
+        // The other pets roam the floor behind the hero (and doze off at night).
+        if (s.residents.isNotEmpty()) b.wander(s.residents, (w * 0.06f).roundToInt(), (w * 0.94f).roundToInt(), h - 3, now, night > 0.6f)
+
         // Hero and pet in the middle of the room.
         val bob = if ((now / 520) % 2 == 1L) 1 else 0
         val hero = Sprites.hero(s.look, blink = now % 3400 < 140)
@@ -105,7 +115,7 @@ class RoomRenderer(val w: Int, val h: Int) {
         shadow(hx + hero.w / 2, h - 3, 10)
         b.blit(hero, hx, hy, glowAlpha = (150 + 80 * sin(now / 500.0)).toInt())
         Catalog.petParts(s.pet)?.let { (sp, po) ->
-            val pet = Sprites.pet(sp, po, s.petGrown, blink = (now + 900) % 4100 < 140)
+            val pet = Sprites.pet(sp, po, s.petGrown, blink = (now + 900) % 4100 < 140, form = s.petForm, wear = s.petWear)
             val hopT = now % 2600
             val hop = if (hopT < 300) (sin(hopT / 300.0 * Math.PI) * 3).roundToInt() else 0
             val inBed = s.placement.entries.firstOrNull { it.value == "pet_bed" }?.key
@@ -193,7 +203,7 @@ class RoomRenderer(val w: Int, val h: Int) {
     }
 
     /** Roof slopes in the top corners, rafters, and a round window in the gable. */
-    private fun drawAttic(hour: Float, now: Long) {
+    private fun drawAttic(hour: Float, now: Long, weather: Weather) {
         val b = buffer
         val slope = (w * 0.24f)
         val wood = Ramps.of(0xFF8A5A36.toInt())
@@ -214,7 +224,7 @@ class RoomRenderer(val w: Int, val h: Int) {
         val cy = 13
         val r = 8
         val behind = b.px.copyOf()
-        drawSky(cx - r, cy - r, 2 * r + 1, 2 * r + 1, hour, now)
+        drawSky(cx - r, cy - r, 2 * r + 1, 2 * r + 1, hour, now, weather)
         for (y in cy - r - 1..cy + r + 1) for (x in cx - r - 1..cx + r + 1) {
             if (x !in 0 until w || y !in 0 until h) continue
             val d = sqrt(((x - cx) * (x - cx) + (y - cy) * (y - cy)).toFloat())
@@ -228,7 +238,7 @@ class RoomRenderer(val w: Int, val h: Int) {
         }
     }
 
-    private fun drawSky(x0: Int, y0: Int, ww: Int, hh: Int, hour: Float, now: Long) {
+    private fun drawSky(x0: Int, y0: Int, ww: Int, hh: Int, hour: Float, now: Long, weather: Weather = Weather.CLEAR) {
         val n = nightness(hour)
         val day = intArrayOf(0xFF4A9BEF.toInt(), 0xFFD4ECFA.toInt())
         val dusk = intArrayOf(0xFF2F3374.toInt(), 0xFFFFAE6B.toInt())
@@ -244,9 +254,23 @@ class RoomRenderer(val w: Int, val h: Int) {
         if (n > 0.7f) {
             buffer.plot(x0 + ww / 3, y0 + 2, 0xFFFFF6E0.toInt()); buffer.plot(x0 + ww - 3, y0 + 4, 0xFFFFF6E0.toInt())
             buffer.rect(x0 + ww - 6, y0 + 1, x0 + ww - 5, y0 + 2, 0xFFF1EEDC.toInt())
-        } else if (n <= 0.1f) {
+        } else if (n <= 0.1f && !weather.wet) {
             val cx = x0 + ((now / 900) % (ww + 8)).toInt() - 4
             buffer.rect(cx, y0 + hh / 3, cx + 4, y0 + hh / 3 + 1, 0xE0FFFFFF.toInt())
+        }
+        // Weather on the glass: grey light, then rain streaks or flakes drifting past.
+        if (weather.wet || weather == Weather.SNOW || weather == Weather.CLOUDY || weather == Weather.FOG) {
+            for (y in 0 until hh) for (x in 0 until ww) buffer.plot(x0 + x, y0 + y, 0x55A3ABBD)
+        }
+        if (weather.wet || weather == Weather.SNOW) {
+            val snow = weather == Weather.SNOW
+            for (i in 0 until ww * hh / 14) {
+                val seed = noise(i, 91)
+                val y = ((now * (if (snow) 0.008f else 0.06f) + seed * hh * 9) % hh).toInt()
+                val x = Math.floorMod((seed * ww * 7 - if (snow) 0f else y * 0.4f).toInt(), ww)
+                buffer.plot(x0 + x, y0 + y, if (snow) 0xF0FFFFFF.toInt() else 0xB0DDE8F8.toInt())
+                if (!snow && y + 1 < hh) buffer.plot(x0 + x, y0 + y + 1, 0x80DDE8F8.toInt())
+            }
         }
     }
 

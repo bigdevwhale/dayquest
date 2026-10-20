@@ -75,8 +75,7 @@ fun QuestsScreen(hero: Hero) {
     val season = rememberSeason()
     var offers by remember { mutableStateOf<Offers?>(null) }
     LaunchedEffect(hero.questsDone, hero.level, hero.quest) { offers = c.game.offers(hero) }
-    val grown by remember(hero.pet) { c.db.game().observePets().map { l -> (l.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100 } }
-        .collectAsStateWithLifecycle(initialValue = false)
+    val pets = app.dayquest.ui.pets.rememberPets()
     val start: (Boss) -> Unit = { b -> if (active != null) fb.show(busy) else c.launch { c.game.startQuest(b) } }
 
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
@@ -88,8 +87,8 @@ fun QuestsScreen(hero: Hero) {
             if (active != null) {
                 Column(Modifier.fillMaxWidth().clip(D.RLg).background(D.c.surface).border(1.dp, D.c.line, D.RLg)) {
                     SceneView(
-                        SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, grown, active, hero.resting, season, mount = hero.mount),
-                        bursts = fx.bursts, floaters = fx.floaters,
+                        app.dayquest.ui.pets.heroScene(hero, pets, active),
+                        bursts = fx.bursts, floaters = fx.floaters, onPet = app.dayquest.ui.pets.rememberPat(hero).takeIf { hero.pet.isNotEmpty() },
                     )
                     Column(Modifier.padding(16.dp)) {
                         Text(stringResource(R.string.quest_active).uppercase(), style = DType.Eyebrow)

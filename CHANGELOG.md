@@ -1,51 +1,59 @@
 # Changelog
 
-## v1.5.0: Classes, mounts and the weekend dungeon
+## v1.6.0: Pet friends, weather and the album
 
-**Classes and skills.** At level 5 choose a Warrior, Mage, Rogue or Healer. Your class's stat grows twice as fast, and it brings three skills that cost mana: hit the boss, boost the day, or soften tonight's damage. Mana comes back with every finished task and overnight. The first choice is free; changing later costs 100 gold.
+**Friendship.** Every pet has ten hearts to fill: days together, treats and bosses beaten side by side bring it closer. Tap your companion in the scene to pat it. Three hearts teach it a flip, six bring a friendship ribbon, ten make it a best friend whose help is a fifth stronger for good.
 
-**Mounts.** Saddle a fully grown pet and ride it: the hero sits on its back in the scene, and it gives its bonus in full on top of your companion's. Saddles are sold in the shop and found at the end of the weekend dungeon.
+**Names and character.** Name your pets. Each one hatches with a character: a glutton, a sleepyhead, brave, curious, cheerful or loyal, and each brings its own small bonus.
 
-**The weekend dungeon.** Every Saturday and Sunday a new dungeon opens, five rooms deep. Every finished task is a step deeper (hard ones count twice). Each room pays; the last one holds a chest and a saddle.
+**Morning notes.** Your companion leaves a note every morning: what it found overnight, how the rain sounded, or that it missed you.
 
-**Statistics.** Every task has its own page (the chart button in the editor): the last 30 days, completions by weekday and its strength over 90 days. The hero screen shows what is going well this month and what needs care.
+**Pet clothes.** Bows, hats, scarves, glasses and seasonal pieces in the shop. Bought once, worn by any pet, seen in the scene, the home and the stable.
 
-**Journal.** "How was today?" at the end of the task board: pick a mood and write a line. After a few weeks the journal shows how your mood and your finished tasks go together.
+**Evolution.** A grown pet can evolve once: the starry form after 30 days together, the battle form after 10 bosses. An evolved pet helps a quarter more.
 
-**Focus.** A 15, 25 or 50 minute session (the hourglass on the task board). A finished session pays like a task; leaving early pays nothing. It rings even with the app closed.
+**Pets at home.** Your closest friends live in the room and the garden: they stroll about by day and doze off at night. The home now opens from the task board.
 
-**Tavern.** Swap one-line hero codes with friends, no account needed. Friends' heroes appear in your tavern, and each card less than a week old gives +2% XP and gold, up to +10%. *Share my hero* sends a picture of your scene and stats.
+**Collections.** Every colour of one kind, every kind in one colour, or all 88: each finished collection pays gold and a title, and a full kind earns a statue for your home.
 
-**Also:** the hero screen is split into tabs (Hero, Awards, History, Tavern); the boss's health bar now sits apart, under its name; six new achievements; two new 8-bit sounds.
+**Daily visits.** The morning card brings a seven-day ladder of gifts. A missed day keeps the weeks you've already finished.
+
+**Weather.** Clouds, rain, storms, fog, snow and a rainbow after the rain, the same for everyone. The hero opens an umbrella and the pet hides under a leaf.
+
+**Album.** Big moments keep a picture of the scene as it was: hatchings, first wins, perfect days, best friends. Share any of them.
 
 Your saves carry over: nothing to reset.
 
 ---
 
-## v1.5.0: классы, ездовые звери и подземелье выходного дня
+## v1.6.0: друзья-питомцы, погода и альбом
 
-**Классы и умения.** На 5 уровне выберите воина, мага, плута или целителя. Характеристика класса растёт вдвое быстрее, и появляются три умения за ману: удар по боссу, усиление на день или защита от ночного урона. Мана возвращается с каждой задачей и за ночь. Первый выбор бесплатный, смена стоит 100 золота.
+**Дружба.** У каждого питомца десять сердец: дни вместе, угощения и боссы, побеждённые бок о бок, делают его ближе. Тапните спутника в сцене, чтобы погладить. На трёх сердцах он выучит сальто, на шести подарит ленту дружбы, на десяти станет лучшим другом и навсегда будет помогать на пятую часть сильнее.
 
-**Ездовые звери.** Оседлайте взрослого питомца и езжайте верхом: герой сидит на нём в сцене, а зверь даёт свою помощь целиком, вдобавок к помощи спутника. Сёдла продаются в лавке и ждут в конце подземелья выходного дня.
+**Имена и характер.** Дайте питомцам имена. Каждый вылупляется со своим характером: обжора, соня, храбрец, любопытный, весельчак или верный, и у каждого свой маленький бонус.
 
-**Подземелье выходного дня.** Каждую субботу и воскресенье открывается новое подземелье в пять комнат. Каждая сделанная задача ведёт на шаг глубже (сложные считаются за два). Каждая комната платит, а в последней ждут сундук и седло.
+**Утренние записки.** Каждое утро спутник оставляет записку: что нашёл за ночь, как шумел дождь или как скучал.
 
-**Статистика.** У каждой задачи своя страница (кнопка с графиком в редакторе): последние 30 дней, выполнения по дням недели и сила привычки за 90 дней. На экране героя видно, что за месяц получается, а что требует внимания.
+**Одежда для питомцев.** Бантики, шляпки, шарфы, очки и сезонные вещи в лавке. Покупаются один раз, носить может любой питомец; видно в сцене, дома и в конюшне.
 
-**Дневник.** «Как прошёл день?» в конце списка задач: отметьте настроение и напишите пару слов. Через несколько недель дневник покажет, как связаны настроение и сделанные задачи.
+**Эволюция.** Взрослый питомец может эволюционировать один раз: звёздная форма за 30 дней вместе, боевая за 10 боссов. После эволюции он помогает на четверть сильнее.
 
-**Фокус.** Сессия на 15, 25 или 50 минут (песочные часы на доске задач). Завершённая платит как задача, прерванная не платит ничего. Сигнал придёт, даже если приложение закрыто.
+**Питомцы дома.** Самые близкие друзья живут в комнате и в саду: днём гуляют, ночью дремлют. Дом теперь открывается прямо с доски задач.
 
-**Таверна.** Обменивайтесь с друзьями однострочными кодами героев, без аккаунтов. Герои друзей появляются в вашей таверне, и каждая карточка моложе недели даёт +2% опыта и золота, до +10%. «Поделиться героем» отправляет картинку с вашей сценой и достижениями.
+**Коллекции.** Все окрасы одного вида, все виды одного окраса или все 88: собранная коллекция приносит золото и титул, а полный вид ещё и статую для дома.
 
-**А ещё:** экран героя разбит на вкладки («Герой», «Награды», «История», «Таверна»); шкала здоровья босса теперь отдельно, под его именем; шесть новых достижений; два новых 8-битных звука.
+**Ежедневные визиты.** Карта дня приносит семидневную лестницу подарков. Пропущенный день не отнимает уже пройденные недели.
+
+**Погода.** Облака, дождь, гроза, туман, снег и радуга после дождя, одинаковые для всех. Герой открывает зонтик, а питомец прячется под листом.
+
+**Альбом.** Большие моменты сохраняют картинку сцены такой, какой она была: вылупления, первые победы, идеальные дни, лучшие друзья. Любой можно отправить друзьям.
 
 Прогресс сохраняется: ничего сбрасывать не нужно.
 
 ---
-
 ## Earlier versions
 
+- **v1.5.0** — Classes and skills, mounts, the weekend dungeon, statistics, journal, focus and a tavern.
 - **v1.4.0** — Pet food in the shop, a bonus for every companion, overnight finds.
 - **v1.3.0** — Card of the day, the perfect-day chest, difficulty levels and 8-bit sounds.
 - **v1.2.0** — Richer pixel art, more bosses, gear and places, a garden and an attic.

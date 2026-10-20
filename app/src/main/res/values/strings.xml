@@ -964,4 +964,204 @@
     <string name="tab_history">History</string>
     <string name="friends">Friends</string>
     <string name="stats_mixed">Both</string>
+    <!-- Pet friends: characters, friendship, clothes, forms, collections, notes, the album -->
+    <string name="trait_glutton">Glutton</string>
+    <string name="trait_glutton_text">Food grows it half as much again.</string>
+    <string name="trait_sleepy">Sleepyhead</string>
+    <string name="trait_sleepy_text">Brings something home overnight more often.</string>
+    <string name="trait_brave">Brave</string>
+    <string name="trait_brave_text" formatted="false">As your companion: +5% damage to bosses.</string>
+    <string name="trait_curious">Curious</string>
+    <string name="trait_curious_text" formatted="false">As your companion: +2% chance to find items.</string>
+    <string name="trait_cheerful">Cheerful</string>
+    <string name="trait_cheerful_text" formatted="false">As your companion: +3% XP from tasks.</string>
+    <string name="trait_loyal">Loyal</string>
+    <string name="trait_loyal_text">Friendship grows half as fast again.</string>
+    <string name="trait_line">Character: %s</string>
+
+    <string name="form_star">Starry form</string>
+    <string name="form_star_text">For 30 days together as your companion, each with a finished task. Night-blue fur full of stars.</string>
+    <string name="form_battle">Battle form</string>
+    <string name="form_battle_text">For 10 bosses beaten together as your companion. War paint and a plated belly.</string>
+    <string name="evolve_title">Evolution</string>
+    <string name="evolve_text">A grown pet can evolve once, down one of two roads. An evolved pet helps a quarter more.</string>
+    <string name="evolve">Evolve</string>
+    <string name="evolve_confirm_title">%s?</string>
+    <string name="evolve_confirm_text">This is for good: the other road closes for this pet.</string>
+    <string name="evolved">Evolved: %s</string>
+
+    <string name="pet_rename">Name</string>
+    <string name="pet_rename_text">Give your pet a name. Leave it empty to go back to its kind and colour.</string>
+    <string name="bond_best">Best friends. Its help is a fifth stronger for good.</string>
+    <string name="bond_next_best">At 10 hearts: best friends, and its help grows stronger.</string>
+    <string name="bond_next_gift">At 6 hearts: a gift.</string>
+    <string name="bond_next_trick">At 3 hearts: a new trick.</string>
+    <string name="pat">Pat</string>
+    <string name="patted">+%d friendship</string>
+    <string name="patted_today">Already patted today. Tap it in the scene for more hearts anyway.</string>
+    <string name="grew_bond">+%1$d%% growth · +%2$d friendship</string>
+    <string name="treat_bond">A treat: +%d friendship</string>
+    <string name="tip_friends">Friendship grows with every day together, every treat and every boss you beat side by side. Tap your companion in the scene to pat it. Three hearts teach it a trick, ten make it your best friend.</string>
+
+    <string name="wardrobe">Wardrobe</string>
+    <string name="wardrobe_empty">Bows, hats, scarves and glasses for pets are sold in the shop.</string>
+    <string name="shop_wear">Pet clothes</string>
+    <string name="shop_wear_text">Bought once, worn by any pet: on the stable card tap a piece to put it on or take it off.</string>
+    <string name="wear_text">Seen in the scene, at home and in the stable.</string>
+    <string name="wear_seasonal">This season only.</string>
+    <string name="owned">Owned</string>
+    <string name="w_bow">Bow</string>
+    <string name="w_flower">Daisy</string>
+    <string name="w_party_hat">Party hat</string>
+    <string name="w_top_hat">Top hat</string>
+    <string name="w_wreath">Spring wreath</string>
+    <string name="w_straw_hat">Straw hat</string>
+    <string name="w_witch_hat">Witch hat</string>
+    <string name="w_santa_hat">Winter hat</string>
+    <string name="w_ribbon">Friendship ribbon</string>
+    <string name="w_scarf">Scarf</string>
+    <string name="w_bell">Bell collar</string>
+    <string name="w_bandana">Bandana</string>
+    <string name="w_bowtie">Bow tie</string>
+    <string name="w_glasses">Glasses</string>
+    <string name="w_sunglasses">Sunglasses</string>
+    <string name="w_monocle">Monocle</string>
+
+    <string name="collections">Collections</string>
+    <string name="collections_text">Hatch every colour of one kind, or every kind in one colour. A finished collection pays gold and a title; a full kind also earns a statue for your home.</string>
+    <string name="show_all">Show all</string>
+    <string name="show_less">Show less</string>
+    <string name="set_species">Every %s</string>
+    <string name="set_potion">Every kind: %s</string>
+    <string name="set_all">All 88 pets</string>
+    <string name="set_reward_gold">%s gold</string>
+    <string name="set_reward_statue">a statue</string>
+    <string name="claim">Claim</string>
+    <string name="set_claimed">Collection complete: «%s»</string>
+    <string name="title_fox">Fox Friend</string>
+    <string name="title_cat">Cat Whisperer</string>
+    <string name="title_owl">Owl Keeper</string>
+    <string name="title_slime">Slime Tamer</string>
+    <string name="title_bunny">Bunny Guardian</string>
+    <string name="title_wolf">Pack Leader</string>
+    <string name="title_turtle">Shell Collector</string>
+    <string name="title_dragon">Dragon Rider</string>
+    <string name="title_potion">%s Keeper</string>
+    <string name="title_all">Great Breeder</string>
+    <string name="title_section">Title</string>
+    <string name="title_none">No title</string>
+    <string name="title_text">Shown under your name. Tap to change.</string>
+    <string name="d_statue_fox">Fox statue</string>
+    <string name="d_statue_cat">Cat statue</string>
+    <string name="d_statue_owl">Owl statue</string>
+    <string name="d_statue_slime">Slime statue</string>
+    <string name="d_statue_bunny">Bunny statue</string>
+    <string name="d_statue_wolf">Wolf statue</string>
+    <string name="d_statue_turtle">Turtle statue</string>
+    <string name="d_statue_dragon">Dragon statue</string>
+
+    <string name="news_heart">%1$s: %2$d ♥</string>
+    <string name="news_trick_title">A new trick!</string>
+    <string name="news_trick">Three hearts. Now and then %s does a flip in the scene, and a pat sets it off.</string>
+    <string name="news_gift_title">A gift of friendship</string>
+    <string name="news_gift">Six hearts. %s brings you a friendship ribbon: any pet can wear it (stable → wardrobe).</string>
+    <string name="news_best_title">Best friends</string>
+    <string name="news_best">Ten hearts. %s is your best friend now, and its help is a fifth stronger for good.</string>
+    <string name="news_form_title">Ready to evolve</string>
+    <string name="news_form">%s can evolve. Pick its road on its card in the stable.</string>
+
+    <string name="note_title">A note from %s</string>
+    <string name="note_sign">— %s</string>
+    <string name="note_ok">Good morning!</string>
+    <string name="note_also_found">P.S. I brought you %s.</string>
+    <plurals name="note_missed">
+        <item quantity="one">You were gone for a day. I waited by the door and kept your spot warm. I\'m so glad you\'re back!</item>
+        <item quantity="other">You were gone for %d days. I waited by the door every evening. Never mind, you\'re back now, and that\'s what matters!</item>
+    </plurals>
+    <string-array name="note_found">
+        <item>While you slept I found %1$s %2$s. It\'s for you!</item>
+        <item>Look what I dug up %2$s: %1$s!</item>
+        <item>I went for a little walk %2$s and came back with %1$s.</item>
+        <item>%1$s! I found it %2$s and carried it all the way home.</item>
+    </string-array>
+    <string-array name="note_places">
+        <item>by the stream</item>
+        <item>under the old oak</item>
+        <item>in the tall grass</item>
+        <item>behind the mossy stone</item>
+        <item>over the hill</item>
+        <item>in the bushes</item>
+        <item>by the garden fence</item>
+        <item>down the path</item>
+    </string-array>
+    <string-array name="note_bond">
+        <item>I think we\'re getting closer. Yesterday was a good day together.</item>
+        <item>You did so much yesterday. I\'m proud to walk beside you.</item>
+        <item>Another heart! I knew we\'d make a good team.</item>
+    </string-array>
+    <string-array name="note_rain">
+        <item>It rained all night. I hid under a big leaf and listened to the drops.</item>
+        <item>The rain drummed on the roof. I curled up and dreamed of sunshine.</item>
+        <item>Puddles everywhere this morning! Can we jump in them later?</item>
+    </string-array>
+    <string-array name="note_snow">
+        <item>It snowed in the night! I left little footprints all around the house.</item>
+        <item>Everything is white outside. I caught a snowflake on my nose.</item>
+    </string-array>
+    <string-array name="note_glutton">
+        <item>I dreamed of a mountain of cake. Do we have any cake?</item>
+        <item>Good morning! Is it breakfast yet? It feels like breakfast.</item>
+        <item>I only ate a little bit of the berries. Well, most of them.</item>
+    </string-array>
+    <string-array name="note_sleepy">
+        <item>I slept all evening. And a little more this morning. Five more minutes?</item>
+        <item>Mmm… morning already? I\'ll walk with you, just slowly.</item>
+        <item>I had the coziest dream. You were in it, finishing all your tasks.</item>
+    </string-array>
+    <string-array name="note_brave">
+        <item>I kept watch all night. No monsters came. They know I\'m here.</item>
+        <item>Ready for today! Whatever comes, I\'ve got your back.</item>
+        <item>I practised growling at shadows. I\'m getting really good at it.</item>
+    </string-array>
+    <string-array name="note_curious">
+        <item>Did you know there\'s a beetle living under the doorstep? We\'re friends now.</item>
+        <item>I found a new smell by the fence. I must investigate today.</item>
+        <item>What\'s on the list today? I want to see everything!</item>
+    </string-array>
+    <string-array name="note_cheerful">
+        <item>Good morning! Today is going to be a great day, I can feel it!</item>
+        <item>The sun is up and so am I. Let\'s go!</item>
+        <item>I did a little dance when I woke up. You should try it.</item>
+    </string-array>
+    <string-array name="note_loyal">
+        <item>I slept right by your door. Just in case you needed me.</item>
+        <item>Wherever you go today, I\'m coming too.</item>
+        <item>You\'re my favourite person. That\'s all. Good morning.</item>
+    </string-array>
+
+    <plurals name="visit_streak">
+        <item quantity="one">Day %d in a row</item>
+        <item quantity="other">Day %d in a row</item>
+    </plurals>
+    <string name="visit_gold">+%s gold</string>
+
+    <string name="album">Album</string>
+    <string name="album_text">Big moments keep a picture of the scene just as it was: hatchings, wins, perfect days, best friends.</string>
+    <string name="album_empty">Nothing here yet. Hatch a pet or beat a boss and the first picture appears.</string>
+    <string name="album_share">Share</string>
+    <string name="close">Close</string>
+    <plurals name="album_count">
+        <item quantity="one">%d moment</item>
+        <item quantity="other">%d moments</item>
+    </plurals>
+    <string name="m_hatch">Hatched: %s</string>
+    <string name="m_grown">%s grew up</string>
+    <string name="m_victory">Victory: %s</string>
+    <string name="m_perfect">A perfect day</string>
+    <string name="m_level">Level %s</string>
+    <string name="m_dungeon">Dungeons cleared: %s</string>
+    <string name="m_ride">First ride: %s</string>
+    <string name="m_friend">Best friends: %s</string>
+    <string name="m_evolve">Evolved: %s</string>
+    <string name="m_collection">Collection complete: «%s»</string>
 </resources>

@@ -50,6 +50,7 @@ object ShareCard {
             Look(hero.skin, hero.hairStyle, hero.hairColor, hero.weapon, hero.armor, hero.head, hero.shield),
             hero.pet, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100, Catalog.boss(hero.quest), hero.resting,
             Season.of(LocalDate.now(), settings.southern), mount = hero.mount,
+            petForm = pets.firstOrNull { it.key == hero.pet }?.form.orEmpty(), petWear = pets.firstOrNull { it.key == hero.pet }?.wear.orEmpty(),
         )
         repeat(20) { r.render(state, 10_000L + it * 66) }
         val scene = createBitmap(VW, VH)

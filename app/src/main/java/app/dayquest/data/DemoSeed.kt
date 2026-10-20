@@ -20,10 +20,12 @@ object DemoSeed {
                 pet = "fox:golden", scene = "meadow",
                 ownedGear = "wooden_sword,tunic,iron_sword,leather,cap,buckler,iron_helm,flame_blade,chainmail,wizard_hat,kite_shield,knight_plate,pumpkin_hat",
                 ownedScenes = "meadow,forest,snow", quest = "frost_wyrm#1", questHp = 540.0, questsDone = "slime_king=3,goblin_chief=2,stone_golem=1,frost_wyrm=1,week:2026:41=1,season:summer:2026=1",
-                ownedDecor = "wp_plain,fl_planks,wp_bricks,painting_hills,window,trophies,bookshelf,fireplace,aquarium,plant,pet_bed,rug_royal,lamp",
-                home = "WALL_L=painting_hills,WALL_C=window,WALL_R=trophies,BIG_L=bookshelf,BIG_R=fireplace,SMALL_L=plant,SMALL_R=pet_bed,RUG=rug_royal",
+                ownedDecor = "wp_plain,fl_planks,wp_bricks,painting_hills,window,trophies,bookshelf,fireplace,aquarium,plant,pet_bed,rug_royal,lamp,statue_fox,area:garden,apple_tree,flower_bed,fence_picket,path_stone",
+                home = "WALL_L=painting_hills,WALL_C=window,WALL_R=trophies,BIG_L=bookshelf,BIG_R=fireplace,SMALL_L=statue_fox,SMALL_R=pet_bed,RUG=rug_royal,G_BIG_L=apple_tree,G_SMALL_L=flower_bed,G_FENCE=fence_picket,G_PATH=path_stone",
                 wallpaper = "wp_bricks",
                 heroClass = "MAGE", mp = 27.0, mount = "owl:aurora", dungeonsCleared = 2, uid = "demo0000mira0000",
+                ownedWear = "bow,scarf,top_hat,glasses,bowtie,party_hat", visitDay = today - 1, visitStreak = 5,
+                collections = "sp:fox", title = "sp:fox",
             )
         )
         fun s(id: Int) = context.getString(id)
@@ -54,8 +56,24 @@ object DemoSeed {
             db.insertCheck(CheckItem(taskId = t.id, text = "Chapter 3", done = true, position = 0))
             db.insertCheck(CheckItem(taskId = t.id, text = "Notes", position = 1))
         }
-        listOf("fox:golden" to 100, "cat:base" to 40, "owl:base" to 0, "slime:rose" to 60, "turtle:moss" to 20, "bunny:base" to 80, "wolf:frost" to 0, "fox:harvest" to 30, "owl:aurora" to 100, "dragon:ember" to 10, "cat:blossom" to 0, "bunny:tide" to 50, "slime:base" to 100)
-            .forEach { (k, g) -> db.savePet(Pet(k, g, mount = k == "owl:aurora" || k == "slime:base")) }
+        val ru = context.resources.configuration.locales[0].language == "ru"
+        val pets = listOf("cat:base" to 40, "owl:base" to 0, "slime:rose" to 60, "turtle:moss" to 20, "bunny:base" to 80, "wolf:frost" to 0, "owl:aurora" to 100, "dragon:ember" to 10, "cat:blossom" to 0, "bunny:tide" to 50, "slime:base" to 100) +
+            app.dayquest.game.Potion.entries.filter { it.key != "golden" }.map { "fox:${it.key}" to 100 }
+        pets.forEach { (k, g) -> db.savePet(Pet(k, g, mount = k == "owl:aurora" || k == "slime:base", hatchedAt = 1_700_000_000_000L + k.hashCode())) }
+        // The companion: named, close friends, dressed up and evolved.
+        db.savePet(Pet("fox:golden", 100, hatchedAt = 1_699_000_000_000L, name = if (ru) "Пирожок" else "Biscuit", bond = 420, days = 34, wins = 6, form = "star", wear = "bow,scarf"))
+        db.savePet(Pet("cat:base", 40, hatchedAt = 1_700_100_000_000L, name = if (ru) "Мурка" else "Pebble", bond = 160, wear = "glasses"))
+        db.savePet(Pet("bunny:base", 80, hatchedAt = 1_700_200_000_000L, bond = 120, wear = "party_hat,bowtie"))
+        fun snap(pet: String, hour: Float, boss: String = "", wear: String = "", form: String = "") = app.dayquest.game.Snap(
+            "meadow", hour, "summer", 1, 3, 4, "flame_blade", "chainmail", "wizard_hat", "kite_shield", pet, true, form, wear, "", boss, "CLEAR",
+        ).encode()
+        listOf(
+            Moment(day = today - 120, kind = "HATCH", subject = "fox:golden", scene = snap("fox:golden", 9f)),
+            Moment(day = today - 60, kind = "VICTORY", subject = "stone_golem", scene = snap("fox:golden", 17f, "stone_golem", "bow")),
+            Moment(day = today - 30, kind = "PERFECT", scene = snap("fox:golden", 19.5f, wear = "bow")),
+            Moment(day = today - 9, kind = "EVOLVE", subject = "fox:golden", scene = snap("fox:golden", 21.5f, wear = "bow,scarf", form = "star")),
+            Moment(day = today - 2, kind = "COLLECTION", subject = "sp:fox", scene = snap("fox:golden", 12f, wear = "bow,scarf", form = "star")),
+        ).forEach { db.insertMoment(it) }
         listOf("egg:fox" to 2, "egg:owl" to 1, "egg:cat" to 1, "potion:golden" to 1, "potion:moss" to 2, "potion:harvest" to 2, "food:berry" to 3, "food:fish" to 1, "food:cake" to 2)
             .forEach { (k, n) -> db.saveItem(Item(k, n)) }
         // Some history for the activity heatmap

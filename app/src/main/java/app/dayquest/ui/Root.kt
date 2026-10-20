@@ -87,6 +87,7 @@ import app.dayquest.ui.events.ChestDialog
 import app.dayquest.ui.events.EventCardDialog
 import app.dayquest.ui.hero.HeroScreen
 import app.dayquest.ui.onboarding.OnboardingScreen
+import app.dayquest.ui.pets.petTitle
 import app.dayquest.ui.pixel.PixelImage
 import app.dayquest.ui.quests.QuestsScreen
 import app.dayquest.ui.settings.SettingsScreen
@@ -105,6 +106,11 @@ import kotlinx.coroutines.withContext
 /** Snackbars with undo, and the tap buzz. */
 class Feedback(private val host: SnackbarHostState, private val scope: CoroutineScope, private val haptic: HapticFeedback, private val onUndo: (Long) -> Unit) {
     var haptics = true
+
+    /** A line that waits its turn instead of replacing the snackbar on screen. */
+    fun showLater(message: String) {
+        scope.launch { host.showSnackbar(message, duration = SnackbarDuration.Short) }
+    }
 
     fun show(message: String, undoLabel: String? = null, undoLog: Long = 0) {
         scope.launch {
@@ -178,20 +184,26 @@ fun DayquestRoot(settings: Settings) {
 private fun Main(hero: Hero, settings: Settings) {
     val context = LocalContext.current
     val c = context.container
+    val feedback = LocalFeedback.current
     val nav = rememberNavController()
     var tab by rememberSaveable { mutableStateOf(Tab.TASKS) }
 
     // ---- New day ----
     var recap by remember { mutableStateOf<Pair<Long, List<Task>>?>(null) }
     var report by remember { mutableStateOf<DayReport?>(null) }
+    var note by remember { mutableStateOf<app.dayquest.game.PetNote?>(null) }
+    suspend fun closeDay() {
+        val r = c.game.startNewDay() ?: return
+        withContext(kotlinx.coroutines.Dispatchers.Main) {
+            if (r.hp + r.bossHit > 0 || r.fainted) report = r
+            note = r.note
+        }
+    }
     suspend fun checkDay() {
         val pending = c.game.pendingRecap() ?: return
         val h = c.game.hero()
         if (pending.second.isNotEmpty() && !h.resting) withContext(kotlinx.coroutines.Dispatchers.Main) { recap = pending }
-        else {
-            val r = c.game.startNewDay()
-            if (r != null && (r.hp + r.bossHit > 0 || r.fainted || r.found.isNotEmpty())) withContext(kotlinx.coroutines.Dispatchers.Main) { report = r }
-        }
+        else closeDay()
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { c.scope.launch { checkDay() } }
     LaunchedEffect(Unit) {
@@ -206,6 +218,16 @@ private fun Main(hero: Hero, settings: Settings) {
     var fainted by remember { mutableStateOf(false) }
     var victory by remember { mutableStateOf<Boss?>(null) }
     val unlocked = remember { mutableStateListOf<app.dayquest.game.Achievement>() }
+    // Friendship milestones: a new heart is a quiet line, the bigger ones get their own card.
+    val news = remember { mutableStateListOf<app.dayquest.game.PetNews>() }
+    LaunchedEffect(Unit) {
+        c.game.news.collect { n ->
+            if (n.kind == app.dayquest.game.NewsKind.HEART) {
+                val pet = c.db.game().pet(n.pet)
+                feedback.showLater(context.getString(R.string.news_heart, context.petTitle(pet), n.level))
+            } else news += n
+        }
+    }
     suspend fun checkAchievements() {
         val fresh = c.game.checkAchievements()
         if (fresh.isNotEmpty()) withContext(kotlinx.coroutines.Dispatchers.Main) { unlocked.addAll(fresh) }
@@ -268,12 +290,13 @@ private fun Main(hero: Hero, settings: Settings) {
                                 onNew = { type, title -> nav.navigate("new/${type.name}?title=${android.net.Uri.encode(title)}") },
                                 onSettings = { nav.navigate("settings") },
                                 onFocus = { nav.navigate("focus") },
+                                onHome = { nav.navigate("home") },
                             )
                             Tab.SHOP -> ShopScreen(hero, onEdit = { nav.navigate("edit/$it") }, onNew = { nav.navigate("new/REWARD?title=${android.net.Uri.encode(it)}") })
                             Tab.STABLE -> StableScreen(hero)
                             Tab.QUESTS -> QuestsScreen(hero)
                             Tab.HERO -> HeroScreen(
-                                hero, onSettings = { nav.navigate("settings") }, onHome = { nav.navigate("home") },
+                                hero, onSettings = { nav.navigate("settings") }, onHome = { nav.navigate("home") }, onAlbum = { nav.navigate("album") },
                                 onJournal = { nav.navigate("journal") }, onTask = { nav.navigate("stats/$it") },
                             )
                         }
@@ -307,6 +330,7 @@ private fun Main(hero: Hero, settings: Settings) {
             app.dayquest.ui.onboarding.HowItWorks(hero.look(), stringResource(R.string.guide_done), onFinish = { nav.popBackStack() })
         }
         composable("home") { app.dayquest.ui.home.HomeScreen(hero, onBack = { nav.popBackStack() }) }
+        composable("album") { app.dayquest.ui.album.AlbumScreen(onBack = { nav.popBackStack() }) }
     }
 
     recap?.let { (day, missed) ->
@@ -314,24 +338,22 @@ private fun Main(hero: Hero, settings: Settings) {
             recap = null
             c.scope.launch {
                 checked.forEach { c.game.setDaily(it, true, day) }
-                val r = c.game.startNewDay()
-                if (r != null && (r.hp + r.bossHit > 0 || r.fainted || r.found.isNotEmpty())) withContext(kotlinx.coroutines.Dispatchers.Main) { report = r }
+                closeDay()
             }
         }
     }
     report?.takeIf { !it.fainted }?.let { r ->
-        val hurt = r.hp + r.bossHit > 0
         MomentDialog(
-            sprite = if (hurt) Sprites.heart else itemSprite(r.found) ?: Sprites.heart,
-            title = stringResource(if (hurt) R.string.recap_title else R.string.found_title),
+            sprite = Sprites.heart,
+            title = stringResource(R.string.recap_title),
             text = listOfNotNull(
                 stringResource(R.string.report_hurt, gainText(r.hp)).takeIf { r.hp > 0 },
                 stringResource(R.string.report_boss, gainText(r.bossHit)).takeIf { r.bossHit > 0 },
-                stringResource(R.string.report_found, petName(hero.pet), itemName(r.found)).takeIf { r.found.isNotEmpty() },
             ).joinToString("\n"),
             button = stringResource(R.string.next),
         ) { report = null }
     }
+    if (report == null && !fainted) note?.let { n -> app.dayquest.ui.pets.NoteDialog(n, hero) { note = null } }
     if (fainted || report?.fainted == true) {
         MomentDialog(Sprites.tombstone, stringResource(R.string.faint_title), stringResource(R.string.faint_text), stringResource(R.string.faint_ok)) {
             fainted = false; report = null
@@ -357,12 +379,17 @@ private fun Main(hero: Hero, settings: Settings) {
         ) { unlocked.clear() }
     }
     val today = Rules.logicalDay(java.time.LocalDateTime.now(), settings.dayStart)
-    val calm = recap == null && report == null && !fainted && levelUp == 0 && victory == null && unlocked.isEmpty()
+    val calm = recap == null && report == null && note == null && !fainted && levelUp == 0 && victory == null && unlocked.isEmpty() && news.isEmpty()
     if (calm && !chest && hero.lastDay == today && hero.eventDay != today && cardOpened != today) {
-        EventCardDialog(DayEvent.of(today)) {
+        val streak = app.dayquest.game.Visits.streak(hero.visitDay, hero.visitStreak, today)
+        val visit = if (hero.visitDay != today) streak to app.dayquest.game.Visits.gift(streak, hero.level, today) else null
+        EventCardDialog(DayEvent.of(today), visit) {
             cardOpened = today
             c.launch { c.game.openEvent() }
         }
+    }
+    if (recap == null && report == null && note == null && !fainted && levelUp == 0 && victory == null) news.firstOrNull()?.let { n ->
+        app.dayquest.ui.pets.PetNewsDialog(n) { news.removeAt(0) }
     }
     if (calm && chest) {
         ChestDialog(chestPerfect, hero.chests) { loot ->

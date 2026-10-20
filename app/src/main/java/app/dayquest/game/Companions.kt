@@ -51,10 +51,21 @@ object Companions {
     /** The boss-only pets are a little stronger. */
     private fun rare(s: Species) = if (s.questOnly) 1.5 else 1.0
 
+    /** A best friend helps a fifth more, an evolved pet a quarter more. */
+    fun friendship(pet: Pet) = (if (Bond.best(pet)) 1.2 else 1.0) * (if (pet.form.isNotEmpty()) 1.25 else 1.0)
+
     /** How much of the perk a pet gives: half while young, all of it once fully grown. */
     fun amount(pet: Pet): Double {
         val s = Catalog.petParts(pet.key)?.first ?: return 0.0
-        return perk(s).full * rare(s) * if (pet.growth >= 100) 1.0 else 0.5
+        return perk(s).full * rare(s) * friendship(pet) * if (pet.growth >= 100) 1.0 else 0.5
+    }
+
+    /** The small extra a companion's character adds (only while it walks beside the hero). */
+    fun trait(pet: Pet?): Boost = when (pet?.let { Trait.of(it) }) {
+        Trait.BRAVE -> Boost(boss = 0.05)
+        Trait.CURIOUS -> Boost(drop = 0.02)
+        Trait.CHEERFUL -> Boost(xp = 0.03)
+        else -> Boost()
     }
 
     /** A saddled pet carries the hero and gives its perk in full, on top of the companion's. */
@@ -75,8 +86,8 @@ object Companions {
         }
     }
 
-    /** The chance the companion brings something home overnight. */
-    fun findChance(pet: Pet) = if (pet.growth >= 100) 0.6 else 0.3
+    /** The chance the companion brings something home overnight (a sleepy one wanders in its dreams too). */
+    fun findChance(pet: Pet) = (if (pet.growth >= 100) 0.6 else 0.3) + if (Trait.of(pet) == Trait.SLEEPY) 0.15 else 0.0
 
     /** What the companion found overnight, or "": often its favourite food, sometimes any. */
     fun forage(pet: Pet?, random: Random): String {

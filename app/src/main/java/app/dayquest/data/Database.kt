@@ -173,6 +173,20 @@ data class Hero(
     /** A random id that tells this hero apart in friends' taverns. */
     @ColumnInfo(defaultValue = "")
     val uid: String = "",
+    /** Pet clothes bought, "bow,scarf" (any pet can wear them). */
+    @ColumnInfo(defaultValue = "")
+    val ownedWear: String = "",
+    /** The last day the game was opened and its visit gift taken, and how many days in a row. */
+    @ColumnInfo(defaultValue = "-1")
+    val visitDay: Long = -1,
+    @ColumnInfo(defaultValue = "0")
+    val visitStreak: Int = 0,
+    /** Pet collections whose reward was taken, "sp:fox,po:golden". */
+    @ColumnInfo(defaultValue = "")
+    val collections: String = "",
+    /** The collection whose title the hero shows, "" for none. */
+    @ColumnInfo(defaultValue = "")
+    val title: String = "",
 ) {
     fun owns(gear: String) = gear in ownedGear.split(',')
     fun ownsScene(key: String) = key in ownedScenes.split(',')
@@ -203,6 +217,37 @@ data class Pet(
     /** Saddled: a fully grown pet that can now be ridden. */
     @ColumnInfo(defaultValue = "0")
     val mount: Boolean = false,
+    /** The name the player gave it, "" for none. */
+    @ColumnInfo(defaultValue = "")
+    val name: String = "",
+    /** Friendship points (see [app.dayquest.game.Bond]). */
+    @ColumnInfo(defaultValue = "0")
+    val bond: Int = 0,
+    /** The last day it was patted: a pat counts once a day. */
+    @ColumnInfo(defaultValue = "-1")
+    val pattedDay: Long = -1,
+    /** Days spent as the companion with at least one finished task, and bosses beaten as the companion. */
+    @ColumnInfo(defaultValue = "0")
+    val days: Int = 0,
+    @ColumnInfo(defaultValue = "0")
+    val wins: Int = 0,
+    /** [app.dayquest.game.Form] key once evolved, "" before. */
+    @ColumnInfo(defaultValue = "")
+    val form: String = "",
+    /** What it wears, "bow,scarf". */
+    @ColumnInfo(defaultValue = "")
+    val wear: String = "",
+)
+
+/** A moment kept in the album: what happened ([kind], [subject]) and the scene as it looked ([scene], a [app.dayquest.game.Snap]). */
+@Entity(tableName = "moments")
+data class Moment(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val at: Long = System.currentTimeMillis(),
+    val day: Long,
+    val kind: String,
+    val subject: String = "",
+    val scene: String = "",
 )
 
 /** One line in the journal: how the day felt (1 hard .. 5 great) and a short note. */
@@ -222,6 +267,7 @@ data class Snapshot(
     val pets: List<Pet>,
     val journal: List<JournalEntry> = emptyList(),
     val friends: List<Friend> = emptyList(),
+    val moments: List<Moment> = emptyList(),
 )
 
 @Dao
@@ -391,7 +437,26 @@ abstract class GameDao {
     @Query("DELETE FROM friends WHERE uid = :uid")
     abstract suspend fun deleteFriend(uid: String)
 
+    // Album
+    @Query("SELECT * FROM moments ORDER BY at DESC")
+    abstract fun observeMoments(): Flow<List<Moment>>
+
+    @Query("SELECT * FROM moments WHERE kind = :kind ORDER BY at DESC LIMIT 1")
+    abstract suspend fun lastMoment(kind: String): Moment?
+
+    @Insert
+    abstract suspend fun insertMoment(m: Moment): Long
+
     // Backup
+    @Query("SELECT * FROM moments")
+    protected abstract suspend fun allMoments(): List<Moment>
+
+    @Query("DELETE FROM moments")
+    protected abstract suspend fun clearMoments()
+
+    @Insert
+    protected abstract suspend fun insertMoments(items: List<Moment>)
+
     @Query("SELECT * FROM journal")
     protected abstract suspend fun allJournal(): List<JournalEntry>
 
@@ -450,12 +515,12 @@ abstract class GameDao {
     protected abstract suspend fun insertPets(items: List<Pet>)
 
     @Transaction
-    open suspend fun snapshot() = Snapshot(hero(), tasks(), allChecklist(), allLog(), allItems(), allPets(), allJournal(), friends())
+    open suspend fun snapshot() = Snapshot(hero(), tasks(), allChecklist(), allLog(), allItems(), allPets(), allJournal(), friends(), allMoments())
 
     /** Replaces everything with a backup (checklists cascade away with their tasks). */
     @Transaction
     open suspend fun replaceAll(s: Snapshot) {
-        clearTasks(); clearLog(); clearItems(); clearPets(); clearHero(); clearJournal(); clearFriends()
+        clearTasks(); clearLog(); clearItems(); clearPets(); clearHero(); clearJournal(); clearFriends(); clearMoments()
         s.hero?.let { saveHero(it) }
         insertTasks(s.tasks)
         insertChecklist(s.checklist)
@@ -464,14 +529,15 @@ abstract class GameDao {
         insertPets(s.pets)
         insertJournal(s.journal)
         insertFriends(s.friends)
+        insertMoments(s.moments)
     }
 }
 
 data class DayKind(val day: Long, val kind: LogKind)
 
 @Database(
-    entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class, JournalEntry::class, Friend::class],
-    version = 4,
+    entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class, JournalEntry::class, Friend::class, Moment::class],
+    version = 5,
 )
 abstract class GameDatabase : RoomDatabase() {
     abstract fun game(): GameDao
@@ -479,7 +545,7 @@ abstract class GameDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): GameDatabase =
             Room.databaseBuilder(context.applicationContext, GameDatabase::class.java, "dayquest.db")
-                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS, CLASSES_AND_FRIENDS)
+                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS, CLASSES_AND_FRIENDS, PET_FRIENDS)
                 .build()
 
         private val ACHIEVEMENTS_AND_HOME = object : Migration(1, 2) {
@@ -515,6 +581,24 @@ abstract class GameDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE log ADD COLUMN step INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("CREATE TABLE IF NOT EXISTS `journal` (`day` INTEGER NOT NULL, `mood` INTEGER NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`day`))")
                 db.execSQL("CREATE TABLE IF NOT EXISTS `friends` (`uid` TEXT NOT NULL, `code` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`uid`))")
+            }
+        }
+
+        private val PET_FRIENDS = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE hero ADD COLUMN ownedWear TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE hero ADD COLUMN visitDay INTEGER NOT NULL DEFAULT -1")
+                db.execSQL("ALTER TABLE hero ADD COLUMN visitStreak INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE hero ADD COLUMN collections TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE hero ADD COLUMN title TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE pets ADD COLUMN name TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE pets ADD COLUMN bond INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE pets ADD COLUMN pattedDay INTEGER NOT NULL DEFAULT -1")
+                db.execSQL("ALTER TABLE pets ADD COLUMN days INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE pets ADD COLUMN wins INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE pets ADD COLUMN form TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE pets ADD COLUMN wear TEXT NOT NULL DEFAULT ''")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `moments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `at` INTEGER NOT NULL, `day` INTEGER NOT NULL, `kind` TEXT NOT NULL, `subject` TEXT NOT NULL, `scene` TEXT NOT NULL)")
             }
         }
     }

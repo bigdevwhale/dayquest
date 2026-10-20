@@ -143,7 +143,7 @@ fun rememberSceneFx(): SceneFx {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit, onFocus: () -> Unit) {
+fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit, onFocus: () -> Unit, onHome: () -> Unit) {
     val context = LocalContext.current
     val c = context.container
     val fb = LocalFeedback.current
@@ -168,7 +168,7 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
     val mood by remember(today) { c.db.game().observeJournalDay(today) }.collectAsStateWithLifecycle(initialValue = null)
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item(key = "header") { HeroHeader(hero, fx, onSettings, onChest, onFocus) }
+        item(key = "header") { HeroHeader(hero, fx, onSettings, onChest, onFocus, onHome) }
         stickyHeader(key = "tabs") {
             Column(Modifier.fillMaxWidth().background(D.c.bg).padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Segmented(
@@ -310,16 +310,14 @@ private fun LazyListScope.taskItems(
 // ---- Header ------------------------------------------------------------------------------
 
 @Composable
-private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest: () -> Unit, onFocus: () -> Unit) {
+private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest: () -> Unit, onFocus: () -> Unit, onHome: () -> Unit) {
     val boss = Catalog.boss(hero.quest)
-    val db = LocalContext.current.container.db.game()
-    val pet by remember(hero.pet) { db.observePets().map { l -> l.firstOrNull { it.key == hero.pet } } }
-        .collectAsStateWithLifecycle(initialValue = null)
+    val pets = app.dayquest.ui.pets.rememberPets()
     Column(Modifier.fillMaxWidth()) {
         Box {
             SceneView(
-                SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, (pet?.growth ?: 0) >= 100, boss, hero.resting, app.dayquest.ui.rememberSeason(), mount = hero.mount),
-                bursts = fx.bursts, floaters = fx.floaters,
+                app.dayquest.ui.pets.heroScene(hero, pets, boss),
+                bursts = fx.bursts, floaters = fx.floaters, onPet = app.dayquest.ui.pets.rememberPat(hero).takeIf { hero.pet.isNotEmpty() },
             )
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 // Unopened chests wait here until tapped.
@@ -336,6 +334,12 @@ private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest:
                     }
                 }
                 Spacer(Modifier.weight(1f))
+                // Home is one tap away: the pets that live there are waiting.
+                Box(
+                    Modifier.size(40.dp).clip(D.RSm).background(Color(0x55000000)).clickable(onClick = onHome),
+                    contentAlignment = Alignment.Center,
+                ) { PixelImage(app.dayquest.pixel.Badges.house, pixel = 2.dp) }
+                Spacer(Modifier.width(8.dp))
                 Box(
                     Modifier.size(40.dp).clip(D.RSm).background(Color(0x55000000)).clickable(onClick = onFocus),
                     contentAlignment = Alignment.Center,
@@ -366,7 +370,10 @@ fun StatsPanel(hero: Hero, modifier: Modifier = Modifier) {
                 Text(stringResource(R.string.lv, hero.level), style = DType.Pixel.copy(color = D.c.onAccent, fontSize = 17.sp))
             }
             Spacer(Modifier.width(10.dp))
-            Text(hero.name, style = DType.Heading.copy(fontSize = 21.sp), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.weight(1f)) {
+                Text(hero.name, style = DType.Heading.copy(fontSize = 21.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (hero.title.isNotEmpty()) Text(app.dayquest.ui.pets.titleName(hero.title), style = DType.Small.copy(color = D.c.gold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             PixelImage(Sprites.coin, pixel = 2.dp)
             Spacer(Modifier.width(6.dp))
             Text(goldText(hero.gold), style = DType.Number.copy(color = D.c.gold, fontSize = 17.sp))

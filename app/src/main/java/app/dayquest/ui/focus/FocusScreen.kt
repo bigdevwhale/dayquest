@@ -107,11 +107,10 @@ fun FocusScreen(hero: Hero, onBack: () -> Unit) {
         onDispose { view.keepScreenOn = false }
     }
     val pets by remember { c.db.game().observePets() }.collectAsStateWithLifecycle(initialValue = emptyList())
-    val grown = (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100
 
     Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())) {
         TopBar(stringResource(R.string.focus), onBack)
-        SceneView(SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, grown, null, false, rememberSeason(), mount = hero.mount))
+        SceneView(app.dayquest.ui.pets.heroScene(hero.copy(resting = false), pets))
         Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             if (running) {
                 val total = s.focusMinutes * 60_000L

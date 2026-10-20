@@ -5,6 +5,7 @@ import app.dayquest.data.GameDao
 import app.dayquest.data.Hero
 import app.dayquest.data.LogEntry
 import app.dayquest.data.LogKind
+import app.dayquest.data.Moment
 import app.dayquest.data.Pet
 import app.dayquest.data.Settings
 import app.dayquest.data.Task
@@ -16,6 +17,7 @@ import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.random.Random
 
@@ -66,13 +68,25 @@ data class DayReport(
     val resting: Boolean,
     /** What the companion brought home overnight, or "". */
     val found: String = "",
+    /** The companion's morning note, when there is a companion. */
+    val note: PetNote? = null,
 )
+
+/** What a meal did: growth (0 once grown) and friendship. */
+data class Fed(val growth: Int, val bond: Int)
 
 /** All the rules that touch the database. [prefs] reads the current settings (a function, so tests need no Android). */
 class Game(private val db: GameDao, private val prefs: suspend () -> Settings, private val random: Random = Random.Default) {
+    companion object {
+        const val NAME_MAX = 16
+    }
+
     private val mutex = Mutex()
     private val _fx = MutableSharedFlow<Outcome>(extraBufferCapacity = 16)
     val fx: SharedFlow<Outcome> = _fx
+    private val _news = MutableSharedFlow<PetNews>(extraBufferCapacity = 16)
+    /** Friendship milestones and evolutions that just became possible. */
+    val news: SharedFlow<PetNews> = _news
 
     suspend fun today(): Long = Rules.logicalDay(LocalDateTime.now(), prefs().dayStart)
 
@@ -85,7 +99,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
 
     /** What the hero's companion and mount add right now. */
     private suspend fun boost(h: Hero): Boost =
-        (if (h.pet.isEmpty()) Boost() else Companions.boost(db.pet(h.pet))) +
+        (if (h.pet.isEmpty()) Boost() else db.pet(h.pet).let { Companions.boost(it) + Companions.trait(it) }) +
             (if (h.mount.isEmpty()) Boost() else Companions.mountBoost(db.pet(h.mount)))
 
     fun stats(h: Hero): Stats {
@@ -148,6 +162,9 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
             val h3 = hero()
             if (d == today() && h3.perfectDay != d && isPerfect(d)) {
                 db.saveHero(h3.copy(perfectDay = d, chests = h3.chests + 1))
+                // The first perfect day goes in the album, and then one a week at most.
+                val last = db.lastMoment(MomentKind.PERFECT.name)
+                if (last == null || d - last.day >= 7) keep(MomentKind.PERFECT, "", h3)
                 emit(o.copy(perfect = true))
             } else emit(o)
         } else if (!done && t.doneDay == d) {
@@ -216,6 +233,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         items.forEach { db.addItem(it, 1) }
         val next = levelUp(h.copy(chests = h.chests - 1, gold = h.gold + gold, xp = h.xp + xp))
         db.saveHero(next)
+        leveled(h.level, next)
         db.insertLog(LogEntry(day = today(), kind = LogKind.CHEST, gold = gold, xp = xp))
         Loot(gold, xp, items, if (next.level > h.level) next.level else 0)
     }
@@ -226,11 +244,14 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         val day = today()
         if (h.eventDay == day) return null
         val ev = DayEvent.of(day)
-        val items = giftItems(ev.gift)
+        // The visit ladder pays with the morning card: one gift per day the game is opened.
+        val streak = Visits.streak(h.visitDay, h.visitStreak, day)
+        val visit = if (h.visitDay != day) Visits.gift(streak, h.level, day) else VisitGift(0.0, emptyList())
+        val items = giftItems(ev.gift) + visit.items
         items.forEach { db.addItem(it, 1) }
-        val gold = if (ev.giftGold < 0) -minOf(-ev.giftGold, h.gold) else ev.giftGold
+        val gold = (if (ev.giftGold < 0) -minOf(-ev.giftGold, h.gold) else ev.giftGold) + visit.gold
         val heal = minOf(ev.heal, Rules.MAX_HP - h.hp).coerceAtLeast(0.0)
-        db.saveHero(h.copy(eventDay = day, gold = h.gold + gold, hp = h.hp + heal))
+        db.saveHero(h.copy(eventDay = day, gold = h.gold + gold, hp = h.hp + heal, visitDay = day, visitStreak = streak))
         if (gold != 0.0 || heal > 0) db.insertLog(LogEntry(day = day, kind = LogKind.EVENT, gold = gold, hp = heal))
         if (gold == 0.0 && heal == 0.0 && items.isEmpty()) null
         else emit(Outcome(gold = gold, hp = heal, drop = items.firstOrNull().orEmpty(), items = items))
@@ -326,6 +347,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         val (won, defeated) = defeat(walk.hero, day)
         val before = won.level
         next = levelUp(won)
+        leveled(before, next)
         val id = db.insertLog(LogEntry(taskId = taskId, day = day, kind = kind, xp = xp, gold = gold, hp = heal, valueDelta = delta, boss = hit, drop = drop, mp = mp, step = walk.step))
         return next to Outcome(
             xp = xp, gold = gold, hp = heal, boss = hit, crit = crit, drop = drop, levelUp = if (next.level > before) next.level else 0, bossDefeated = defeated, logId = id,
@@ -339,6 +361,10 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         val boss = Catalog.boss(h.quest) ?: return h to null
         if (h.questHp > 0) return h to null
         boss.rewards.forEach { (key, n) -> db.addItem(key, n) }
+        // The first win over each foe goes in the album (weekly ones would crowd it).
+        if (h.wins(boss.record) == 0 && boss.kind != BossKind.WEEKLY) keep(MomentKind.VICTORY, boss.record, h)
+        // The companion fought alongside: a little closer, and one step down the battle road.
+        if (h.pet.isNotEmpty()) db.pet(h.pet)?.let { befriend(it, Bond.VICTORY) { p -> p.copy(wins = p.wins + 1) } }
         db.insertLog(LogEntry(day = day, kind = LogKind.VICTORY, gold = boss.gold, xp = boss.xp))
         return h.copy(quest = "", questHp = 0.0, questsDone = h.withWin(boss.record), xp = h.xp + boss.xp, gold = h.gold + boss.gold) to boss
     }
@@ -361,6 +387,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
             if (room == Dungeon.last) {
                 items += Rules.SADDLE
                 next = next.copy(chests = next.chests + 1, dungeonsCleared = next.dungeonsCleared + 1)
+                if (next.dungeonsCleared == 1 || next.dungeonsCleared % 5 == 0) keep(MomentKind.DUNGEON, next.dungeonsCleared.toString(), next)
             } else items += pickItem(h, season())
         }
         items.forEach { db.addItem(it, 1) }
@@ -481,9 +508,33 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         db.saveHero(next)
         if (hp + bossHit > 0) _fx.tryEmit(Outcome(hp = -(hp + bossHit), fainted = fainted))
         // The companion wanders off overnight and sometimes brings something back.
-        val found = if (h.pet.isEmpty()) "" else Companions.forage(db.pet(h.pet), random)
+        val companion = if (h.pet.isEmpty()) null else db.pet(h.pet)
+        val found = Companions.forage(companion, random)
         if (found.isNotEmpty()) db.addItem(found, 1)
-        DayReport(day, missed.size, hp, bossHit, fainted, h.resting, found)
+        // A day of work together brings the companion (and, less, the mount) closer.
+        val worked = db.doneOn(day) > 0
+        var closer = false
+        if (companion != null && worked) {
+            val after = befriend(companion, Bond.DAY) { it.copy(days = it.days + 1) }
+            closer = Bond.level(after.bond) > Bond.level(companion.bond)
+        }
+        if (h.mount.isNotEmpty() && worked) db.pet(h.mount)?.let { befriend(it, Bond.MOUNT_DAY) }
+        DayReport(day, missed.size, hp, bossHit, fainted, h.resting, found, companion?.let { note(it, h, day, today, found, closer) })
+    }
+
+    /** The companion's morning note: it missed you, found something, felt closer, or just how the night was. */
+    private suspend fun note(pet: Pet, h: Hero, day: Long, today: Long, found: String, closer: Boolean): PetNote {
+        val away = (today - day).toInt()
+        val night = Weather.at(day + 1, 2f, Season.of(LocalDate.ofEpochDay(day), prefs().southern), Catalog.scene(h.scene).kind)
+        val kind = when {
+            away >= 2 -> NoteKind.MISSED
+            found.isNotEmpty() -> NoteKind.FOUND
+            closer -> NoteKind.BOND
+            night.wet -> NoteKind.RAIN
+            night == Weather.SNOW -> NoteKind.SNOW
+            else -> NoteKind.PLAIN
+        }
+        return PetNote(pet.key, kind, found, if (kind == NoteKind.MISSED) away - 1 else 0, random.nextInt(1000))
     }
 
     suspend fun setResting(rest: Boolean) = mutex.withLock { db.saveHero(hero().copy(resting = rest)) }
@@ -544,6 +595,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         db.savePet(Pet(key))
         val h = hero()
         if (h.pet.isEmpty()) db.saveHero(h.copy(pet = key))
+        keep(MomentKind.HATCH, key, h, pet = key)
         true
     }
 
@@ -558,15 +610,139 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         true
     }
 
-    /** Returns how much the pet grew, 0 when nothing happened. */
-    suspend fun feed(petKey: String, food: Food): Int = mutex.withLock {
-        val pet = db.pet(petKey) ?: return 0
-        if (pet.growth >= 100 || (db.item("food:${food.key}")?.count ?: 0) < 1) return 0
-        val species = Catalog.petParts(petKey)?.first ?: return 0
-        val grow = ((if (species.favorite == food) Rules.FAVORITE_FOOD else Rules.OTHER_FOOD) * DayEvent.of(today()).feed).toInt()
+    /** Feeds a pet: a young one grows, any one grows fonder (its favourite most). Null when there's nothing to give. */
+    suspend fun feed(petKey: String, food: Food): Fed? = mutex.withLock {
+        val pet = db.pet(petKey) ?: return null
+        if ((db.item("food:${food.key}")?.count ?: 0) < 1) return null
+        val species = Catalog.petParts(petKey)?.first ?: return null
+        val favorite = species.favorite == food
+        val glutton = if (Trait.of(pet) == Trait.GLUTTON) 1.5 else 1.0
+        val grow = if (pet.growth >= 100) 0 else ((if (favorite) Rules.FAVORITE_FOOD else Rules.OTHER_FOOD) * DayEvent.of(today()).feed * glutton).toInt()
         db.addItem("food:${food.key}", -1)
-        db.savePet(pet.copy(growth = (pet.growth + grow).coerceAtMost(100)))
-        grow
+        val points = if (favorite) Bond.FAVORITE else Bond.FOOD
+        val next = befriend(pet, points) { it.copy(growth = (it.growth + grow).coerceAtMost(100)) }
+        if (pet.growth < 100 && next.growth >= 100) keep(MomentKind.GROWN, petKey, hero(), pet = petKey)
+        Fed(next.growth - pet.growth, Bond.gain(pet, points))
+    }
+
+    // ---- Friends -------------------------------------------------------------------------
+
+    /** A pat: once a day it brings a pet a little closer. Returns the friendship it gave (0 when already patted). */
+    suspend fun pat(petKey: String): Int = mutex.withLock {
+        val pet = db.pet(petKey) ?: return 0
+        val day = today()
+        if (pet.pattedDay == day) return 0
+        befriend(pet, Bond.PAT) { it.copy(pattedDay = day) }
+        Bond.gain(pet, Bond.PAT)
+    }
+
+    suspend fun rename(petKey: String, name: String) = mutex.withLock {
+        db.pet(petKey)?.let { db.savePet(it.copy(name = name.trim().take(NAME_MAX))) }
+    }
+
+    /**
+     * Adds friendship to a pet (and whatever [change] does), and announces a heart it reaches or a
+     * new form that just opened. Saves only the pet: callers may hold an unsaved hero.
+     */
+    private suspend fun befriend(pet: Pet, points: Int, change: (Pet) -> Pet = { it }): Pet {
+        val next = change(pet).let { it.copy(bond = it.bond + Bond.gain(pet, points)) }
+        db.savePet(next)
+        val before = Bond.level(pet.bond)
+        val after = Bond.level(next.bond)
+        if (after > before) {
+            val kind = when {
+                after >= Bond.MAX -> NewsKind.BEST
+                before < Bond.GIFT && after >= Bond.GIFT -> NewsKind.GIFT
+                before < Bond.TRICK && after >= Bond.TRICK -> NewsKind.TRICK
+                else -> NewsKind.HEART
+            }
+            _news.tryEmit(PetNews(pet.key, kind, after))
+            if (after >= Bond.MAX) db.hero()?.let { keep(MomentKind.FRIEND, pet.key, it, pet = pet.key) }
+        }
+        if (Form.entries.any { it.ready(next) && !it.ready(pet) }) _news.tryEmit(PetNews(pet.key, NewsKind.FORM))
+        return next
+    }
+
+    /** Takes a grown pet down one road for good. */
+    suspend fun evolve(petKey: String, form: Form): Boolean = mutex.withLock {
+        val pet = db.pet(petKey) ?: return false
+        if (!form.ready(pet)) return false
+        db.savePet(pet.copy(form = form.key))
+        keep(MomentKind.EVOLVE, petKey, hero(), pet = petKey)
+        true
+    }
+
+    // ---- Pet clothes ---------------------------------------------------------------------
+
+    /** Bought clothes, plus the friendship ribbon once any pet has six hearts. */
+    suspend fun ownsWear(h: Hero, w: PetWear): Boolean =
+        if (w.gift) db.pets().any { Bond.level(it.bond) >= Bond.GIFT } else w.key in h.ownedWear.split(',')
+
+    suspend fun buyWear(w: PetWear): Boolean = mutex.withLock {
+        val h = hero()
+        if (w.gift || ownsWear(h, w) || h.level < w.level || h.gold + 1e-9 < w.price) return false
+        if (w.season != null && w.season != season()) return false
+        db.saveHero(h.copy(gold = h.gold - w.price, ownedWear = (h.ownedWear.split(',').filter { it.isNotEmpty() } + w.key).joinToString(",")))
+        db.insertLog(LogEntry(day = today(), kind = LogKind.BUY, gold = -w.price))
+        true
+    }
+
+    /** Puts a piece on a pet (replacing the one in its slot), or takes it off. */
+    suspend fun wear(petKey: String, w: PetWear): Boolean = mutex.withLock {
+        val pet = db.pet(petKey) ?: return false
+        if (!ownsWear(hero(), w)) return false
+        db.savePet(pet.copy(wear = PetWear.toggle(pet.wear, w)))
+        true
+    }
+
+    // ---- Collections ---------------------------------------------------------------------
+
+    /** Takes a finished collection's reward: gold, maybe a statue for the home, and its title. */
+    suspend fun claimCollection(key: String): PetSet? = mutex.withLock {
+        val set = Collections.of(key) ?: return null
+        val h = hero()
+        val claimed = Collections.claimed(h.collections)
+        if (key in claimed || !Collections.complete(set, db.pets().map { it.key }.toSet())) return null
+        val decor = if (set.decor.isEmpty() || h.ownsDecor(set.decor)) h.ownedDecor else h.ownedDecor + "," + set.decor
+        db.saveHero(
+            h.copy(
+                gold = h.gold + set.gold, ownedDecor = decor, collections = (claimed + key).joinToString(","),
+                title = h.title.ifEmpty { key },
+            )
+        )
+        db.insertLog(LogEntry(day = today(), kind = LogKind.ACHIEVEMENT, gold = set.gold))
+        keep(MomentKind.COLLECTION, key, h)
+        set
+    }
+
+    /** Shows a title from a claimed collection ("" hides it). */
+    suspend fun setTitle(key: String) = mutex.withLock {
+        val h = hero()
+        if (key.isEmpty() || key in Collections.claimed(h.collections)) db.saveHero(h.copy(title = key))
+    }
+
+    // ---- Album ---------------------------------------------------------------------------
+
+    /** The scene right now, as a line the album can draw again later. */
+    private suspend fun snap(h: Hero, pet: String, boss: String): String {
+        val p = if (pet.isEmpty()) null else db.pet(pet)
+        val t = LocalTime.now()
+        val hour = t.hour + t.minute / 60f
+        val season = season()
+        val weather = Weather.at(LocalDate.now().toEpochDay(), hour, season, Catalog.scene(h.scene).kind)
+        return Snap(
+            h.scene, hour, season.key, h.skin, h.hairStyle, h.hairColor, h.weapon, h.armor, h.head, h.shield,
+            pet, (p?.growth ?: 0) >= 100, p?.form.orEmpty(), p?.wear.orEmpty(), if (h.mount == pet) "" else h.mount, boss, weather.name,
+        ).encode()
+    }
+
+    private suspend fun keep(kind: MomentKind, subject: String, h: Hero, pet: String = h.pet, boss: String = h.quest) {
+        db.insertMoment(Moment(day = today(), kind = kind.name, subject = subject, scene = snap(h, pet, boss)))
+    }
+
+    /** Every fifth level goes in the album. */
+    private suspend fun leveled(before: Int, h: Hero) {
+        if (h.level / 5 > before / 5) keep(MomentKind.LEVEL, h.level.toString(), h)
     }
 
     /** One pet can walk beside the hero or carry them, not both at once. */
@@ -594,6 +770,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         db.savePet(pet.copy(mount = true))
         val h = hero()
         if (h.mount.isEmpty()) db.saveHero(h.copy(mount = petKey, pet = if (h.pet == petKey) "" else h.pet))
+        keep(MomentKind.RIDE, petKey, h.copy(mount = petKey), pet = if (h.pet == petKey) "" else h.pet)
         true
     }
 
@@ -644,6 +821,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
                 val (won, defeated) = defeat(next, day)
                 val before = won.level
                 next = levelUp(won)
+                leveled(before, next)
                 out = out.copy(boss = hit, xp = xp, bossDefeated = defeated, levelUp = if (next.level > before) next.level else 0)
             }
             Skill.PICKPOCKET -> Classes.pickpocket(s).let { g -> next = next.copy(gold = next.gold + g); out = out.copy(gold = g) }
@@ -691,7 +869,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
     suspend fun buyDecor(d: Decor): Boolean = mutex.withLock {
         val h = hero()
         if (h.ownsDecor(d.key)) return true
-        if (h.level < d.level || h.gold + 1e-9 < d.price) return false
+        if (d.reward || h.level < d.level || h.gold + 1e-9 < d.price) return false
         db.saveHero(h.copy(gold = h.gold - d.price, ownedDecor = h.ownedDecor + "," + d.key))
         db.insertLog(LogEntry(day = today(), kind = LogKind.BUY, gold = -d.price))
         true

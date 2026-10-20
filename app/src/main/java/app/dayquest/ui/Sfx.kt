@@ -8,7 +8,7 @@ import android.media.AudioTrack
 import java.util.concurrent.Executors
 import kotlin.random.Random
 
-enum class Sound { DONE, UNDO, HURT, HIT, CRIT, DROP, COIN, JACKPOT, LEVEL, VICTORY, PERFECT, CHEST, CARD, FAINT, SPELL, CHIME }
+enum class Sound { DONE, UNDO, HURT, HIT, CRIT, DROP, COIN, JACKPOT, LEVEL, VICTORY, PERFECT, CHEST, CARD, FAINT, SPELL, CHIME, PAT, LETTER }
 
 /**
  * 8-bit sound effects, synthesised once on first use: square, triangle and noise voices, like an
@@ -97,6 +97,10 @@ object Sfx {
             Sound.SPELL -> listOf(Note(0, 260, 300.0, 1200.0, Wave.TRIANGLE, 0.35)) + seq(120, 45, "E6", "G#6", "B6", "E7", wave = Wave.PULSE, vol = 0.25)
             // A soft bell, twice: time is up.
             Sound.CHIME -> seq(0, 260, "E6", "B5", wave = Wave.TRIANGLE, vol = 0.55) + seq(560, 420, "E6", wave = Wave.TRIANGLE, vol = 0.5)
+            // A happy little chirp, up and up: a pat.
+            Sound.PAT -> listOf(Note(0, 90, n("G5"), n("C6"), Wave.TRIANGLE, 0.5), Note(100, 120, n("E6"), n("G6"), Wave.TRIANGLE, 0.45))
+            // Paper rustle, then a soft two-note hello: a note from the companion.
+            Sound.LETTER -> listOf(Note(0, 120, 0.0, wave = Wave.NOISE, vol = 0.1)) + seq(120, 120, "C6", "G5", "C6", wave = Wave.TRIANGLE, vol = 0.45)
         }
     )
 

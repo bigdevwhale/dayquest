@@ -613,8 +613,11 @@ object Sprites {
         ".....ggggg....",
     )
 
-    fun petColors(s: Species, p: Potion): Pair<Int, Int> {
-        val main = p.color ?: s.color
+    /** The colours of a pet; an evolved one shifts them (a night-sky belly, or battle-worn and darker). */
+    fun petColors(s: Species, p: Potion, form: String = ""): Pair<Int, Int> {
+        val base = p.color ?: s.color
+        val main = if (form == "battle") Color.mix(base, 0xFF2A1F38.toInt(), 0.15f) else base
+        if (form == "star") return main to 0xFF4757C2.toInt()
         val belly = when {
             p.belly != null -> p.belly
             p.color == null -> s.belly
@@ -624,22 +627,181 @@ object Sprites {
         return main to belly
     }
 
-    fun pet(s: Species, p: Potion, grown: Boolean = false, blink: Boolean = false): Sprite = cached("pet:${s.key}:${p.key}:$grown:$blink") {
-        val c = PixelCanvas(PET_W, PET_H)
-        val (main, belly) = petColors(s, p)
-        val mainRamp = Ramps.of(main)
-        val legend = mapOf(
-            'a' to Mat(mainRamp), 'b' to mat(belly), 'd' to Tone(mainRamp, 1),
-            'K' to EYE, 'W' to WHITE, 'n' to Flat(Color.mix(main, 0xFF3A2030.toInt(), 0.7f)),
-            'c' to mat(if (s == Species.OWL) 0xFFF2A03D.toInt() else belly),
-        )
-        val rows = PETS.getValue(s).let { r -> if (blink) r.map { it.replace('W', 'B') } else r }
-        c.grid(rows, legend + ('B' to Tone(mainRamp, 1)), dy = 2)
-        if (blink) {
-            // Closed eyes: the pupil row turns into a short lash line.
-            for (y in 0 until PET_H) for (x in 0 until PET_W) if (c[x, y] === EYE && c[x, y - 1] is Tone) c.set(x, y - 1, Mat(mainRamp))
+    /** Where clothes sit on each kind of pet, in pet-canvas pixels: the top of the head, the eyes and the neck. */
+    private class Fit(val headTop: Int, val cx: Int, val eyeY: Int, val eyes: List<Int>, val neckY: Int, val neckL: Int, val neckR: Int)
+
+    private fun fit(s: Species) = when (s) {
+        Species.FOX, Species.CAT -> Fit(4, 6, 7, listOf(2, 10), 10, 3, 9)
+        Species.WOLF -> Fit(5, 6, 7, listOf(2, 10), 10, 3, 9)
+        Species.OWL -> Fit(4, 6, 7, listOf(3, 9), 10, 2, 10)
+        Species.SLIME -> Fit(4, 6, 9, listOf(4, 9), 11, 1, 12)
+        Species.BUNNY -> Fit(6, 6, 9, listOf(3, 9), 11, 2, 10)
+        Species.TURTLE -> Fit(8, 12, 9, listOf(12), 10, 10, 12)
+        Species.DRAGON -> Fit(4, 6, 7, listOf(3, 9), 9, 3, 9)
+    }
+
+    /** Hats sit on the head, bottom row just above it, centred. */
+    private val HATS = mapOf(
+        "party_hat" to listOf("..y..", "..p..", ".pyp.", "ppppp"),
+        "top_hat" to listOf(".kkk.", ".kkk.", ".rrr.", "kkkkk"),
+        "straw_hat" to listOf("..sss..", "..rrr..", "sssssss"),
+        "witch_hat" to listOf("...k...", "..kk...", ".kkkk..", ".ppppp.", "kkkkkkk"),
+        "santa_hat" to listOf("....w", "..rr.", ".rrrr", "wwwww"),
+        "wreath" to listOf("pgwgpgw"),
+    )
+
+    /** Pins worn on one side of the head. */
+    private val PINS = mapOf(
+        "bow" to listOf("rr.rr", "rrkrr", ".r.r."),
+        "ribbon" to listOf("pp.pp", "ppppp", ".ppp.", "..p.."),
+        "flower" to listOf(".w.", "wyw", ".w."),
+    )
+
+    private fun wearInk(c: Char): Ink = when (c) {
+        'r' -> mat(0xFFE2435F.toInt())
+        'k' -> mat(0xFF2E2433.toInt())
+        'y' -> mat(0xFFF2C14E.toInt(), glows = true)
+        'p' -> mat(0xFFF28DB2.toInt())
+        's' -> mat(0xFFE8C26A.toInt())
+        'w' -> mat(0xFFF4F8FF.toInt())
+        'g' -> mat(0xFF6DBA5A.toInt())
+        'b' -> mat(0xFF4F7BD9.toInt())
+        'o' -> mat(0xFFE8862E.toInt())
+        else -> error("No ink for '$c'")
+    }
+
+    /** Stamps a small picture with its top-left at (x, y), skipping what falls outside. */
+    private fun PixelCanvas.stamp(rows: List<String>, x: Int, y: Int) {
+        rows.forEachIndexed { dy, row -> row.forEachIndexed { dx, ch -> if (ch != '.') set(x + dx, y + dy, wearInk(ch)) } }
+    }
+
+    private fun PixelCanvas.dress(s: Species, wear: String) {
+        val f = fit(s)
+        val dark = Flat(0xFF2A1F38.toInt())
+        app.dayquest.game.PetWear.parse(wear).forEach { w ->
+            when (w.key) {
+                in HATS -> HATS.getValue(w.key).let { r -> stamp(r, f.cx - r[0].length / 2, f.headTop - r.size) }
+                in PINS -> PINS.getValue(w.key).let { r -> stamp(r, minOf(f.cx + 2, PET_W - r[0].length), f.headTop - 2) }
+                "scarf" -> {
+                    for (x in f.neckL..f.neckR) set(x, f.neckY, wearInk('r'))
+                    set(f.neckR - 1, f.neckY + 1, wearInk('r')); set(f.neckR - 1, f.neckY + 2, wearInk('w'))
+                }
+                "bell" -> {
+                    for (x in f.neckL + 1..f.neckR - 1) set(x, f.neckY, Tone(Ramps.of(0xFFC8553D.toInt()), 2))
+                    set((f.neckL + f.neckR) / 2, f.neckY + 1, wearInk('y'))
+                }
+                "bandana" -> {
+                    for (x in f.neckL..f.neckR) set(x, f.neckY, wearInk('b'))
+                    for (x in f.neckL + 1..f.neckR - 1) set(x, f.neckY + 1, wearInk('b'))
+                    set((f.neckL + f.neckR) / 2, f.neckY + 2, wearInk('b'))
+                    set(f.neckL + 2, f.neckY, wearInk('w')); set(f.neckR - 2, f.neckY + 1, wearInk('w'))
+                }
+                "bowtie" -> {
+                    val m = (f.neckL + f.neckR) / 2
+                    stamp(listOf("r...r", "rrkrr", "r...r"), m - 2, f.neckY - 1)
+                }
+                "glasses", "sunglasses", "monocle" -> {
+                    val eyes = if (w.key == "monocle") listOf(f.eyes.last()) else f.eyes
+                    val rim = if (w.key == "monocle") Flat(0xFFF2C14E.toInt()) else dark
+                    eyes.forEach { x ->
+                        if (w.key == "sunglasses") {
+                            for (yy in f.eyeY - 1..f.eyeY) for (xx in x - 1..x + 1) set(xx, yy, dark)
+                            set(x - 1, f.eyeY - 1, Flat(0xFF8C8AA8.toInt()))
+                        } else {
+                            set(x - 1, f.eyeY - 1, rim); set(x - 1, f.eyeY, rim); set(x + 1, f.eyeY - 1, rim); set(x + 1, f.eyeY, rim)
+                            set(x, f.eyeY - 2, rim); set(x, f.eyeY + 1, rim)
+                        }
+                    }
+                    if (w.key == "monocle") { set(f.eyes.last() + 1, f.eyeY + 2, rim); set(f.eyes.last() + 2, f.eyeY + 3, rim) }
+                    else if (eyes.size == 2) for (x in eyes[0] + 2..eyes[1] - 2) set(x, f.eyeY - 1, dark)
+                }
+            }
         }
-        if (grown) c.grid(PET_CROWN, mapOf('g' to mat(0xFFF2C14E.toInt(), glows = true)))
+    }
+
+    /** Starry specks across the body, or war paint and plated belly. */
+    private fun PixelCanvas.evolve(s: Species, form: String, mainRamp: IntArray, belly: Ink) {
+        val f = fit(s)
+        when (form) {
+            "star" -> {
+                // Stars thick on the night-blue belly, a few scattered across the fur.
+                val star = Mat(Ramps.of(0xFFFFF3B0.toInt()), glows = true)
+                for (y in 0 until h) for (x in 0 until w) {
+                    val i = this[x, y]
+                    val onBelly = i === belly && (x * 5 + y * 3) % 4 == 0
+                    val onFur = i is Mat && i.ramp === mainRamp && (x * 7 + y * 13) % 17 == 0
+                    if (onBelly || onFur) set(x, y, star)
+                }
+            }
+            "battle" -> {
+                val paint = Flat(0xFFE2435F.toInt())
+                f.eyes.forEach { x -> set(x, f.eyeY + 1, paint); set(x + if (x < f.cx) -1 else 1, f.eyeY + 1, paint) }
+                val plate = Mat(Ramps.of(0xFFB9C3CF.toInt()))
+                for (y in f.neckY + 1 until h) for (x in 0 until w) if (this[x, y] === belly) set(x, y, if ((x + y) % 3 == 0) Tone(Ramps.of(0xFFB9C3CF.toInt()), 1) else plate)
+            }
+        }
+    }
+
+    fun pet(s: Species, p: Potion, grown: Boolean = false, blink: Boolean = false, form: String = "", wear: String = ""): Sprite =
+        cached("pet:${s.key}:${p.key}:$grown:$blink:$form:$wear") {
+            val c = PixelCanvas(PET_W, PET_H)
+            val (main, belly) = petColors(s, p, form)
+            val mainRamp = Ramps.of(main)
+            val bellyInk = mat(belly)
+            val legend = mapOf(
+                'a' to Mat(mainRamp), 'b' to bellyInk, 'd' to Tone(mainRamp, 1),
+                'K' to EYE, 'W' to WHITE, 'n' to Flat(Color.mix(main, 0xFF3A2030.toInt(), 0.7f)),
+                'c' to mat(if (s == Species.OWL) 0xFFF2A03D.toInt() else belly),
+            )
+            val rows = PETS.getValue(s).let { r -> if (blink) r.map { it.replace('W', 'B') } else r }
+            c.grid(rows, legend + ('B' to Tone(mainRamp, 1)), dy = 2)
+            if (blink) {
+                // Closed eyes: the pupil row turns into a short lash line.
+                for (y in 0 until PET_H) for (x in 0 until PET_W) if (c[x, y] === EYE && c[x, y - 1] is Tone) c.set(x, y - 1, Mat(mainRamp))
+            }
+            c.evolve(s, form, mainRamp, bellyInk)
+            c.dress(s, wear)
+            // A hat takes the crown's place.
+            val hat = app.dayquest.game.PetWear.parse(wear).any { it.key in HATS }
+            if (grown && !hat) c.grid(PET_CROWN, mapOf('g' to mat(0xFFF2C14E.toInt(), glows = true)))
+            c.render()
+        }
+
+    /** A pet carved in stone on a pedestal: the reward for collecting every colour of its kind. */
+    fun statue(s: Species): Sprite = cached("statue:${s.key}") {
+        val c = PixelCanvas(16, 19)
+        val stone = Ramps.of(0xFFB4B8C8.toInt())
+        val legend = PETS.getValue(s).flatMap { it.toList() }.toSet().filter { it != '.' }.associateWith { ch ->
+            if (ch == 'K' || ch == 'n' || ch == 'd') Tone(stone, 1) else Mat(stone)
+        }
+        c.grid(PETS.getValue(s), legend, dx = 1)
+        val base = Mat(Ramps.of(0xFF8E94A8.toInt()))
+        c.rect(2, 12, 13, 15, base)
+        c.rect(1, 16, 14, 18, base)
+        c.rect(6, 13, 9, 14, mat(0xFFF2C14E.toInt()))
+        c.render()
+    }
+
+    private val UMBRELLA = listOf(
+        "......k......",
+        "....rrrrr....",
+        "..rrrwrwrrr..",
+        ".rrrrwrwrrrr.",
+        "rrrrrwrwrrrrr",
+        "r.r.r.r.r.r.r",
+    )
+
+    /** The hero's umbrella on rainy days (the handle is drawn by the scene). */
+    val umbrella: Sprite by lazy {
+        val c = PixelCanvas(13, 6)
+        c.grid(UMBRELLA, mapOf('r' to mat(0xFFE2435F.toInt()), 'w' to mat(0xFFF4F8FF.toInt()), 'k' to Flat(0xFF2E2433.toInt())))
+        c.render()
+    }
+
+    /** A big leaf the pet holds over its head in the rain. */
+    val leaf: Sprite by lazy {
+        val c = PixelCanvas(9, 4)
+        c.grid(listOf("..ggggg..", ".gggdggg.", "ggd.d.dgg", "....d...."), mapOf('g' to mat(0xFF5DAE4F.toInt()), 'd' to Flat(0xFF3E7A3A.toInt())))
         c.render()
     }
 
@@ -647,9 +809,9 @@ object Sprites {
      * A saddled pet: the same creature drawn twice as big (shading and outline stay one pixel thin,
      * so it reads as a larger beast, not a blurry zoom), with a blanket and saddle across its back.
      */
-    fun mount(s: Species, p: Potion, blink: Boolean = false): Sprite = cached("mount:${s.key}:${p.key}:$blink") {
+    fun mount(s: Species, p: Potion, blink: Boolean = false, form: String = ""): Sprite = cached("mount:${s.key}:${p.key}:$blink:$form") {
         val c = PixelCanvas(PET_W * 2, PET_H * 2)
-        val (main, belly) = petColors(s, p)
+        val (main, belly) = petColors(s, p, form)
         val mainRamp = Ramps.of(main)
         val legend = mapOf(
             'a' to Mat(mainRamp), 'b' to mat(belly), 'd' to Tone(mainRamp, 1),
@@ -1195,7 +1357,8 @@ object Sprites {
 
     private val animated = setOf("clock", "fireplace", "aquarium", "candles") + MoreDecor.animated
 
-    fun decor(key: String, frame: Int = 0): Sprite = cached("decor:$key:${if (key in animated) frame else 0}") {
+    fun decor(key: String, frame: Int = 0): Sprite = if (key.startsWith("statue_")) Species.of(key.removePrefix("statue_"))?.let(::statue) ?: statue(Species.FOX)
+    else cached("decor:$key:${if (key in animated) frame else 0}") {
         val wood = mat(0xFF9A6334.toInt())
         val dark = mat(0xFF6B4630.toInt())
         val gold = mat(0xFFF2C14E.toInt())

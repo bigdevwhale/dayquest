@@ -9,6 +9,7 @@ import app.dayquest.data.Hero
 import app.dayquest.data.Item
 import app.dayquest.data.LogEntry
 import app.dayquest.data.LogKind
+import app.dayquest.data.Moment
 import app.dayquest.data.Pet
 import app.dayquest.data.Settings
 import app.dayquest.data.Task
@@ -329,7 +330,7 @@ class GameTest {
 }
 
 /** An in-memory stand-in for Room, enough for the game rules. */
-private class FakeDao : GameDao() {
+internal class FakeDao : GameDao() {
     val tasks = linkedMapOf<Long, Task>()
     val log = linkedMapOf<Long, LogEntry>()
     var hero: Hero? = null
@@ -406,6 +407,13 @@ private class FakeDao : GameDao() {
     override suspend fun clearFriends() = Unit
     override suspend fun insertJournal(items: List<JournalEntry>) = Unit
     override suspend fun insertFriends(items: List<Friend>) = Unit
+    val moments = mutableListOf<Moment>()
+    override fun observeMoments(): Flow<List<Moment>> = TODO()
+    override suspend fun lastMoment(kind: String) = moments.lastOrNull { it.kind == kind }
+    override suspend fun insertMoment(m: Moment): Long { moments += m.copy(id = next++); return next - 1 }
+    override suspend fun allMoments() = moments.toList()
+    override suspend fun clearMoments() = moments.clear()
+    override suspend fun insertMoments(items: List<Moment>) { moments += items }
 
     private companion object {
         val DONE = setOf(LogKind.UP, LogKind.DAILY, LogKind.TODO)

@@ -77,7 +77,7 @@ import kotlinx.coroutines.launch
 private enum class HeroTab { HERO, AWARDS, HISTORY, TAVERN }
 
 @Composable
-fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit, onJournal: () -> Unit, onTask: (Long) -> Unit) {
+fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit, onAlbum: () -> Unit, onJournal: () -> Unit, onTask: (Long) -> Unit) {
     val context = LocalContext.current
     val c = context.container
     val pets by remember { c.db.game().observePets() }.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -88,7 +88,7 @@ fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit, onJournal
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Box {
-            SceneView(SceneState(Catalog.scene(hero.scene).kind, 12f, hero.look(), hero.pet, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100, null, hero.resting, app.dayquest.ui.rememberSeason(), mount = hero.mount))
+            SceneView(app.dayquest.ui.pets.heroScene(hero, pets), onPet = app.dayquest.ui.pets.rememberPat(hero).takeIf { hero.pet.isNotEmpty() })
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(8.dp), horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = onSettings, modifier = Modifier.size(40.dp).clip(D.RSm).background(Color(0x55000000))) {
                     Icon(Icons.Rounded.Settings, stringResource(R.string.settings), tint = Color.White)
@@ -115,6 +115,31 @@ fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit, onJournal
             when (tab) {
                 HeroTab.HERO -> {
                     app.dayquest.ui.components.Tip("hero", stringResource(R.string.tip_hero))
+                    TitleSection(hero)
+                    SectionTitle(stringResource(R.string.home))
+                    Column(Modifier.fillMaxWidth().clip(D.RMd).border(1.dp, D.c.line, D.RMd).clickable(onClick = onHome)) {
+                        app.dayquest.ui.home.RoomView(app.dayquest.ui.pets.roomState(hero, pets, app.dayquest.ui.home.roomState(hero, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100)), virtualHeight = 64)
+                        Row(Modifier.fillMaxWidth().background(D.c.surface).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.home_text), style = DType.Muted, modifier = Modifier.weight(1f))
+                            Spacer(Modifier.width(8.dp))
+                            SoftButton(stringResource(R.string.home_open), onHome)
+                        }
+                    }
+
+                    SectionTitle(stringResource(R.string.album))
+                    val moments by remember { c.db.game().observeMoments() }.collectAsStateWithLifecycle(initialValue = emptyList())
+                    DCard(onClick = onAlbum) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(androidx.compose.ui.res.pluralStringResource(R.plurals.album_count, moments.size, moments.size), style = DType.Strong)
+                                Gap(2)
+                                Text(stringResource(R.string.album_text), style = DType.Muted)
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            SoftButton(stringResource(R.string.home_open), onAlbum)
+                        }
+                    }
+
                     ClassSection(hero)
                     SectionTitle(stringResource(R.string.equipment))
                     DCard(padding = androidx.compose.foundation.layout.PaddingValues(6.dp)) {
@@ -162,16 +187,6 @@ fun HeroScreen(hero: Hero, onSettings: () -> Unit, onHome: () -> Unit, onJournal
                                 Text(stringResource(R.string.rest_inn_text), style = DType.Muted)
                             }
                             Switch(hero.resting, { v -> c.launch { c.game.setResting(v) } }, colors = SwitchDefaults.colors(checkedTrackColor = D.c.accent))
-                        }
-                    }
-
-                    SectionTitle(stringResource(R.string.home))
-                    Column(Modifier.fillMaxWidth().clip(D.RMd).border(1.dp, D.c.line, D.RMd).clickable(onClick = onHome)) {
-                        app.dayquest.ui.home.RoomView(app.dayquest.ui.home.roomState(hero, (pets.firstOrNull { it.key == hero.pet }?.growth ?: 0) >= 100), virtualHeight = 64)
-                        Row(Modifier.fillMaxWidth().background(D.c.surface).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.home_text), style = DType.Muted, modifier = Modifier.weight(1f))
-                            Spacer(Modifier.width(8.dp))
-                            SoftButton(stringResource(R.string.home_open), onHome)
                         }
                     }
 
@@ -423,4 +438,36 @@ private fun ChronicleStat(n: Int, label: String, modifier: Modifier) {
         Text(n.toString(), style = DType.Number.copy(fontSize = 17.sp))
         Text(label, style = DType.Small.copy(fontSize = 11.sp))
     }
+}
+
+/** Titles from finished collections: pick one to show under the hero's name. */
+@Composable
+private fun TitleSection(hero: Hero) {
+    val claimed = app.dayquest.game.Collections.claimed(hero.collections).toList()
+    if (claimed.isEmpty()) return
+    val c = LocalContext.current.container
+    var picking by remember { mutableStateOf(false) }
+    SectionTitle(stringResource(R.string.title_section))
+    DCard(onClick = { picking = true }) {
+        Text(if (hero.title.isEmpty()) stringResource(R.string.title_none) else "«${app.dayquest.ui.pets.titleName(hero.title)}»", style = DType.Strong)
+        Text(stringResource(R.string.title_text), style = DType.Muted)
+    }
+    if (picking) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { picking = false },
+        containerColor = D.c.bg,
+        confirmButton = {},
+        title = { Text(stringResource(R.string.title_section), style = DType.Heading) },
+        text = {
+            Column {
+                (listOf("") + claimed).forEach { key ->
+                    val on = hero.title == key
+                    Text(
+                        if (key.isEmpty()) stringResource(R.string.title_none) else app.dayquest.ui.pets.titleName(key),
+                        style = DType.Strong.copy(color = if (on) D.c.accent else D.c.ink),
+                        modifier = Modifier.fillMaxWidth().clip(D.RSm).clickable { c.launch { c.game.setTitle(key) }; picking = false }.padding(12.dp),
+                    )
+                }
+            }
+        },
+    )
 }

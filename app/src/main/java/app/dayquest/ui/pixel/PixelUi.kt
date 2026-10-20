@@ -24,6 +24,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -95,6 +97,8 @@ fun SceneView(
     ground: Int = 14,
     bursts: Flow<Burst>? = null,
     floaters: Flow<Floater>? = null,
+    /** A tap on the companion: it gets hearts and a happy hop, and the caller counts the pat. */
+    onPet: (() -> Unit)? = null,
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val widthPx = constraints.maxWidth
@@ -130,14 +134,28 @@ fun SceneView(
                 if (now - last < 66) continue
                 last = now
                 val t = LocalTime.now()
-                renderer.render(current.copy(hour = t.hour + t.minute / 60f), now)
+                // Screenshot builds stay in late morning light.
+                val hour = if (app.dayquest.BuildConfig.DEMO) 11.5f else t.hour + t.minute / 60f
+                val s = current
+                // Live scenes (those that know the season) get the real weather; previews stay clear.
+                val weather = s.season?.let { app.dayquest.game.Weather.at(java.time.LocalDate.now().toEpochDay(), hour, it, s.kind) } ?: s.weather
+                renderer.render(s.copy(hour = hour, weather = weather), now)
                 bitmap.setPixels(renderer.buffer.px, 0, vw, 0, 0, vw, virtualHeight)
                 frame = now
             }
         }
         val density = LocalDensity.current
         val heightDp = with(density) { (virtualHeight * scale).toDp() }
-        Box(Modifier.fillMaxWidth().height(heightDp)) {
+        val pat by rememberUpdatedState(onPet)
+        val tap = if (onPet == null) Modifier else Modifier.pointerInput(renderer) {
+            detectTapGestures { o ->
+                if (renderer.hitPet(o.x / scale, o.y / scale)) {
+                    renderer.burst(Burst.LOVE, SystemClock.uptimeMillis())
+                    pat?.invoke()
+                }
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(heightDp).then(tap)) {
             Canvas(Modifier.fillMaxWidth().height(heightDp)) {
                 frame // redraw on every rendered frame
                 drawImage(image, dstSize = IntSize(vw * scale, virtualHeight * scale), filterQuality = FilterQuality.None)
