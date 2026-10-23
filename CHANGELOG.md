@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.6.1: Fix
+
+**Bosses fall at zero.** A boss whose health showed "0" could stay standing on a sliver of a point. Now it falls as soon as the bar reads zero; one already stuck falls on your next task or skill.
+
+---
+
+## v1.6.1: исправление
+
+**Боссы падают на нуле.** Босс, у которого на полоске было «0», мог остаться стоять из-за доли очка здоровья. Теперь он падает, как только полоска показывает ноль; уже застрявший падёт после следующей задачи или навыка.
+
+---
+
 ## v1.6.0: Pet friends, weather and the album
 
 **Friendship.** Every pet has ten hearts to fill: days together, treats and bosses beaten side by side bring it closer. Tap your companion in the scene to pat it. Three hearts teach it a flip, six bring a friendship ribbon, ten make it a best friend whose help is a fifth stronger for good.

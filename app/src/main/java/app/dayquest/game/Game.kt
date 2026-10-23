@@ -359,7 +359,8 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
     /** A boss brought to zero: its loot, the win on record and the fight closed. */
     private suspend fun defeat(h: Hero, day: Long): Pair<Hero, Boss?> {
         val boss = Catalog.boss(h.quest) ?: return h to null
-        if (h.questHp > 0) return h to null
+        // Health shows rounded, so a sliver under half a point already reads "0" and counts as beaten.
+        if (h.questHp >= 0.5) return h to null
         boss.rewards.forEach { (key, n) -> db.addItem(key, n) }
         // The first win over each foe goes in the album (weekly ones would crowd it).
         if (h.wins(boss.record) == 0 && boss.kind != BossKind.WEEKLY) keep(MomentKind.VICTORY, boss.record, h)
