@@ -57,10 +57,18 @@ jobs:
             echo "::warning::No signing secrets set — the APK is signed with the CI debug key."
           fi
 
+      - name: Release notes from CHANGELOG.md
+        run: |
+          V="${{ steps.v.outputs.name }}"
+          touch CHANGELOG.md
+          awk -v v="$V" '/^## /{f = index($0, "## [" v "]") == 1 || index($0, "## v" v ":") == 1 || $0 == "## v" v; next} f' CHANGELOG.md > notes.md
+          cat notes.md
+
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.v.outputs.name }}
           name: Dayquest v${{ steps.v.outputs.name }}
+          body_path: notes.md
           generate_release_notes: true
           files: dist/*.apk
