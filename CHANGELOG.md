@@ -6,6 +6,13 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.6.2] - 2026-10-25
+
+### Added
+- Community links in settings: report a bug, suggest an idea or follow updates through the StillCraft bot on Telegram, and the StillCraft chat.
+
+<!-- tg skip -->
+
 ## v1.6.1: Fix
 
 **Bosses fall at zero.** A boss whose health showed "0" could stay standing on a sliver of a point. Now it falls as soon as the bar reads zero; one already stuck falls on your next task or skill.

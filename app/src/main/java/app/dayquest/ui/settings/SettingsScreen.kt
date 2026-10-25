@@ -66,6 +66,7 @@ import app.dayquest.notify.Reminders
 import app.dayquest.pixel.Sprites
 import app.dayquest.ui.Language
 import app.dayquest.ui.components.Chip
+import app.dayquest.ui.components.CommunityLinks
 import app.dayquest.ui.components.ConfirmDialog
 import app.dayquest.ui.components.DCard
 import app.dayquest.ui.components.DTextField
@@ -175,6 +176,8 @@ fun SettingsScreen(settings: app.dayquest.data.Settings, onBack: () -> Unit, onG
                 Gap(2)
                 Text(stringResource(R.string.g1_title), style = DType.Muted)
             }
+
+            CommunityLinks()
 
             SectionTitle(stringResource(R.string.about))
             DCard {
