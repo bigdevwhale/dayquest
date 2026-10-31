@@ -135,16 +135,16 @@ def icon() -> Image.Image:
 
 
 def scene(preview: Path) -> Image.Image:
-    """The meadow with the Slime King from scenes.png (14 scenes of 720x288, drawn at 4x)."""
+    """The desert with the fire dragon from scenes.png (14 scenes of 720x288, drawn at 4x)."""
     sheet = Image.open(preview / "scenes.png").convert("RGB")
     h = sheet.height // 14
-    return sheet.crop((0, 7 * h, sheet.width, 8 * h)).resize((180, 72), Image.NEAREST)
+    return sheet.crop((0, 5 * h, sheet.width, 6 * h)).resize((180, 72), Image.NEAREST)
 
 
 def feature(lang: str, sc: Image.Image) -> Image.Image:
     W, H = 1024, 500
     big = sc.resize((sc.width * 7, sc.height * 7), Image.NEAREST)  # 1260x504
-    g = big.crop((150, 0, 150 + W, H)).convert("RGBA")  # the hero on the left, the Slime King on the right
+    g = big.crop((150, 0, 150 + W, H)).convert("RGBA")  # the hero on the left, the dragon on the right
     d = ImageDraw.Draw(g)
     d.text((48, 18), "Dayquest", font=font("pixel_bold.ttf", 132), fill=GOLD, stroke_width=6, stroke_fill=NIGHT)
     sub = font("inter_semibold.ttf", 34)
