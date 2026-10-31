@@ -63,6 +63,13 @@ android {
     androidResources {
         generateLocaleConfig = true
     }
+    // Play otherwise installs only the device's languages from the AAB,
+    // and the in-app switch to the other language would find no strings.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
     lint {
         error += "MissingTranslation"
         // Dependency versions are pinned on purpose (AGP 8.13 + Kotlin 2.2 toolchain).

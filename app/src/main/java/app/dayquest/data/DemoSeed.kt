@@ -10,7 +10,8 @@ import java.time.LocalDate
 object DemoSeed {
     suspend fun seedIfEmpty(c: AppContainer, context: Context) {
         val db = c.db.game()
-        if (db.hero() != null) return
+        // The app may have made a blank hero at start-up already (Game.hero()); only a named one counts.
+        if (db.hero()?.name?.isNotEmpty() == true) return
         val today = c.game.today()
         db.saveHero(
             Hero(
