@@ -9,6 +9,7 @@
 *RPG для привычек в духе Habitica: более красивый пиксель-арт, спокойный интерфейс и контент, которого хватит на годы. Бесплатно, без рекламы, премиума и аккаунта.*
 
 [![Android CI](https://github.com/bigdevwhale/dayquest/actions/workflows/android.yml/badge.svg)](https://github.com/bigdevwhale/dayquest/actions/workflows/android.yml)
+[![Google Play](https://img.shields.io/badge/Google_Play-скачать-34A853?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=app.dayquest)
 [![Release](https://img.shields.io/github/v/release/bigdevwhale/dayquest?color=7C5CFF&label=скачать&logo=android)](https://github.com/bigdevwhale/dayquest/releases/latest)
 ![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-7C5CFF?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)
@@ -87,7 +88,9 @@
 
 ## Скачать
 
-APK — на странице **[Releases](https://github.com/bigdevwhale/dayquest/releases/latest)** или debug-сборка в любом [запуске CI](https://github.com/bigdevwhale/dayquest/actions/workflows/android.yml). Android 8.0 (API 26) или новее.
+**[Скачать в Google Play](https://play.google.com/store/apps/details?id=app.dayquest)**.
+
+Или возьмите APK на странице **[Releases](https://github.com/bigdevwhale/dayquest/releases/latest)** или debug-сборка в любом [запуске CI](https://github.com/bigdevwhale/dayquest/actions/workflows/android.yml). Android 8.0 (API 26) или новее.
 
 > [!TIP]
 > На Xiaomi (MIUI / HyperOS), Huawei и некоторых других телефонах система останавливает фоновые приложения и сбрасывает их будильники.

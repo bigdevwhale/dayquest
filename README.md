@@ -9,6 +9,7 @@
 *A habit RPG in the spirit of Habitica, with richer pixel art, a calmer interface and content that lasts for years. Free, no ads, no premium, no account.*
 
 [![Android CI](https://github.com/bigdevwhale/dayquest/actions/workflows/android.yml/badge.svg)](https://github.com/bigdevwhale/dayquest/actions/workflows/android.yml)
+[![Google Play](https://img.shields.io/badge/Google_Play-get_it-34A853?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=app.dayquest)
 [![Release](https://img.shields.io/github/v/release/bigdevwhale/dayquest?color=7C5CFF&label=download&logo=android)](https://github.com/bigdevwhale/dayquest/releases/latest)
 ![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-7C5CFF?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)
@@ -101,7 +102,9 @@ Since everything is generated, a new boss, pet colour or forge tier is a line in
 
 ## Download
 
-Get the APK from **[Releases](https://github.com/bigdevwhale/dayquest/releases/latest)**, or the debug APK attached to any [CI run](https://github.com/bigdevwhale/dayquest/actions/workflows/android.yml).
+**[Get it on Google Play](https://play.google.com/store/apps/details?id=app.dayquest)**.
+
+Or get the APK from **[Releases](https://github.com/bigdevwhale/dayquest/releases/latest)**, or the debug APK attached to any [CI run](https://github.com/bigdevwhale/dayquest/actions/workflows/android.yml).
 Android 8.0 (API 26) or newer.
 
 > [!TIP]
