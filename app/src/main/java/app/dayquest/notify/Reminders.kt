@@ -89,12 +89,12 @@ object Reminders {
         return at
     }
 
-    /** Clock times (today) that fell inside (since, now]. */
-    private fun crossed(minutes: Int, since: Long, now: Long): Boolean {
+    /** Clock times (today) that fell inside (since, now]; with [onDay] (an epoch day) only that date's counts. */
+    private fun crossed(minutes: Int, since: Long, now: Long, onDay: Long = -1): Boolean {
         val zone = ZoneId.systemDefault()
         val time = LocalTime.of(minutes / 60, minutes % 60)
         val today = LocalDate.now(zone)
-        return listOf(today, today.minusDays(1)).any {
+        return listOf(today, today.minusDays(1)).filter { onDay < 0 || it.toEpochDay() == onDay }.any {
             val at = it.atTime(time).atZone(zone).toInstant().toEpochMilli()
             at in (since + 1)..now
         }
@@ -130,7 +130,8 @@ object Reminders {
             else -> false
         }
         if (settings.reminders) {
-            tasks.filter { it.reminder >= 0 && pending(it) && crossed(it.reminder, since, now) }.forEach {
+            // A to-do with a due date reminds on that day only (#4); without one, every day until done.
+            tasks.filter { it.reminder >= 0 && pending(it) && crossed(it.reminder, since, now, if (it.type == TaskType.TODO) it.dueDay else -1) }.forEach {
                 notify(context, 100 + it.id.toInt(), context.getString(R.string.notif_task, it.title), context.getString(R.string.notif_task_text))
             }
         }

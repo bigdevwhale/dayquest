@@ -916,6 +916,8 @@
     <string name="journal_note_hint">A line about today…</string>
     <string name="dailies_all_done">All done, well played!</string>
     <string name="add_more">More options</string>
+    <string name="reminder_on_due">Only on the due date.</string>
+    <string name="reminder_daily">Every day until done. Set a due date to be reminded on that day only.</string>
     <string name="tags">Tags</string>
     <string name="add_tag">New tag: work, home, health…</string>
     <string name="tag_all">All</string>

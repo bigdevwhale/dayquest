@@ -230,6 +230,10 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
                     Chip(if (reminder >= 0) timeLabel(reminder) else stringResource(R.string.no_reminder), reminder >= 0, { pickTime = true })
                     if (reminder >= 0) Chip("✕", false, { reminder = -1 })
                 }
+                if (kind == TaskType.TODO && reminder >= 0) Text(
+                    stringResource(if (due >= 0) R.string.reminder_on_due else R.string.reminder_daily),
+                    style = DType.Small, modifier = Modifier.padding(top = 6.dp, start = 4.dp),
+                )
 
                 SectionTitle(stringResource(R.string.checklist))
                 lines.forEach { l ->

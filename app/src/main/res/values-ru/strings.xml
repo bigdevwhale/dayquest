@@ -935,6 +935,8 @@
     <string name="journal">Дневник</string>
     <string name="dailies_all_done">Всё сделано, отлично!</string>
     <string name="add_more">Подробнее</string>
+    <string name="reminder_on_due">Только в день срока.</string>
+    <string name="reminder_daily">Каждый день, пока дело не сделано. Укажите срок, и напоминание придёт только в этот день.</string>
     <string name="tags">Теги</string>
     <string name="add_tag">Новый тег: работа, дом, здоровье…</string>
     <string name="tag_all">Все</string>

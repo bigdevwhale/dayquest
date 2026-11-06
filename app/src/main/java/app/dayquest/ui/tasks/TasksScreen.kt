@@ -601,6 +601,7 @@ private fun TaskRow(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Notifications, null, Modifier.size(14.dp), tint = D.c.faint)
                                 Text(timeLabel(t.reminder), style = DType.Small)
+                                if (t.type == TaskType.TODO && t.dueDay >= 0 && !t.done && !overdue) Text(" · " + dayLabel(t.dueDay), style = DType.Small)
                             }
                         }
                         if (t.type == TaskType.TODO && t.dueDay >= 0 && !t.done) {
