@@ -6,6 +6,26 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.7.0] - 2026-11-07
+
+### Added
+- Your own tags for tasks: pick one you already use or type a new one, and filter the board by tag.
+- The journal keeps a line for what was good about the day.
+
+### Changed
+- Today's dailies fill a progress bar; the day's event is a slim line; quick add has a clearer «…» for the full editor.
+- A to-do with a due date reminds you on that day only, not every day.
+
+### Fixed
+- A long journal note pushed the Save button out of reach. Notes now scroll and hold up to 5000 characters.
+- «Ежедневные 0/2» no longer gets cut off in the board tabs.
+
+<!-- tg
+Свои теги у задач и фильтр по ним на доске.
+В дневнике появилась строчка «Что хорошего было сегодня», а длинные заметки больше не прячут кнопку «Сохранить».
+Напоминание о деле со сроком приходит только в этот день, а не каждый.
+-->
+
 ## [1.6.2] - 2026-10-25
 
 ### Added
