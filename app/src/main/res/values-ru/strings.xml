@@ -933,6 +933,8 @@
     <string name="mood_4">Хорошо</string>
     <string name="mood_5">Отлично</string>
     <string name="journal">Дневник</string>
+    <string name="journal_good">Что хорошего было сегодня</string>
+    <string name="journal_good_hint">Даже мелочи: тёплый чай, доброе слово…</string>
     <string name="journal_note_hint">Пара слов о дне…</string>
     <string name="journal_open">Открыть дневник</string>
     <string name="journal_empty">Раз в день отмечайте настроение на доске задач. Через пару недель станет видно, как связаны настроение и ваши дни.</string>

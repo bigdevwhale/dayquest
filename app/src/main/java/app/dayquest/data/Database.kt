@@ -252,7 +252,8 @@ data class Moment(
 
 /** One line in the journal: how the day felt (1 hard .. 5 great) and a short note. */
 @Entity(tableName = "journal")
-data class JournalEntry(@PrimaryKey val day: Long, val mood: Int, val note: String = "")
+/** One day in the journal: the mood, a note, and what was good about it. */
+data class JournalEntry(@PrimaryKey val day: Long, val mood: Int, val note: String = "", val good: String = "")
 
 /** A friend's hero card ([code] is their "DQH1:" hero code), shown in the tavern. */
 @Entity(tableName = "friends")
@@ -537,7 +538,7 @@ data class DayKind(val day: Long, val kind: LogKind)
 
 @Database(
     entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class, JournalEntry::class, Friend::class, Moment::class],
-    version = 5,
+    version = 6,
 )
 abstract class GameDatabase : RoomDatabase() {
     abstract fun game(): GameDao
@@ -545,7 +546,7 @@ abstract class GameDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): GameDatabase =
             Room.databaseBuilder(context.applicationContext, GameDatabase::class.java, "dayquest.db")
-                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS, CLASSES_AND_FRIENDS, PET_FRIENDS)
+                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS, CLASSES_AND_FRIENDS, PET_FRIENDS, GOOD_THINGS)
                 .build()
 
         private val ACHIEVEMENTS_AND_HOME = object : Migration(1, 2) {
@@ -581,6 +582,12 @@ abstract class GameDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE log ADD COLUMN step INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("CREATE TABLE IF NOT EXISTS `journal` (`day` INTEGER NOT NULL, `mood` INTEGER NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`day`))")
                 db.execSQL("CREATE TABLE IF NOT EXISTS `friends` (`uid` TEXT NOT NULL, `code` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`uid`))")
+            }
+        }
+
+        private val GOOD_THINGS = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE journal ADD COLUMN good TEXT NOT NULL DEFAULT ''")
             }
         }
 

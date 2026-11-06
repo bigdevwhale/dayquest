@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -104,7 +106,7 @@ fun MoodCard(today: Long, entry: JournalEntry?, modifier: Modifier = Modifier) {
         Gap(8)
         MoodPicker(entry?.mood) { m ->
             fb.tap()
-            c.launch { c.db.game().saveJournal(JournalEntry(today, m, entry?.note.orEmpty())) }
+            c.launch { c.db.game().saveJournal(entry?.copy(mood = m) ?: JournalEntry(today, m)) }
         }
         if (entry != null) {
             Gap(8)
@@ -125,6 +127,7 @@ private fun EntryDialog(entry: JournalEntry, onDismiss: () -> Unit) {
     val c = LocalContext.current.container
     var mood by remember { mutableIntStateOf(entry.mood) }
     var note by remember { mutableStateOf(entry.note) }
+    var good by remember { mutableStateOf(entry.good) }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = D.c.bg,
@@ -132,13 +135,18 @@ private fun EntryDialog(entry: JournalEntry, onDismiss: () -> Unit) {
         confirmButton = {},
         title = { Text(dayLabel(entry.day), style = DType.Heading) },
         text = {
-            Column {
+            // Long notes scroll inside their field, so Save always stays in reach.
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 MoodPicker(mood) { mood = it }
                 Gap(12)
-                DTextField(note, { note = it.take(500) }, placeholder = stringResource(R.string.journal_note_hint), minLines = 3)
+                DTextField(note, { note = it.take(5000) }, placeholder = stringResource(R.string.journal_note_hint), minLines = 3, maxLines = 7)
+                Gap(12)
+                Text(stringResource(R.string.journal_good), style = DType.Strong)
+                Gap(6)
+                DTextField(good, { good = it.take(2000) }, placeholder = stringResource(R.string.journal_good_hint), minLines = 2, maxLines = 5)
                 Gap(16)
                 PrimaryButton(stringResource(R.string.save), {
-                    c.launch { c.db.game().saveJournal(entry.copy(mood = mood, note = note.trim())) }
+                    c.launch { c.db.game().saveJournal(entry.copy(mood = mood, note = note.trim(), good = good.trim())) }
                     onDismiss()
                 }, Modifier.fillMaxWidth())
                 Gap(8)
@@ -238,6 +246,11 @@ fun JournalScreen(onBack: () -> Unit) {
                         if (e.note.isNotBlank()) {
                             Gap(4)
                             Text(e.note, style = DType.Body.copy(fontSize = 14.sp))
+                        }
+                        if (e.good.isNotBlank()) {
+                            Gap(6)
+                            Text(stringResource(R.string.journal_good), style = DType.Small)
+                            Text(e.good, style = DType.Body.copy(fontSize = 14.sp))
                         }
                     }
                 }

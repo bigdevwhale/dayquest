@@ -41,7 +41,7 @@ object Backup {
         .put("moments", JSONArray(s.moments.map {
             JSONObject().put("id", it.id).put("at", it.at).put("day", it.day).put("kind", it.kind).put("subject", it.subject).put("scene", it.scene)
         }))
-        .put("journal", JSONArray(s.journal.map { JSONObject().put("day", it.day).put("mood", it.mood).put("note", it.note) }))
+        .put("journal", JSONArray(s.journal.map { JSONObject().put("day", it.day).put("mood", it.mood).put("note", it.note).put("good", it.good) }))
         .put("friends", JSONArray(s.friends.map { JSONObject().put("uid", it.uid).put("code", it.code).put("addedAt", it.addedAt) }))
         .put("settings", settings?.let {
             JSONObject().put("theme", it.theme.name).put("dayStart", it.dayStart).put("reminders", it.reminders)
@@ -128,7 +128,7 @@ object Backup {
                     form = optString("form"), wear = optString("wear"),
                 )
             },
-            journal = root.list("journal") { JournalEntry(getLong("day"), getInt("mood"), optString("note")) },
+            journal = root.list("journal") { JournalEntry(getLong("day"), getInt("mood"), optString("note"), optString("good")) },
             friends = root.list("friends") { Friend(getString("uid"), getString("code"), optLong("addedAt")) },
             moments = root.list("moments") { Moment(getLong("id"), optLong("at"), getLong("day"), getString("kind"), optString("subject"), optString("scene")) },
         )

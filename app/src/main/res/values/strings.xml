@@ -914,6 +914,8 @@
     <string name="mood_5">Great</string>
     <string name="journal">Journal</string>
     <string name="journal_note_hint">A line about today…</string>
+    <string name="journal_good">What was good today</string>
+    <string name="journal_good_hint">Even small things: a warm cup, a kind word…</string>
     <string name="journal_open">Open journal</string>
     <string name="journal_empty">Pick a mood on the task board once a day. After a few weeks you\'ll see how your mood and your days go together.</string>
     <string name="journal_corr">On good days you finish %1$s tasks on average, on hard days %2$s.</string>

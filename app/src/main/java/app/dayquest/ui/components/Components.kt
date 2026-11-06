@@ -201,6 +201,7 @@ fun DTextField(
     placeholder: String = "",
     number: Boolean = false,
     minLines: Int = 1,
+    maxLines: Int = Int.MAX_VALUE,
     onDone: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
@@ -210,6 +211,7 @@ fun DTextField(
         modifier = modifier.fillMaxWidth(),
         placeholder = { Text(placeholder, color = D.c.faint) },
         minLines = minLines,
+        maxLines = if (minLines == 1) 1 else maxLines,
         singleLine = minLines == 1,
         shape = D.RSm,
         trailingIcon = trailing,
