@@ -155,7 +155,8 @@ fun Chip(text: String, selected: Boolean, onClick: () -> Unit, color: Color = D.
 }
 
 @Composable
-fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
+/** [fitText] sizes each segment by its label, so a long one («Ежедневные 0/2») is not cut off. */
+fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit, modifier: Modifier = Modifier, fitText: Boolean = false) {
     Row(
         modifier
             .fillMaxWidth()
@@ -166,9 +167,10 @@ fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> Strin
     ) {
         options.forEach { o ->
             val on = o == selected
+            val text = label(o)
             Box(
                 Modifier
-                    .weight(1f)
+                    .weight(if (fitText) text.length.coerceAtLeast(4).toFloat() else 1f)
                     .height(38.dp)
                     .clip(D.RXs)
                     .background(if (on) D.c.surface else Color.Transparent)
@@ -176,7 +178,7 @@ fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> Strin
                     .clickable { onSelect(o) },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(label(o), style = DType.Button.copy(fontSize = 14.sp), color = if (on) D.c.accent else D.c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text, style = DType.Button.copy(fontSize = 14.sp), color = if (on) D.c.accent else D.c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }

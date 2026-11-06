@@ -188,6 +188,7 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                             Board.TODOS -> stringResource(R.string.tab_todos) + todos.count { t -> !t.done }.let { n -> if (n > 0) "  $n" else "" }
                         }
                     },
+                    fitText = true,
                 )
                 if (allTags.isNotEmpty()) {
                     Gap(8)
