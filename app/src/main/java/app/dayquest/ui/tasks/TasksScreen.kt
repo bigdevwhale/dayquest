@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
@@ -193,8 +195,8 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                 if (allTags.isNotEmpty()) {
                     Gap(8)
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Chip(stringResource(R.string.tag_all), tag == null, { tag = null })
-                        allTags.forEach { tg -> Chip("#$tg", tag == tg, { tag = if (tag == tg) null else tg }) }
+                        Chip(stringResource(R.string.tag_all), tag == null, { tag = null }, small = true)
+                        allTags.forEach { tg -> Chip("#$tg", tag == tg, { tag = if (tag == tg) null else tg }, small = true) }
                     }
                 }
             }
@@ -229,11 +231,7 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                 if (dailies.isEmpty()) item { Empty(stringResource(R.string.empty_dailies)) }
                 val open = dueDailies.filter { it.doneDay != today }
                 val done = dueDailies.filter { it.doneDay == today }
-                if (dueDailies.isNotEmpty()) item(key = "progress") {
-                    Row(Modifier.padding(horizontal = 20.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.dailies_progress, done.size, dueDailies.size), style = DType.Small)
-                    }
-                }
+                if (dueDailies.isNotEmpty()) item(key = "progress") { DayProgress(done.size, dueDailies.size) }
                 taskItems(open + done, checklist, expanded, today, actions, onEdit)
                 val notDue = dailies - dueDailies.toSet()
                 if (notDue.isNotEmpty()) {
@@ -442,12 +440,30 @@ private fun QuickAdd(hint: String, onAdd: (String) -> Unit, onMore: (String) -> 
             onDone = { if (text.isNotBlank()) { onAdd(text); text = "" } },
             trailing = {
                 Row {
-                    IconButton(onClick = { onMore(text); text = "" }) { Icon(Icons.Rounded.Tune, null, tint = D.c.muted) }
+                    // «…» opens the full editor with what's typed; «+» adds it as is.
+                    IconButton(onClick = { onMore(text); text = "" }) { Icon(Icons.Rounded.MoreHoriz, stringResource(R.string.add_more), tint = D.c.muted) }
                     IconButton(onClick = { if (text.isNotBlank()) { onAdd(text); text = "" } else onMore("") }) {
-                        Icon(Icons.Rounded.Add, stringResource(R.string.add), tint = D.c.accent)
+                        Icon(Icons.Rounded.Add, stringResource(R.string.add), tint = if (text.isNotBlank()) D.c.accent else D.c.faint)
                     }
                 }
             },
+        )
+    }
+}
+
+/** How far today's dailies are: a bar that fills, and a word of praise when it's full. */
+@Composable
+private fun DayProgress(done: Int, total: Int) {
+    val all = done >= total
+    val f by animateFloatAsState(done.toFloat() / total, label = "day")
+    Row(Modifier.padding(horizontal = 20.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f).height(8.dp).clip(D.RXs).background(D.c.surface2).border(1.dp, D.c.line, D.RXs)) {
+            Box(Modifier.fillMaxWidth(f).fillMaxHeight().background(if (all) D.c.good else D.c.xp))
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            if (all) stringResource(R.string.dailies_all_done) else "$done/$total",
+            style = DType.Small.copy(color = if (all) D.c.good else D.c.muted),
         )
     }
 }

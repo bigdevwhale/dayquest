@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import app.dayquest.R
 import app.dayquest.container
@@ -83,16 +84,17 @@ fun EventBanner(ev: DayEvent, done: Int, claimed: Boolean, onClick: () -> Unit, 
             .background(D.c.surface)
             .border(1.dp, D.c.accent.copy(alpha = 0.45f), D.RMd)
             .clickable(onClick = onClick)
-            .padding(10.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(42.dp).clip(D.RSm).background(D.c.accentSoft), contentAlignment = Alignment.Center) {
-            PixelImage(eventSprite(ev.icon), pixel = 2.5.dp)
+        // A slim line on the board; tapping it shows the whole card.
+        Box(Modifier.size(34.dp).clip(D.RSm).background(D.c.accentSoft), contentAlignment = Alignment.Center) {
+            PixelImage(eventSprite(ev.icon), pixel = 2.dp)
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(stringResource(ev.title), style = DType.Strong.copy(fontSize = 15.sp), maxLines = 1)
-            Text(stringResource(ev.text), style = DType.Muted, maxLines = 2)
+            Text(stringResource(ev.title), style = DType.Strong.copy(fontSize = 14.5.sp), maxLines = 1)
+            Text(stringResource(ev.text), style = DType.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (ev.bounty > 0) {
             Spacer(Modifier.width(8.dp))

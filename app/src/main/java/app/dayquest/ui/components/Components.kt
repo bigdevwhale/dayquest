@@ -138,11 +138,12 @@ fun PriceButton(price: Double, affordable: Boolean, onClick: () -> Unit, modifie
 }
 
 @Composable
-fun Chip(text: String, selected: Boolean, onClick: () -> Unit, color: Color = D.c.accent) {
+fun Chip(text: String, selected: Boolean, onClick: () -> Unit, color: Color = D.c.accent, small: Boolean = false) {
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(text, fontFamily = Inter, fontWeight = FontWeight.Medium, fontSize = 14.sp) },
+        modifier = if (small) Modifier.height(30.dp) else Modifier,
+        label = { Text(text, fontFamily = Inter, fontWeight = FontWeight.Medium, fontSize = if (small) 13.sp else 14.sp) },
         shape = D.RSm,
         colors = FilterChipDefaults.filterChipColors(
             containerColor = D.c.surface,
@@ -154,8 +155,8 @@ fun Chip(text: String, selected: Boolean, onClick: () -> Unit, color: Color = D.
     )
 }
 
-@Composable
 /** [fitText] sizes each segment by its label, so a long one («Ежедневные 0/2») is not cut off. */
+@Composable
 fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit, modifier: Modifier = Modifier, fitText: Boolean = false) {
     Row(
         modifier
