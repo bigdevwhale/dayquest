@@ -69,7 +69,7 @@ object Backup {
         .put("up", t.up).put("down", t.down).put("countUp", t.countUp).put("countDown", t.countDown)
         .put("repeatMask", t.repeatMask).put("everyDays", t.everyDays).put("startDay", t.startDay)
         .put("streak", t.streak).put("bestStreak", t.bestStreak).put("doneDay", t.doneDay)
-        .put("done", t.done).put("doneAt", t.doneAt).put("dueDay", t.dueDay).put("cost", t.cost).put("reminder", t.reminder)
+        .put("done", t.done).put("doneAt", t.doneAt).put("dueDay", t.dueDay).put("cost", t.cost).put("reminder", t.reminder).put("tags", t.tags)
 
     /** Throws [IllegalArgumentException] when the text is not a Dayquest backup. */
     fun decode(text: String): Pair<Snapshot, Settings?> {
@@ -108,7 +108,7 @@ object Backup {
                     repeatMask = optInt("repeatMask", 0b1111111), everyDays = optInt("everyDays"), startDay = optLong("startDay"),
                     streak = optInt("streak"), bestStreak = optInt("bestStreak"), doneDay = optLong("doneDay", -1),
                     done = optBoolean("done"), doneAt = optLong("doneAt"), dueDay = optLong("dueDay", -1),
-                    cost = optDouble("cost", 10.0), reminder = optInt("reminder", -1),
+                    cost = optDouble("cost", 10.0), reminder = optInt("reminder", -1), tags = optString("tags"),
                 )
             },
             checklist = root.list("checklist") { CheckItem(getLong("id"), getLong("taskId"), getString("text"), optBoolean("done"), optInt("position")) },

@@ -31,6 +31,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.collectAsState
+import app.dayquest.data.splitTags
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -93,6 +95,10 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
     var reminder by remember { mutableIntStateOf(-1) }
     var cost by remember { mutableStateOf("10") }
     val lines = remember { mutableStateListOf<Line>() }
+    val tags = remember { mutableStateListOf<String>() }
+    var newTag by remember { mutableStateOf("") }
+    val allTasks by remember { db.observeTasks() }.collectAsState(initial = emptyList())
+    val known = (allTasks.flatMap { it.tagList } + tags).distinct().sortedBy { it.lowercase() }
     var newLine by remember { mutableStateOf("") }
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
@@ -106,6 +112,7 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
         title = t.title; notes = t.notes; difficulty = t.difficulty; up = t.up; down = t.down
         mask = t.repeatMask; every = t.everyDays; due = t.dueDay; reminder = t.reminder; cost = goldText(t.cost)
         lines.clear(); lines.addAll(db.checklist(t.id).map { Line(it.id, it.text, it.done) })
+        tags.clear(); tags.addAll(t.tagList)
         loaded = true
     }
     if (!loaded) return
@@ -119,6 +126,7 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
             up = up || !down, down = down,
             repeatMask = if (mask == 0) 0b1111111 else mask, everyDays = every,
             dueDay = due, reminder = reminder,
+            tags = (tags + splitTags(newTag)).distinct().joinToString(","),
             cost = parsedCost ?: t.cost,
         )
         val items = lines.filter { it.text.isNotBlank() } + listOfNotNull(newLine.takeIf { it.isNotBlank() }?.let { Line(0, it, false) })
@@ -156,6 +164,20 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
             if (titleError) Text(stringResource(R.string.title_required), style = DType.Small.copy(color = D.c.hp), modifier = Modifier.padding(4.dp))
             Gap(8)
             DTextField(notes, { notes = it }, placeholder = stringResource(R.string.notes), minLines = 2)
+
+            SectionTitle(stringResource(R.string.tags))
+            fun addTag() { splitTags(newTag).forEach { if (it !in tags) tags.add(it) }; newTag = "" }
+            if (known.isNotEmpty()) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    known.forEach { tg -> Chip(tg, tg in tags, { if (tg in tags) tags.remove(tg) else tags.add(tg) }) }
+                }
+                Gap(6)
+            }
+            DTextField(
+                newTag, { newTag = it.take(30) }, placeholder = stringResource(R.string.add_tag),
+                onDone = ::addTag,
+                trailing = { IconButton(onClick = ::addTag) { Icon(Icons.Rounded.Add, null, tint = D.c.accent) } },
+            )
 
             if (kind == TaskType.REWARD) {
                 SectionTitle(stringResource(R.string.cost))

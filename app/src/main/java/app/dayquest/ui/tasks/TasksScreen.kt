@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -74,6 +76,7 @@ import app.dayquest.ui.LocalFeedback
 import app.dayquest.ui.MomentDialog
 import app.dayquest.ui.Sfx
 import app.dayquest.ui.Sound
+import app.dayquest.ui.components.Chip
 import app.dayquest.ui.components.DTextField
 import app.dayquest.ui.components.Gap
 import app.dayquest.ui.components.Segmented
@@ -159,10 +162,15 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
     var showNotDue by rememberSaveable { mutableStateOf(false) }
     val fx = rememberSceneFx()
 
-    val habits = tasks.filter { it.type == TaskType.HABIT }
-    val dailies = tasks.filter { it.type == TaskType.DAILY }
+    // The player's own tags filter the board; the row appears once any task has one.
+    val allTags = tasks.flatMap { it.tagList }.distinct().sortedBy { it.lowercase() }
+    var tag by rememberSaveable { mutableStateOf<String?>(null) }
+    if (tag != null && tag !in allTags) tag = null
+    val shown = tag?.let { tg -> tasks.filter { tg in it.tagList } } ?: tasks
+    val habits = shown.filter { it.type == TaskType.HABIT }
+    val dailies = shown.filter { it.type == TaskType.DAILY }
     val dueDailies = dailies.filter { Rules.isDue(it, today) }
-    val todos = tasks.filter { it.type == TaskType.TODO }
+    val todos = shown.filter { it.type == TaskType.TODO }
 
     val actions = remember(fb) { Actions(c, fb, context) }
     val mood by remember(today) { c.db.game().observeJournalDay(today) }.collectAsStateWithLifecycle(initialValue = null)
@@ -181,6 +189,13 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                         }
                     },
                 )
+                if (allTags.isNotEmpty()) {
+                    Gap(8)
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Chip(stringResource(R.string.tag_all), tag == null, { tag = null })
+                        allTags.forEach { tg -> Chip("#$tg", tag == tg, { tag = if (tag == tg) null else tg }) }
+                    }
+                }
             }
         }
         item(key = "tip") { Tip("tasks", stringResource(R.string.tip_tasks), Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
@@ -198,7 +213,7 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                         Board.TODOS -> R.string.add_todo_hint
                     }
                 ),
-                onAdd = { title -> c.launch { quickAdd(c, board.type, title, today) } },
+                onAdd = { title -> c.launch { quickAdd(c, board.type, title, today, tag.orEmpty()) } },
                 onMore = { onNew(board.type, it) },
             )
         }
@@ -247,9 +262,9 @@ private val Board.type get() = when (this) {
     Board.TODOS -> TaskType.TODO
 }
 
-suspend fun quickAdd(c: app.dayquest.AppContainer, type: TaskType, title: String, today: Long) {
+suspend fun quickAdd(c: app.dayquest.AppContainer, type: TaskType, title: String, today: Long, tags: String = "") {
     val db = c.db.game()
-    db.insert(Task(type = type, title = title.trim(), position = db.nextPosition(type), startDay = today, up = true, down = type == TaskType.HABIT))
+    db.insert(Task(type = type, title = title.trim(), position = db.nextPosition(type), startDay = today, up = true, down = type == TaskType.HABIT, tags = tags))
 }
 
 /** Scoring with feedback: haptics, a snackbar with undo, and the scene's fireworks. */
@@ -488,6 +503,7 @@ private fun HabitRow(t: Task, onClick: () -> Unit, onUp: () -> Unit, onDown: () 
         Column(Modifier.weight(1f)) {
             Text(t.title, style = DType.Strong.copy(fontSize = 15.5.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (t.notes.isNotBlank()) Text(t.notes, style = DType.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (t.tags.isNotBlank()) Text(t.tagList.joinToString("  ") { "#$it" }, style = DType.Small.copy(color = D.c.accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (t.countUp + t.countDown > 0) {
                 Gap(2)
                 Text(
@@ -541,6 +557,7 @@ private fun TaskRow(
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
                 if (t.notes.isNotBlank()) Text(t.notes, style = DType.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (t.tags.isNotBlank()) Text(t.tagList.joinToString("  ") { "#$it" }, style = DType.Small.copy(color = D.c.accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 val hasMeta = t.streak > 0 || checklist.isNotEmpty() || t.reminder >= 0 || t.dueDay >= 0
                 if (hasMeta) {
                     Gap(4)

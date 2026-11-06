@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 6,
-    "identityHash": "7f98667ffacc47d3bdc1ad4c8a560f0d",
+    "identityHash": "ded3861e29f81ac0f5a327695f416851",
     "entities": [
       {
         "tableName": "tasks",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `title` TEXT NOT NULL, `notes` TEXT NOT NULL, `difficulty` TEXT NOT NULL, `position` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `value` REAL NOT NULL, `up` INTEGER NOT NULL, `down` INTEGER NOT NULL, `countUp` INTEGER NOT NULL, `countDown` INTEGER NOT NULL, `repeatMask` INTEGER NOT NULL, `everyDays` INTEGER NOT NULL, `startDay` INTEGER NOT NULL, `streak` INTEGER NOT NULL, `bestStreak` INTEGER NOT NULL, `doneDay` INTEGER NOT NULL, `done` INTEGER NOT NULL, `doneAt` INTEGER NOT NULL, `dueDay` INTEGER NOT NULL, `cost` REAL NOT NULL, `reminder` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `title` TEXT NOT NULL, `notes` TEXT NOT NULL, `difficulty` TEXT NOT NULL, `position` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `value` REAL NOT NULL, `up` INTEGER NOT NULL, `down` INTEGER NOT NULL, `countUp` INTEGER NOT NULL, `countDown` INTEGER NOT NULL, `repeatMask` INTEGER NOT NULL, `everyDays` INTEGER NOT NULL, `startDay` INTEGER NOT NULL, `streak` INTEGER NOT NULL, `bestStreak` INTEGER NOT NULL, `doneDay` INTEGER NOT NULL, `done` INTEGER NOT NULL, `doneAt` INTEGER NOT NULL, `dueDay` INTEGER NOT NULL, `cost` REAL NOT NULL, `reminder` INTEGER NOT NULL, `tags` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -144,6 +144,12 @@
             "fieldPath": "reminder",
             "columnName": "reminder",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tags",
+            "columnName": "tags",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -874,7 +880,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7f98667ffacc47d3bdc1ad4c8a560f0d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ded3861e29f81ac0f5a327695f416851')"
     ]
   }
 }

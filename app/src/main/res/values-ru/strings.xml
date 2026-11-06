@@ -933,6 +933,9 @@
     <string name="mood_4">Хорошо</string>
     <string name="mood_5">Отлично</string>
     <string name="journal">Дневник</string>
+    <string name="tags">Теги</string>
+    <string name="add_tag">Новый тег: работа, дом, здоровье…</string>
+    <string name="tag_all">Все</string>
     <string name="journal_good">Что хорошего было сегодня</string>
     <string name="journal_good_hint">Даже мелочи: тёплый чай, доброе слово…</string>
     <string name="journal_note_hint">Пара слов о дне…</string>

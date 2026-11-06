@@ -57,7 +57,13 @@ data class Task(
     val cost: Double = 10.0,
     /** Minutes after midnight for a reminder, -1 when none. */
     val reminder: Int = -1,
-)
+    /** The player's own tags, comma-separated. */
+    val tags: String = "",
+) {
+    val tagList: List<String> get() = splitTags(tags)
+}
+
+fun splitTags(s: String) = s.split(',').map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
 @Entity(
     tableName = "checklist",
@@ -588,6 +594,7 @@ abstract class GameDatabase : RoomDatabase() {
         private val GOOD_THINGS = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE journal ADD COLUMN good TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE tasks ADD COLUMN tags TEXT NOT NULL DEFAULT ''")
             }
         }
 

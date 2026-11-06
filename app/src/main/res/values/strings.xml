@@ -914,6 +914,9 @@
     <string name="mood_5">Great</string>
     <string name="journal">Journal</string>
     <string name="journal_note_hint">A line about today…</string>
+    <string name="tags">Tags</string>
+    <string name="add_tag">New tag: work, home, health…</string>
+    <string name="tag_all">All</string>
     <string name="journal_good">What was good today</string>
     <string name="journal_good_hint">Even small things: a warm cup, a kind word…</string>
     <string name="journal_open">Open journal</string>
