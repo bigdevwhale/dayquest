@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 7,
-    "identityHash": "9a832fdd814b4ce0caa86933da2a057f",
+    "identityHash": "d8d22c4739a3f827bf7277eedb2126b4",
     "entities": [
       {
         "tableName": "tasks",
@@ -897,132 +897,11 @@
             "id"
           ]
         }
-      },
-      {
-        "tableName": "trackers",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `kind` INTEGER NOT NULL, `unit` TEXT NOT NULL, `target` REAL NOT NULL, `step` REAL NOT NULL, `position` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "title",
-            "columnName": "title",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "kind",
-            "columnName": "kind",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "unit",
-            "columnName": "unit",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "target",
-            "columnName": "target",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "step",
-            "columnName": "step",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "position",
-            "columnName": "position",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": true,
-          "columnNames": [
-            "id"
-          ]
-        }
-      },
-      {
-        "tableName": "tracker_days",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`trackerId` INTEGER NOT NULL, `day` INTEGER NOT NULL, `value` REAL NOT NULL, `logId` INTEGER NOT NULL, PRIMARY KEY(`trackerId`, `day`), FOREIGN KEY(`trackerId`) REFERENCES `trackers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        "fields": [
-          {
-            "fieldPath": "trackerId",
-            "columnName": "trackerId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "day",
-            "columnName": "day",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "value",
-            "columnName": "value",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "logId",
-            "columnName": "logId",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "trackerId",
-            "day"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_tracker_days_trackerId",
-            "unique": false,
-            "columnNames": [
-              "trackerId"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_tracker_days_trackerId` ON `${TABLE_NAME}` (`trackerId`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "trackers",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "trackerId"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9a832fdd814b4ce0caa86933da2a057f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd8d22c4739a3f827bf7277eedb2126b4')"
     ]
   }
 }

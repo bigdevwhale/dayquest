@@ -43,11 +43,6 @@ object Backup {
         }))
         .put("journal", JSONArray(s.journal.map { JSONObject().put("day", it.day).put("mood", it.mood).put("note", it.note).put("good", it.good) }))
         .put("friends", JSONArray(s.friends.map { JSONObject().put("uid", it.uid).put("code", it.code).put("addedAt", it.addedAt) }))
-        .put("trackers", JSONArray(s.trackers.map {
-            JSONObject().put("id", it.id).put("title", it.title).put("kind", it.kind).put("unit", it.unit).put("target", it.target)
-                .put("step", it.step).put("position", it.position).put("createdAt", it.createdAt)
-        }))
-        .put("trackerDays", JSONArray(s.trackerDays.map { JSONObject().put("trackerId", it.trackerId).put("day", it.day).put("value", it.value).put("logId", it.logId) }))
         .put("settings", settings?.let {
             JSONObject().put("theme", it.theme.name).put("dayStart", it.dayStart).put("reminders", it.reminders)
                 .put("evening", it.evening).put("haptics", it.haptics).put("southern", it.southern).put("sounds", it.sounds).put("challenge", it.challenge.name).put("tips", JSONArray(it.tips.toList()))
@@ -138,10 +133,6 @@ object Backup {
             journal = root.list("journal") { JournalEntry(getLong("day"), getInt("mood"), optString("note"), optString("good")) },
             friends = root.list("friends") { Friend(getString("uid"), getString("code"), optLong("addedAt")) },
             moments = root.list("moments") { Moment(getLong("id"), optLong("at"), getLong("day"), getString("kind"), optString("subject"), optString("scene")) },
-            trackers = root.list("trackers") {
-                Tracker(getLong("id"), getString("title"), optInt("kind"), optString("unit"), optDouble("target", 1.0), optDouble("step", 1.0), optInt("position"), optLong("createdAt"))
-            },
-            trackerDays = root.list("trackerDays") { TrackerDay(getLong("trackerId"), getLong("day"), optDouble("value", 0.0), optLong("logId")) },
         )
         val settings = root.optJSONObject("settings")?.let {
             Settings(

@@ -90,26 +90,6 @@ class GameTest {
     }
 
     @Test
-    fun aTrackerPaysOnceADayAndTakesItBack() = runBlocking {
-        val db = FakeDao()
-        val g = game(db)
-        start(db, g)
-        val id = db.insertTracker(app.dayquest.data.Tracker(title = "water", target = 8.0, step = 1.0))
-        val d = g.today()
-        assertNull(g.setTracker(id, d, 5.0))
-        val o = g.setTracker(id, d, 8.0)!!
-        assertTrue(o.tracker && o.xp > 0)
-        val xp = db.hero!!.xp
-        assertNull(g.setTracker(id, d, 9.0))
-        assertEquals(xp, db.hero!!.xp, 1e-9)
-        g.setTracker(id, d, 3.0)
-        assertTrue(db.hero!!.xp < xp)
-        assertEquals(0L, db.trackerDay(id, d)!!.logId)
-        // an old day can be put right, but brings nothing
-        assertNull(g.setTracker(id, d - 5, 8.0))
-    }
-
-    @Test
     fun goalPeriods() {
         val mon = java.time.LocalDate.of(2026, 11, 16).toEpochDay()
         assertEquals(mon, Rules.goalStart(mon + 3, 7))
@@ -468,25 +448,6 @@ internal class FakeDao : GameDao() {
     override fun observeUps(from: Long): Flow<List<app.dayquest.data.TaskDay>> = TODO()
     override suspend fun upsBetween(taskId: Long, from: Long, to: Long) =
         log.values.count { it.taskId == taskId && it.kind == LogKind.UP && !it.undone && it.day in from..to }
-    val trackers = linkedMapOf<Long, app.dayquest.data.Tracker>()
-    val trackerDays = linkedMapOf<Pair<Long, Long>, app.dayquest.data.TrackerDay>()
-    override fun observeTrackers(): Flow<List<app.dayquest.data.Tracker>> = TODO()
-    override suspend fun tracker(id: Long) = trackers[id]
-    override fun observeTracker(id: Long): Flow<app.dayquest.data.Tracker?> = TODO()
-    override suspend fun insertTracker(t: app.dayquest.data.Tracker): Long { val id = next++; trackers[id] = t.copy(id = id); return id }
-    override suspend fun updateTracker(t: app.dayquest.data.Tracker) { trackers[t.id] = t }
-    override suspend fun deleteTracker(id: Long) { trackers.remove(id) }
-    override suspend fun nextTrackerPosition() = trackers.size + 1
-    override fun observeTrackerDays(from: Long): Flow<List<app.dayquest.data.TrackerDay>> = TODO()
-    override fun observeTrackerHistory(id: Long): Flow<List<app.dayquest.data.TrackerDay>> = TODO()
-    override suspend fun trackerDay(id: Long, day: Long) = trackerDays[id to day]
-    override suspend fun putTrackerDay(d: app.dayquest.data.TrackerDay) { trackerDays[d.trackerId to d.day] = d }
-    override suspend fun clearTrackerDay(id: Long, day: Long) { trackerDays.remove(id to day) }
-    override suspend fun allTrackers() = trackers.values.toList()
-    override suspend fun allTrackerDays() = trackerDays.values.toList()
-    override suspend fun clearTrackers() { trackers.clear(); trackerDays.clear() }
-    override suspend fun insertTrackers(items: List<app.dayquest.data.Tracker>) { items.forEach { trackers[it.id] = it } }
-    override suspend fun insertTrackerDays(items: List<app.dayquest.data.TrackerDay>) { items.forEach { trackerDays[it.trackerId to it.day] = it } }
 
     private companion object {
         val DONE = setOf(LogKind.UP, LogKind.DAILY, LogKind.TODO)

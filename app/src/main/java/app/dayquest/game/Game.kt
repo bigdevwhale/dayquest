@@ -9,7 +9,6 @@ import app.dayquest.data.Moment
 import app.dayquest.data.Pet
 import app.dayquest.data.Settings
 import app.dayquest.data.Task
-import app.dayquest.data.TrackerDay
 import app.dayquest.data.TaskType
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -54,8 +53,6 @@ data class Outcome(
     val roomItems: List<String> = emptyList(),
     /** A habit's goal for the week or month was just reached: a chest (#6). */
     val goal: Boolean = false,
-    /** A tracker's daily target was just reached (#7). */
-    val tracker: Boolean = false,
 )
 
 /** What a chest held. */
@@ -155,29 +152,6 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
             o
         }
         emit(out)
-    }
-
-    /**
-     * Notes a tracker's value for [day] (#7). Reaching the daily target pays like an easy task, once a day and only
-     * for today or yesterday (old days can be put right, but bring nothing); falling below it takes that back.
-     */
-    suspend fun setTracker(trackerId: Long, day: Long, value: Double): Outcome? = mutex.withLock {
-        val t = db.tracker(trackerId) ?: return null
-        val v = value.coerceAtLeast(0.0)
-        val old = db.trackerDay(trackerId, day)
-        var logId = old?.logId?.takeIf { id -> id != 0L && db.logEntry(id)?.undone == false } ?: 0L
-        var out: Outcome? = null
-        if (t.met(v) && logId == 0L && day >= today() - 1) {
-            val (h2, o) = gain(hero(), Difficulty.EASY, Rules.delta(0.0, true), 1.0, 0, LogKind.TRACKER, day)
-            db.saveHero(h2)
-            logId = o.logId
-            out = o.copy(tracker = true)
-        } else if (!t.met(v) && logId != 0L) {
-            db.logEntry(logId)?.let { revert(it) }
-            logId = 0L
-        }
-        if (v == 0.0 && logId == 0L) db.clearTrackerDay(trackerId, day) else db.putTrackerDay(TrackerDay(trackerId, day, v, logId))
-        out?.let(::emit)
     }
 
     /** Ticks or unticks a daily for [day] (today, or yesterday from the morning recap). */
@@ -353,7 +327,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         val buffs = Classes.buffs(h, day)
         val party = party(day)
         // Focus sessions pay like a task but don't count as one (bounties, achievements).
-        val counts = kind != LogKind.FOCUS && kind != LogKind.TRACKER
+        val counts = kind != LogKind.FOCUS
         val doneBefore = db.doneOn(day)
         val mult = bonus * ev.reward(kind, d, isFirst = counts && doneBefore == 0) * challenge().reward
         val jackpot = ev.jackpot > 0 && random.nextDouble() < ev.jackpot

@@ -1,5 +1,15 @@
 package app.dayquest.ui.tasks
 
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.WindowInsets
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -109,7 +119,7 @@ import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
 import app.dayquest.ui.journal.MoodCard
 
-private enum class Board { HABITS, DAILIES, TODOS, TRACKERS }
+private enum class Board { HABITS, DAILIES, TODOS }
 
 val ManaBlue = Color(0xFF4F9BEF)
 private val BossColor = Color(0xFFB45CFF)
@@ -148,7 +158,7 @@ fun rememberSceneFx(): SceneFx {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit, onFocus: () -> Unit, onHome: () -> Unit, onTracker: (Long) -> Unit = {}) {
+fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit, onFocus: () -> Unit, onHome: () -> Unit) {
     val context = LocalContext.current
     val c = context.container
     val fb = LocalFeedback.current
@@ -178,27 +188,22 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
     // habit goals count from the start of the month (or of the week, when that is earlier) (#6)
     val goalFrom = minOf(Rules.goalStart(today, 7), Rules.goalStart(today, 30))
     val ups by remember(goalFrom) { c.db.game().observeUps(goalFrom) }.collectAsStateWithLifecycle(initialValue = emptyList())
-    val trackers by remember { c.db.game().observeTrackers() }.collectAsStateWithLifecycle(initialValue = emptyList())
-    val trackerDays by remember(today) { c.db.game().observeTrackerDays(today - 6) }.collectAsStateWithLifecycle(initialValue = emptyList())
-    var newTracker by remember { mutableStateOf(false) }
     val mood by remember(today) { c.db.game().observeJournalDay(today) }.collectAsStateWithLifecycle(initialValue = null)
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // Stuck at the top, the tabs keep clear of the status bar instead of sliding under the clock.
+    val stuck by remember { androidx.compose.runtime.derivedStateOf { listState.firstVisibleItemIndex >= 1 } }
+    // Once the scene has gone up, a strip of the page's colour keeps the board from running under the clock.
+    val scrolled by remember { androidx.compose.runtime.derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 300 } }
+    Box(Modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = 24.dp)) {
         item(key = "header") { HeroHeader(hero, fx, onSettings, onChest, onFocus, onHome) }
         stickyHeader(key = "tabs") {
-            Column(Modifier.fillMaxWidth().background(D.c.bg).padding(horizontal = 16.dp, vertical = 10.dp)) {
-                Segmented(
-                    options = Board.entries.toList(), selected = board, onSelect = { board = it },
-                    label = {
-                        when (it) {
-                            Board.HABITS -> stringResource(R.string.tab_habits)
-                            Board.DAILIES -> stringResource(R.string.tab_dailies) + "  " + dueDailies.count { d -> d.doneDay == today } + "/" + dueDailies.size
-                            Board.TODOS -> stringResource(R.string.tab_todos) + todos.count { t -> !t.done }.let { n -> if (n > 0) "  $n" else "" }
-                            Board.TRACKERS -> stringResource(R.string.tab_trackers)
-                        }
-                    },
-                    fitText = true,
-                )
+            Column(Modifier.fillMaxWidth().background(D.c.bg).then(if (stuck) Modifier.statusBarsPadding() else Modifier).padding(horizontal = 12.dp, vertical = 8.dp)) {
+                BoardTabs(board, { board = it },
+                    habits = habits.size,
+                    dailiesDone = dueDailies.count { d -> d.doneDay == today }, dailiesDue = dueDailies.size,
+                    todosOpen = todos.count { t -> !t.done })
                 if (allTags.isNotEmpty()) {
                     Gap(8)
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -214,14 +219,13 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
             EventBanner(ev, doneToday, hero.bountyDay == today, { cardOpen = true }, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             if (cardOpen) MomentDialog(eventSprite(ev.icon), stringResource(ev.title), stringResource(ev.text), stringResource(R.string.ok)) { cardOpen = false }
         }
-        if (board != Board.TRACKERS) item(key = "quick-$board") {
+        item(key = "quick-$board") {
             QuickAdd(
                 hint = stringResource(
                     when (board) {
                         Board.HABITS -> R.string.add_habit_hint
                         Board.DAILIES -> R.string.add_daily_hint
                         Board.TODOS -> R.string.add_todo_hint
-                        Board.TRACKERS -> R.string.add_todo_hint
                     }
                 ),
                 onAdd = { title -> c.launch { quickAdd(c, board.type, title, today, tag.orEmpty()) } },
@@ -233,14 +237,17 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                 if (habits.isEmpty()) item { Empty(stringResource(R.string.empty_habits)) }
                 items(habits, key = { it.id }) { t ->
                     val progress = if (t.goal > 0) Rules.goalStart(today, t.goalPer).let { from -> ups.count { u -> u.taskId == t.id && u.day >= from } } else 0
-                    HabitRow(t, progress, onClick = { onEdit(t.id) }, onUp = { actions.habit(t, true) }, onDown = { actions.habit(t, false) })
+                    SwipeRow(
+                        right = if (t.up) ("+" to { actions.habit(t, true) }) else null,
+                        left = if (t.down) ("−" to { actions.habit(t, false) }) else null,
+                    ) { HabitRow(t, progress, onClick = { onEdit(t.id) }, onUp = { actions.habit(t, true) }, onDown = { actions.habit(t, false) }) }
                 }
             }
             Board.DAILIES -> {
                 if (dailies.isEmpty()) item { Empty(stringResource(R.string.empty_dailies)) }
                 val open = dueDailies.filter { it.doneDay != today }
                 val done = dueDailies.filter { it.doneDay == today }
-                if (dueDailies.isNotEmpty()) item(key = "progress") { DayProgress(done.size, dueDailies.size) }
+                if (dueDailies.isNotEmpty() && done.size == dueDailies.size) item(key = "progress") { DayProgress(done.size, dueDailies.size) }
                 taskItems(open + done, checklist, expanded, today, actions, onEdit)
                 val notDue = dailies - dueDailies.toSet()
                 if (notDue.isNotEmpty()) {
@@ -258,32 +265,18 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                     if (showDone) taskItems(done.take(50), checklist, expanded, today, actions, onEdit, dim = true)
                 }
             }
-            Board.TRACKERS -> {
-                item(key = "tracker-new") {
-                    app.dayquest.ui.components.SoftButton(stringResource(R.string.tracker_add), { newTracker = true },
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
-                }
-                if (trackers.isEmpty()) item { Empty(stringResource(R.string.empty_trackers)) }
-                val byTracker = trackerDays.groupBy { it.trackerId }.mapValues { (_, l) -> l.associate { it.day to it.value } }
-                items(trackers, key = { "tr${it.id}" }) { t ->
-                    val days = byTracker[t.id].orEmpty()
-                    app.dayquest.ui.trackers.TrackerRow(t, days, today, onQuick = {
-                        val v = days[today] ?: 0.0
-                        actions.tracker(t, today, if (t.yesNo) (if (v >= 1) 0.0 else 1.0) else v + t.step)
-                    }, onClick = { onTracker(t.id) })
-                }
-            }
         }
         // The day's mood waits at the end of the board, after the tasks.
         item(key = "mood") { MoodCard(today, mood, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) }
     }
-    if (newTracker) app.dayquest.ui.trackers.TrackerDialog(null, { newTracker = false })
+    if (scrolled) Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(D.c.bg))
+    }
 }
 
 private val Board.type get() = when (this) {
     Board.HABITS -> TaskType.HABIT
     Board.DAILIES -> TaskType.DAILY
-    Board.TODOS, Board.TRACKERS -> TaskType.TODO
+    Board.TODOS -> TaskType.TODO
 }
 
 suspend fun quickAdd(c: app.dayquest.AppContainer, type: TaskType, title: String, today: Long, tags: String = "") {
@@ -304,7 +297,6 @@ class Actions(private val c: app.dayquest.AppContainer, private val fb: Feedback
             if (o.drop.isNotEmpty()) add(s(R.string.snack_drop, context.itemLabel(o.drop)))
             if (o.room > 0 && !o.dungeonDone) add(s(R.string.room_cleared, o.room, goldText(o.roomGold), o.roomItems.joinToString(", ") { context.itemLabel(it) }))
             if (o.goal) add(s(R.string.snack_goal))
-            if (o.tracker) add(s(R.string.snack_tracker))
         }
         if (parts.isNotEmpty()) fb.show(parts.joinToString("\n"), s(R.string.undo), o.logId)
     }
@@ -312,11 +304,6 @@ class Actions(private val c: app.dayquest.AppContainer, private val fb: Feedback
     fun habit(t: Task, up: Boolean) {
         if (up) fb.tap() else fb.thud()
         c.launch { report(c.game.scoreHabit(t.id, up)) }
-    }
-
-    fun tracker(t: app.dayquest.data.Tracker, day: Long, value: Double) {
-        fb.tap()
-        c.launch { report(c.game.setTracker(t.id, day, value)) }
     }
 
     fun daily(t: Task, done: Boolean) {
@@ -331,6 +318,13 @@ class Actions(private val c: app.dayquest.AppContainer, private val fb: Feedback
         c.launch { report(c.game.setTodo(t.id, done)) }
     }
 
+    /** A to-do moves to tomorrow (swiped to the left). */
+    fun tomorrow(t: Task, today: Long) {
+        fb.tap()
+        c.launch { c.db.game().update(t.copy(dueDay = today + 1)) }
+        fb.show(s(R.string.moved_tomorrow), null, 0)
+    }
+
     fun check(item: CheckItem) {
         fb.tap()
         c.launch { c.db.game().updateCheck(item.copy(done = !item.done)) }
@@ -343,6 +337,11 @@ private fun LazyListScope.taskItems(
 ) {
     items(list, key = { it.id }) { t ->
         val items = checklist[t.id].orEmpty()
+        val done = if (t.type == TaskType.DAILY) t.doneDay == today else t.done
+        SwipeRow(
+            right = (if (done) "↺" else "✓") to { if (t.type == TaskType.DAILY) actions.daily(t, !done) else actions.todo(t, !done) },
+            left = if (t.type == TaskType.TODO && !t.done) ("→" to { actions.tomorrow(t, today) }) else ("✎" to { onEdit(t.id) }),
+        ) {
         TaskRow(
             t, items, today, expanded = t.id in expanded, dim = dim,
             onToggle = { done -> if (t.type == TaskType.DAILY) actions.daily(t, done) else actions.todo(t, done) },
@@ -350,7 +349,102 @@ private fun LazyListScope.taskItems(
             onCheck = actions::check,
             onClick = { onEdit(t.id) },
         )
+        }
     }
+}
+
+/**
+ * The three boards as tabs (#UI): an icon, the name and a little count each; the chosen one is filled with the
+ * accent colour, and the day's dailies turn green once all are done.
+ */
+@Composable
+private fun BoardTabs(board: Board, onSelect: (Board) -> Unit, habits: Int, dailiesDone: Int, dailiesDue: Int, todosOpen: Int) {
+    Row(
+        Modifier.fillMaxWidth().clip(D.RMd).background(D.c.surface).border(1.dp, D.c.line, D.RMd).padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        for (b in Board.entries) {
+            val on = b == board
+            val bg by animateColorAsState(if (on) D.c.accent else Color.Transparent, label = "tab")
+            val fg = if (on) D.c.onAccent else D.c.muted
+            val allDone = b == Board.DAILIES && dailiesDue > 0 && dailiesDone >= dailiesDue
+            val count = when (b) {
+                Board.HABITS -> if (habits > 0) "$habits" else null
+                Board.DAILIES -> if (dailiesDue > 0) "$dailiesDone/$dailiesDue" else null
+                Board.TODOS -> if (todosOpen > 0) "$todosOpen" else null
+            }
+            Column(
+                Modifier.weight(1f).clip(D.RSm).background(bg).clickable { onSelect(b) }.padding(vertical = 7.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    when (b) {
+                        Board.HABITS -> Glyph(glyphPlus, fg, 1.5.dp)
+                        Board.DAILIES -> PixelImage(Sprites.flame, pixel = 1.25.dp, alpha = if (on) 1f else 0.7f)
+                        Board.TODOS -> Glyph(glyphCheck, fg, 1.5.dp)
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(when (b) { Board.HABITS -> R.string.tab_habits; Board.DAILIES -> R.string.tab_dailies; Board.TODOS -> R.string.tab_todos }),
+                        style = DType.Strong.copy(fontSize = 14.sp, color = if (on) D.c.onAccent else D.c.ink), maxLines = 1,
+                    )
+                }
+                if (count != null) Text(
+                    count,
+                    style = DType.Number.copy(fontSize = 12.sp, color = when { allDone && on -> D.c.onAccent; allDone -> D.c.good; else -> fg }),
+                    modifier = Modifier.padding(top = 1.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A row that can be swiped: to the right for [right] (done, or + for a habit), to the left for [left]
+ * (a to-do to tomorrow, a habit's −, or the editor). The label shows underneath as the row moves; it springs back.
+ */
+@Composable
+private fun SwipeRow(right: Pair<String, () -> Unit>?, left: Pair<String, () -> Unit>?, content: @Composable () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val dx = remember { androidx.compose.animation.core.Animatable(0f) }
+    val density = LocalDensity.current
+    val limit = with(density) { 96.dp.toPx() }
+    val r by rememberUpdatedState(right)
+    val l by rememberUpdatedState(left)
+    Box(Modifier.fillMaxWidth()) {
+        val shown = if (dx.value > 0) r else if (dx.value < 0) l else null
+        if (shown != null) Box(
+            Modifier.matchParentSize().padding(horizontal = 16.dp, vertical = 5.dp).clip(D.RMd)
+                .background(if (dx.value > 0) D.c.good.copy(alpha = (dx.value / limit).coerceIn(0.25f, 1f)) else D.c.accent.copy(alpha = (-dx.value / limit).coerceIn(0.25f, 1f))),
+            contentAlignment = if (dx.value > 0) Alignment.CenterStart else Alignment.CenterEnd,
+        ) { Text(shown.first, style = DType.Heading.copy(color = Color.White, fontSize = 22.sp), modifier = Modifier.padding(horizontal = 22.dp)) }
+        Box(
+            Modifier
+                .offset { androidx.compose.ui.unit.IntOffset(dx.value.toInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            val v = dx.value
+                            if (v > limit) r?.second?.invoke() else if (v < -limit) l?.second?.invoke()
+                            scope.launch { dx.animateTo(0f, androidx.compose.animation.core.spring(dampingRatio = 0.7f)) }
+                        },
+                        onDragCancel = { scope.launch { dx.animateTo(0f) } },
+                    ) { change, amount ->
+                        val next = dx.value + amount
+                        if ((next > 0 && r == null) || (next < 0 && l == null)) return@detectHorizontalDragGestures
+                        change.consume()
+                        scope.launch { dx.snapTo(next.coerceIn(-limit * 1.4f, limit * 1.4f)) }
+                    }
+                },
+        ) { content() }
+    }
+}
+
+/** One to three little stars for how hard a task is (a trivial one has none): what it pays in experience and mana. */
+@Composable
+private fun DifficultyMarks(d: app.dayquest.game.Difficulty, color: Color) {
+    val n = when (d) { app.dayquest.game.Difficulty.TRIVIAL -> 0; app.dayquest.game.Difficulty.EASY -> 1; app.dayquest.game.Difficulty.MEDIUM -> 2; app.dayquest.game.Difficulty.HARD -> 3 }
+    if (n > 0) Text("★".repeat(n), style = DType.Small.copy(fontSize = 11.sp, color = color, letterSpacing = 1.sp))
 }
 
 // ---- Header ------------------------------------------------------------------------------
@@ -396,12 +490,12 @@ private fun HeroHeader(hero: Hero, fx: SceneFx, onSettings: () -> Unit, onChest:
                 }
             }
         }
-        StatsPanel(hero)
+        StatsPanel(hero, compact = true)
     }
 }
 
 @Composable
-fun StatsPanel(hero: Hero, modifier: Modifier = Modifier) {
+fun StatsPanel(hero: Hero, modifier: Modifier = Modifier, compact: Boolean = false) {
     val next = Rules.xpToNext(hero.level)
     val boss = Catalog.boss(hero.quest)
     Column(
@@ -424,16 +518,37 @@ fun StatsPanel(hero: Hero, modifier: Modifier = Modifier) {
             Spacer(Modifier.width(6.dp))
             Text(goldText(hero.gold), style = DType.Number.copy(color = D.c.gold, fontSize = 17.sp))
         }
+        val mana = if (app.dayquest.game.Classes.of(hero) != null) app.dayquest.game.Classes.maxMp(LocalContext.current.container.game.stats(hero)) else null
+        if (compact) {
+            // On the task board the hero's bars sit side by side, so the tasks start higher.
+            Gap(8)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                MiniStat(Sprites.heart, hero.hp / Rules.MAX_HP, D.c.hp, "${num(hero.hp.coerceAtLeast(0.0))}/${Rules.MAX_HP.toInt()}", Modifier.weight(1f))
+                MiniStat(Sprites.star, (hero.xp / next).toFloat(), D.c.xp, "${num(hero.xp)}/$next", Modifier.weight(1f))
+                if (mana != null) MiniStat(app.dayquest.pixel.Badges.mana, (hero.mp / mana).toFloat(), ManaBlue, "${num(hero.mp.coerceAtMost(mana))}/${num(mana)}", Modifier.weight(1f))
+            }
+        } else {
         Gap(10)
         StatLine(Sprites.heart, hero.hp / Rules.MAX_HP, D.c.hp, "${num(hero.hp.coerceAtLeast(0.0))} / ${Rules.MAX_HP.toInt()}")
         Gap(6)
         StatLine(Sprites.star, (hero.xp / next).toFloat(), D.c.xp, "${num(hero.xp)} / $next")
-        if (app.dayquest.game.Classes.of(hero) != null) {
-            val max = app.dayquest.game.Classes.maxMp(LocalContext.current.container.game.stats(hero))
+        if (mana != null) {
             Gap(6)
-            StatLine(app.dayquest.pixel.Badges.mana, (hero.mp / max).toFloat(), ManaBlue, "${num(hero.mp.coerceAtMost(max))} / ${num(max)}")
+            StatLine(app.dayquest.pixel.Badges.mana, (hero.mp / mana).toFloat(), ManaBlue, "${num(hero.mp.coerceAtMost(mana))} / ${num(mana)}")
         }
-        if (boss != null) {
+        }
+        if (boss != null && compact) {
+            Gap(8)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.width(20.dp), contentAlignment = Alignment.Center) { PixelImage(Sprites.boss(boss.shape, boss.primary, boss.secondary), pixel = 0.4.dp) }
+                Spacer(Modifier.width(6.dp))
+                Text(app.dayquest.ui.bossName(boss), style = DType.Small.copy(color = BossColor, fontSize = 12.sp), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
+                PixelBar((hero.questHp / boss.hp).toFloat(), BossColor, Modifier.width(90.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("${num(hero.questHp)}/${num(boss.hp)}", style = DType.Number.copy(fontSize = 12.sp, color = D.c.muted))
+            }
+        } else if (boss != null) {
             // The foe's bar sits apart from the hero's own, under its name, so it never reads as a fourth hero stat.
             Gap(10)
             androidx.compose.material3.HorizontalDivider(color = D.c.line)
@@ -447,6 +562,19 @@ fun StatsPanel(hero: Hero, modifier: Modifier = Modifier) {
             Gap(4)
             PixelBar((hero.questHp / boss.hp).toFloat(), BossColor)
         }
+    }
+}
+
+/** A hero bar for the compact panel: the icon, a short bar, and the numbers under it. */
+@Composable
+private fun MiniStat(icon: app.dayquest.pixel.Sprite, fraction: Number, color: Color, label: String, modifier: Modifier) {
+    Column(modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PixelImage(icon, pixel = 1.5.dp)
+            Spacer(Modifier.width(5.dp))
+            PixelBar(fraction.toFloat(), color, Modifier.weight(1f))
+        }
+        Text(label, style = DType.Number.copy(fontSize = 11.sp, color = D.c.muted), maxLines = 1, modifier = Modifier.padding(start = 2.dp, top = 1.dp))
     }
 }
 
@@ -544,15 +672,18 @@ private fun HabitRow(t: Task, progress: Int, onClick: () -> Unit, onUp: () -> Un
             .background(D.c.surface)
             .border(1.dp, D.c.line, D.RMd)
             .clickable(onClick = onClick)
-            .padding(10.dp),
+            .padding(horizontal = 10.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PressBox(band, t.up, onUp) { Glyph(glyphPlus, Color.White, 3.dp) }
-        Spacer(Modifier.width(12.dp))
+        PressBox(band, t.up, onUp, size = 38) { Glyph(glyphPlus, Color.White, 3.dp) }
+        Spacer(Modifier.width(11.dp))
         Column(Modifier.weight(1f)) {
-            Text(t.title, style = DType.Strong.copy(fontSize = 15.5.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (t.notes.isNotBlank()) Text(t.notes, style = DType.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (t.tags.isNotBlank()) Text(t.tagList.joinToString("  ") { "#$it" }, style = DType.Small.copy(color = D.c.accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(t.title, style = DType.Strong.copy(fontSize = 15.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (t.notes.isNotBlank()) Text(t.notes, style = DType.Muted.copy(fontSize = 13.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DifficultyMarks(t.difficulty, D.c.gold)
+                if (t.tags.isNotBlank()) Text(t.tagList.joinToString(" ") { "#$it" }, style = DType.Small.copy(color = D.c.accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             // the goal for the week or month, and how far along it is (#6)
             if (t.goal > 0) Text(
                 stringResource(if (t.goalPer == 30) R.string.goal_progress_month else R.string.goal_progress_week, minOf(progress, t.goal), t.goal) + if (progress >= t.goal) " ✓" else "",
@@ -567,7 +698,7 @@ private fun HabitRow(t: Task, progress: Int, onClick: () -> Unit, onUp: () -> Un
             }
         }
         Spacer(Modifier.width(12.dp))
-        PressBox(Bands[(Rules.band(t.value) - 2).coerceAtLeast(0)], t.down, onDown) { Glyph(glyphMinus, Color.White, 3.dp) }
+        PressBox(Bands[(Rules.band(t.value) - 2).coerceAtLeast(0)], t.down, onDown, size = 38) { Glyph(glyphMinus, Color.White, 3.dp) }
     }
 }
 
@@ -599,23 +730,24 @@ private fun TaskRow(
             .background(D.c.surface)
             .border(1.dp, D.c.line, D.RMd),
     ) {
-        Row(Modifier.clickable(onClick = onClick).padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onToggle(!done) }) {
-                CheckBoxPixel(done, if (done) D.c.faint else band, 46)
+                CheckBoxPixel(done, if (done) D.c.faint else band, 36)
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(11.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     t.title,
-                    style = DType.Strong.copy(fontSize = 15.5.sp, color = if (done) D.c.muted else D.c.ink, textDecoration = if (done && t.type == TaskType.TODO) TextDecoration.LineThrough else null),
+                    style = DType.Strong.copy(fontSize = 15.sp, color = if (done) D.c.muted else D.c.ink, textDecoration = if (done && t.type == TaskType.TODO) TextDecoration.LineThrough else null),
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
-                if (t.notes.isNotBlank()) Text(t.notes, style = DType.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (t.tags.isNotBlank()) Text(t.tagList.joinToString("  ") { "#$it" }, style = DType.Small.copy(color = D.c.accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                val hasMeta = t.streak > 0 || checklist.isNotEmpty() || t.reminder >= 0 || t.dueDay >= 0
+                if (t.notes.isNotBlank()) Text(t.notes, style = DType.Muted.copy(fontSize = 13.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                val hasMeta = t.streak > 0 || checklist.isNotEmpty() || t.reminder >= 0 || t.dueDay >= 0 || t.tags.isNotBlank() || t.difficulty != app.dayquest.game.Difficulty.TRIVIAL
                 if (hasMeta) {
-                    Gap(4)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Gap(2)
+                    // difficulty, streak, checklist, reminder, due date and tags: one thin line
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        DifficultyMarks(t.difficulty, if (done) D.c.faint else D.c.gold)
                         if (t.type == TaskType.DAILY && t.streak > 0) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 PixelImage(Sprites.flame, pixel = 1.5.dp)
@@ -647,6 +779,7 @@ private fun TaskRow(
                                 style = DType.Small.copy(color = if (overdue) D.c.hp else D.c.faint),
                             )
                         }
+                        if (t.tags.isNotBlank()) Text(t.tagList.joinToString(" ") { "#$it" }, style = DType.Small.copy(color = D.c.accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }

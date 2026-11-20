@@ -1210,7 +1210,6 @@
     <string name="community_follow_sub">бот напишет, когда выйдет версия</string>
     <string name="community_chat">Чат StillCraft</string>
     <string name="community_chat_sub">все приложения и люди</string>
-    <string name="tab_trackers">Трекеры</string>
     <string name="habit_goal">Цель</string>
     <string name="goal_none">Без цели</string>
     <string name="goal_week">В неделю</string>
@@ -1231,25 +1230,5 @@
     <string name="goal_progress_week">%1$d из %2$d на этой неделе</string>
     <string name="goal_progress_month">%1$d из %2$d в этом месяце</string>
     <string name="snack_goal">Цель привычки выполнена – сундук твой!</string>
-    <string name="snack_tracker">Цель трекера на сегодня выполнена</string>
-    <string name="tracker_add">+ Новый трекер</string>
-    <string name="empty_trackers">Здесь можно следить за тем, что не задача: сон, вода, витамины. Отмечай каждый день и смотри сетку за месяц.</string>
-    <string name="tracker_yes">Сегодня отмечено</string>
-    <string name="tracker_not_yet">Сегодня ещё нет</string>
-    <string name="tracker_done_q">Да, сделано</string>
-    <string name="tracker_not_done">Нет</string>
-    <string name="tracker_new">Новый трекер</string>
-    <string name="tracker_edit">Трекер</string>
-    <string name="tracker_name_hint">Название: сон, вода, витамин D</string>
-    <string name="tracker_number">Число</string>
-    <string name="tracker_yesno">Да или нет</string>
-    <string name="tracker_target">Цель на день и единица</string>
-    <string name="tracker_unit_hint">ч, стаканов</string>
-    <string name="tracker_step">Сколько прибавлять одной кнопкой</string>
-    <string name="tracker_delete_t">Удалить трекер?</string>
-    <string name="tracker_delete_b">Все его записи тоже удалятся.</string>
-    <string name="tracker_average">в среднем за день</string>
-    <string name="tracker_days_yes">дней отмечено</string>
-    <string name="tracker_met_days">дней с выполненной целью</string>
-    <string name="tracker_screen_hint">Нажми на день, чтобы поправить запись. Опыт дают только сегодня и вчера.</string>
+    <string name="moved_tomorrow">Перенесено на завтра</string>
 </resources>
