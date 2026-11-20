@@ -6,6 +6,21 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.8.0] - 2026-11-20
+
+### Added
+- Habit goals: aim for a habit so many times a week or a month; the row shows how far along you are, and reaching the goal brings a chest (#6).
+
+### Changed
+- Mana follows difficulty: an easy task gives 1, a medium one 2, a hard one 3 (#5).
+- A tidier task board: new tabs with icons and counts, the hero's bars side by side, lower rows with difficulty stars, swipe right to tick a task, swipe left to move a to-do to tomorrow.
+
+<!-- tg
+У привычек появилась цель: сколько раз в неделю или в месяц. Выполнишь норму – получишь сундук.
+Мана теперь зависит от сложности: за лёгкую задачу 1, за среднюю 2, за сложную 3.
+Доска задач стала компактнее: новые вкладки, звёздочки сложности, задачу можно отметить свайпом вправо, а дело перенести на завтра свайпом влево.
+-->
+
 ## [1.7.0] - 2026-11-07
 
 ### Added
