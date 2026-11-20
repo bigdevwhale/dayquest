@@ -332,7 +332,7 @@ class Game(private val db: GameDao, private val prefs: suspend () -> Settings, p
         if (drop.isNotEmpty()) db.addItem(drop, 1)
         // A healing companion (or a healer's renewal) patches the hero up a little with every finished task.
         val heal = minOf(pet.heal + buffs.heal, Rules.MAX_HP - h.hp).coerceAtLeast(0.0)
-        val mp = if (Classes.of(h) == null) 0.0 else minOf(Classes.mpGain(s), Classes.maxMp(s) - h.mp).coerceAtLeast(0.0)
+        val mp = if (Classes.of(h) == null) 0.0 else minOf(Classes.mpGain(s, d), Classes.maxMp(s) - h.mp).coerceAtLeast(0.0)
 
         var next = h.copy(xp = h.xp + xp, gold = h.gold + gold, hp = h.hp + heal, mp = h.mp + mp, questHp = h.questHp - hit, dropsToday = h.dropsToday + if (drop.isNotEmpty()) 1 else 0)
         // The card's bounty pays once, the moment the day's count reaches it (undoing later keeps it).

@@ -81,8 +81,10 @@ object Classes {
 
     fun maxMp(s: Stats) = 20.0 + s.int
 
-    /** Mana from one finished task: a little more with Intelligence. */
-    fun mpGain(s: Stats) = 1.0 + s.int / 40.0
+    /** Mana from one finished task: 1, 2 or 3 for an easy, medium or hard one, half for a trivial one (#5); a little more with Intelligence. */
+    fun mpGain(s: Stats, d: Difficulty = Difficulty.EASY) = manaOf(d) * (1.0 + s.int / 40.0)
+
+    fun manaOf(d: Difficulty) = when (d) { Difficulty.TRIVIAL -> 0.5; Difficulty.EASY -> 1.0; Difficulty.MEDIUM -> 2.0; Difficulty.HARD -> 3.0 }
 
     /** Overnight the hero gets back a quarter of the pool. */
     fun mpOvernight(s: Stats) = maxMp(s) * 0.25

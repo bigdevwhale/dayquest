@@ -807,7 +807,7 @@
     <string name="class_locked">At level %d you choose a class: one stat grows twice as fast, and you get skills that cost mana.</string>
     <string name="class_choose">Choose a class</string>
     <string name="class_pick_title">Choose your class</string>
-    <string name="class_pick_text">Your class\'s stat grows twice as fast, and it brings three skills that cost mana. Mana comes back with every finished task and overnight.</string>
+    <string name="class_pick_text">Your class\'s stat grows twice as fast, and it brings three skills that cost mana. Mana comes back with every finished task (more for harder ones) and overnight.</string>
     <string name="class_change">Change class</string>
     <string name="class_change_cost">A change costs %s gold and empties your mana.</string>
     <string name="class_first_free">The first choice is free.</string>
