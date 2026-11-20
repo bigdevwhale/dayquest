@@ -1184,4 +1184,42 @@
     <string name="community_follow_sub">the bot writes when a version is out</string>
     <string name="community_chat">StillCraft chat</string>
     <string name="community_chat_sub">all the apps and people</string>
+    <string name="tab_trackers">Trackers</string>
+    <string name="habit_goal">Goal</string>
+    <string name="goal_none">No goal</string>
+    <string name="goal_week">A week</string>
+    <string name="goal_month">A month</string>
+    <plurals name="goal_times_week">
+        <item quantity="one">%d time a week</item>
+        <item quantity="other">%d times a week</item>
+    </plurals>
+    <plurals name="goal_times_month">
+        <item quantity="one">%d time a month</item>
+        <item quantity="other">%d times a month</item>
+    </plurals>
+    <string name="goal_hint">The week starts on Monday. Reach the goal and a chest is yours.</string>
+    <string name="goal_progress_week">%1$d of %2$d this week</string>
+    <string name="goal_progress_month">%1$d of %2$d this month</string>
+    <string name="snack_goal">Habit goal reached – a chest is yours!</string>
+    <string name="snack_tracker">Today\'s tracker goal reached</string>
+    <string name="tracker_add">+ New tracker</string>
+    <string name="empty_trackers">Keep an eye on things that aren\'t tasks: sleep, water, vitamins. Note them every day and see the month as a grid.</string>
+    <string name="tracker_yes">Noted today</string>
+    <string name="tracker_not_yet">Not yet today</string>
+    <string name="tracker_done_q">Yes, done</string>
+    <string name="tracker_not_done">No</string>
+    <string name="tracker_new">New tracker</string>
+    <string name="tracker_edit">Tracker</string>
+    <string name="tracker_name_hint">Name: sleep, water, vitamin D</string>
+    <string name="tracker_number">A number</string>
+    <string name="tracker_yesno">Yes or no</string>
+    <string name="tracker_target">Daily goal and unit</string>
+    <string name="tracker_unit_hint">h, glasses</string>
+    <string name="tracker_step">How much one tap adds</string>
+    <string name="tracker_delete_t">Delete the tracker?</string>
+    <string name="tracker_delete_b">All its entries go too.</string>
+    <string name="tracker_average">a day on average</string>
+    <string name="tracker_days_yes">days noted</string>
+    <string name="tracker_met_days">days the goal was met</string>
+    <string name="tracker_screen_hint">Tap a day to put it right. Only today and yesterday give experience.</string>
 </resources>

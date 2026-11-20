@@ -109,7 +109,7 @@ import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
 import app.dayquest.ui.journal.MoodCard
 
-private enum class Board { HABITS, DAILIES, TODOS }
+private enum class Board { HABITS, DAILIES, TODOS, TRACKERS }
 
 val ManaBlue = Color(0xFF4F9BEF)
 private val BossColor = Color(0xFFB45CFF)
@@ -148,7 +148,7 @@ fun rememberSceneFx(): SceneFx {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit, onFocus: () -> Unit, onHome: () -> Unit) {
+fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: (TaskType, String) -> Unit, onSettings: () -> Unit, onFocus: () -> Unit, onHome: () -> Unit, onTracker: (Long) -> Unit = {}) {
     val context = LocalContext.current
     val c = context.container
     val fb = LocalFeedback.current
@@ -175,6 +175,12 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
     val todos = shown.filter { it.type == TaskType.TODO }
 
     val actions = remember(fb) { Actions(c, fb, context) }
+    // habit goals count from the start of the month (or of the week, when that is earlier) (#6)
+    val goalFrom = minOf(Rules.goalStart(today, 7), Rules.goalStart(today, 30))
+    val ups by remember(goalFrom) { c.db.game().observeUps(goalFrom) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val trackers by remember { c.db.game().observeTrackers() }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val trackerDays by remember(today) { c.db.game().observeTrackerDays(today - 6) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    var newTracker by remember { mutableStateOf(false) }
     val mood by remember(today) { c.db.game().observeJournalDay(today) }.collectAsStateWithLifecycle(initialValue = null)
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
@@ -188,6 +194,7 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                             Board.HABITS -> stringResource(R.string.tab_habits)
                             Board.DAILIES -> stringResource(R.string.tab_dailies) + "  " + dueDailies.count { d -> d.doneDay == today } + "/" + dueDailies.size
                             Board.TODOS -> stringResource(R.string.tab_todos) + todos.count { t -> !t.done }.let { n -> if (n > 0) "  $n" else "" }
+                            Board.TRACKERS -> stringResource(R.string.tab_trackers)
                         }
                     },
                     fitText = true,
@@ -207,13 +214,14 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
             EventBanner(ev, doneToday, hero.bountyDay == today, { cardOpen = true }, Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             if (cardOpen) MomentDialog(eventSprite(ev.icon), stringResource(ev.title), stringResource(ev.text), stringResource(R.string.ok)) { cardOpen = false }
         }
-        item(key = "quick-$board") {
+        if (board != Board.TRACKERS) item(key = "quick-$board") {
             QuickAdd(
                 hint = stringResource(
                     when (board) {
                         Board.HABITS -> R.string.add_habit_hint
                         Board.DAILIES -> R.string.add_daily_hint
                         Board.TODOS -> R.string.add_todo_hint
+                        Board.TRACKERS -> R.string.add_todo_hint
                     }
                 ),
                 onAdd = { title -> c.launch { quickAdd(c, board.type, title, today, tag.orEmpty()) } },
@@ -224,7 +232,8 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
             Board.HABITS -> {
                 if (habits.isEmpty()) item { Empty(stringResource(R.string.empty_habits)) }
                 items(habits, key = { it.id }) { t ->
-                    HabitRow(t, onClick = { onEdit(t.id) }, onUp = { actions.habit(t, true) }, onDown = { actions.habit(t, false) })
+                    val progress = if (t.goal > 0) Rules.goalStart(today, t.goalPer).let { from -> ups.count { u -> u.taskId == t.id && u.day >= from } } else 0
+                    HabitRow(t, progress, onClick = { onEdit(t.id) }, onUp = { actions.habit(t, true) }, onDown = { actions.habit(t, false) })
                 }
             }
             Board.DAILIES -> {
@@ -249,16 +258,32 @@ fun TasksScreen(hero: Hero, onChest: () -> Unit, onEdit: (Long) -> Unit, onNew: 
                     if (showDone) taskItems(done.take(50), checklist, expanded, today, actions, onEdit, dim = true)
                 }
             }
+            Board.TRACKERS -> {
+                item(key = "tracker-new") {
+                    app.dayquest.ui.components.SoftButton(stringResource(R.string.tracker_add), { newTracker = true },
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
+                }
+                if (trackers.isEmpty()) item { Empty(stringResource(R.string.empty_trackers)) }
+                val byTracker = trackerDays.groupBy { it.trackerId }.mapValues { (_, l) -> l.associate { it.day to it.value } }
+                items(trackers, key = { "tr${it.id}" }) { t ->
+                    val days = byTracker[t.id].orEmpty()
+                    app.dayquest.ui.trackers.TrackerRow(t, days, today, onQuick = {
+                        val v = days[today] ?: 0.0
+                        actions.tracker(t, today, if (t.yesNo) (if (v >= 1) 0.0 else 1.0) else v + t.step)
+                    }, onClick = { onTracker(t.id) })
+                }
+            }
         }
         // The day's mood waits at the end of the board, after the tasks.
         item(key = "mood") { MoodCard(today, mood, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) }
     }
+    if (newTracker) app.dayquest.ui.trackers.TrackerDialog(null, { newTracker = false })
 }
 
 private val Board.type get() = when (this) {
     Board.HABITS -> TaskType.HABIT
     Board.DAILIES -> TaskType.DAILY
-    Board.TODOS -> TaskType.TODO
+    Board.TODOS, Board.TRACKERS -> TaskType.TODO
 }
 
 suspend fun quickAdd(c: app.dayquest.AppContainer, type: TaskType, title: String, today: Long, tags: String = "") {
@@ -278,6 +303,8 @@ class Actions(private val c: app.dayquest.AppContainer, private val fb: Feedback
             if (o.boss > 0) add(s(if (o.crit) R.string.snack_crit else R.string.snack_hit, gainText(o.boss)))
             if (o.drop.isNotEmpty()) add(s(R.string.snack_drop, context.itemLabel(o.drop)))
             if (o.room > 0 && !o.dungeonDone) add(s(R.string.room_cleared, o.room, goldText(o.roomGold), o.roomItems.joinToString(", ") { context.itemLabel(it) }))
+            if (o.goal) add(s(R.string.snack_goal))
+            if (o.tracker) add(s(R.string.snack_tracker))
         }
         if (parts.isNotEmpty()) fb.show(parts.joinToString("\n"), s(R.string.undo), o.logId)
     }
@@ -285,6 +312,11 @@ class Actions(private val c: app.dayquest.AppContainer, private val fb: Feedback
     fun habit(t: Task, up: Boolean) {
         if (up) fb.tap() else fb.thud()
         c.launch { report(c.game.scoreHabit(t.id, up)) }
+    }
+
+    fun tracker(t: app.dayquest.data.Tracker, day: Long, value: Double) {
+        fb.tap()
+        c.launch { report(c.game.setTracker(t.id, day, value)) }
     }
 
     fun daily(t: Task, done: Boolean) {
@@ -502,7 +534,7 @@ private fun PressBox(color: Color, enabled: Boolean, onClick: () -> Unit, size: 
 }
 
 @Composable
-private fun HabitRow(t: Task, onClick: () -> Unit, onUp: () -> Unit, onDown: () -> Unit) {
+private fun HabitRow(t: Task, progress: Int, onClick: () -> Unit, onUp: () -> Unit, onDown: () -> Unit) {
     val band = Bands[Rules.band(t.value)]
     Row(
         Modifier
@@ -521,6 +553,11 @@ private fun HabitRow(t: Task, onClick: () -> Unit, onUp: () -> Unit, onDown: () 
             Text(t.title, style = DType.Strong.copy(fontSize = 15.5.sp), maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (t.notes.isNotBlank()) Text(t.notes, style = DType.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (t.tags.isNotBlank()) Text(t.tagList.joinToString("  ") { "#$it" }, style = DType.Small.copy(color = D.c.accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // the goal for the week or month, and how far along it is (#6)
+            if (t.goal > 0) Text(
+                stringResource(if (t.goalPer == 30) R.string.goal_progress_month else R.string.goal_progress_week, minOf(progress, t.goal), t.goal) + if (progress >= t.goal) " ✓" else "",
+                style = DType.Small.copy(color = if (progress >= t.goal) D.c.good else D.c.accent),
+            )
             if (t.countUp + t.countDown > 0) {
                 Gap(2)
                 Text(

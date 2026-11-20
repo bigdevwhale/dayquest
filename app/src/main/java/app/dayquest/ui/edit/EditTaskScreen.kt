@@ -94,6 +94,9 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
     var due by remember { mutableStateOf(-1L) }
     var reminder by remember { mutableIntStateOf(-1) }
     var cost by remember { mutableStateOf("10") }
+    // a habit's goal: so many times a week (7) or a month (30), 0 for none (#6)
+    var goal by remember { mutableIntStateOf(0) }
+    var goalPer by remember { mutableIntStateOf(7) }
     val lines = remember { mutableStateListOf<Line>() }
     val tags = remember { mutableStateListOf<String>() }
     var newTag by remember { mutableStateOf("") }
@@ -111,6 +114,7 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
         base = t
         title = t.title; notes = t.notes; difficulty = t.difficulty; up = t.up; down = t.down
         mask = t.repeatMask; every = t.everyDays; due = t.dueDay; reminder = t.reminder; cost = goldText(t.cost)
+        goal = t.goal; goalPer = if (t.goalPer == 30) 30 else 7
         lines.clear(); lines.addAll(db.checklist(t.id).map { Line(it.id, it.text, it.done) })
         tags.clear(); tags.addAll(t.tagList)
         loaded = true
@@ -128,6 +132,9 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
             dueDay = due, reminder = reminder,
             tags = (tags + splitTags(newTag)).distinct().joinToString(","),
             cost = parsedCost ?: t.cost,
+            goal = if (t.type == TaskType.HABIT && up) goal else 0, goalPer = goalPer,
+            // a new goal or period starts a fresh count
+            goalPaid = if (goal != t.goal || goalPer != t.goalPer) -1 else t.goalPaid,
         )
         val items = lines.filter { it.text.isNotBlank() } + listOfNotNull(newLine.takeIf { it.isNotBlank() }?.let { Line(0, it, false) })
         c.launch {
@@ -192,6 +199,20 @@ fun EditTaskScreen(id: Long, type: TaskType, initialTitle: String, onDone: () ->
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Chip(stringResource(R.string.positive), up, { up = !up || !down }, D.c.good)
                     Chip(stringResource(R.string.negative), down, { down = !down || !up }, D.c.bad)
+                }
+                if (up) {
+                    SectionTitle(stringResource(R.string.habit_goal))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Chip(stringResource(R.string.goal_none), goal == 0, { goal = 0 })
+                        Chip(stringResource(R.string.goal_week), goal > 0 && goalPer == 7, { goalPer = 7; if (goal == 0) goal = 3 })
+                        Chip(stringResource(R.string.goal_month), goal > 0 && goalPer == 30, { goalPer = 30; if (goal == 0) goal = 10 })
+                    }
+                    if (goal > 0) Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { goal = (goal - 1).coerceAtLeast(1) }) { Icon(Icons.Rounded.Remove, null, tint = D.c.accent) }
+                        Text(pluralStringResource(if (goalPer == 30) R.plurals.goal_times_month else R.plurals.goal_times_week, goal, goal), style = DType.Strong, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { goal = (goal + 1).coerceAtMost(if (goalPer == 30) 100 else 50) }) { Icon(Icons.Rounded.Add, null, tint = D.c.accent) }
+                    }
+                    if (goal > 0) Text(stringResource(R.string.goal_hint), style = DType.Small)
                 }
             }
 

@@ -287,6 +287,7 @@ private fun Main(hero: Hero, settings: Settings) {
                                 hero = hero,
                                 onChest = { chestPerfect = false; chest = true },
                                 onEdit = { nav.navigate("edit/$it") },
+                                onTracker = { nav.navigate("tracker/$it") },
                                 onNew = { type, title -> nav.navigate("new/${type.name}?title=${android.net.Uri.encode(title)}") },
                                 onSettings = { nav.navigate("settings") },
                                 onFocus = { nav.navigate("focus") },
@@ -322,6 +323,9 @@ private fun Main(hero: Hero, settings: Settings) {
         }
         composable("stats/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { e ->
             app.dayquest.ui.stats.TaskStatsScreen(e.arguments?.getLong("id") ?: 0, onBack = { nav.popBackStack() })
+        }
+        composable("tracker/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { e ->
+            app.dayquest.ui.trackers.TrackerScreen(e.arguments?.getLong("id") ?: 0L, app.dayquest.game.Rules.logicalDay(java.time.LocalDateTime.now(), settings.dayStart), onBack = { nav.popBackStack() })
         }
         composable("focus") { app.dayquest.ui.focus.FocusScreen(hero, onBack = { nav.popBackStack() }) }
         composable("journal") { app.dayquest.ui.journal.JournalScreen(onBack = { nav.popBackStack() }) }

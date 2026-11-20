@@ -24,6 +24,12 @@ data class Stats(val str: Int = 0, val int: Int = 0, val con: Int = 0, val per: 
 
 /** The numbers of the game. Pure functions, so they are easy to test and to tune. */
 object Rules {
+    /** First day of a habit goal's period (#6): Monday of the week, or the 1st of the month for [per] 30. */
+    fun goalStart(day: Long, per: Int): Long = LocalDate.ofEpochDay(day).let { if (per == 30) it.withDayOfMonth(1) else it.with(DayOfWeek.MONDAY) }.toEpochDay()
+
+    /** Last day of that period. */
+    fun goalEnd(day: Long, per: Int): Long = LocalDate.ofEpochDay(goalStart(day, per)).let { if (per == 30) it.plusMonths(1).minusDays(1) else it.plusDays(6) }.toEpochDay()
+
     const val MAX_HP = 50.0
     const val HEALTH_POTION_COST = 25.0
     const val HEALTH_POTION_HP = 15.0

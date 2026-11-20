@@ -59,6 +59,11 @@ data class Task(
     val reminder: Int = -1,
     /** The player's own tags, comma-separated. */
     val tags: String = "",
+    // Habit goal (#6): [goal] times a week ([goalPer] 7) or a month (30); 0 for none.
+    @ColumnInfo(defaultValue = "0") val goal: Int = 0,
+    @ColumnInfo(defaultValue = "0") val goalPer: Int = 0,
+    /** First day of the last period whose goal was met and paid, -1 when none. */
+    @ColumnInfo(defaultValue = "-1") val goalPaid: Long = -1,
 ) {
     val tagList: List<String> get() = splitTags(tags)
 }
@@ -78,7 +83,7 @@ data class CheckItem(
     val position: Int = 0,
 )
 
-enum class LogKind { UP, DOWN, DAILY, TODO, REWARD, BUY, MISSED, BOSS, POTION, VICTORY, ACHIEVEMENT, CHEST, EVENT, SKILL, FOCUS, DUNGEON }
+enum class LogKind { UP, DOWN, DAILY, TODO, REWARD, BUY, MISSED, BOSS, POTION, VICTORY, ACHIEVEMENT, CHEST, EVENT, SKILL, FOCUS, DUNGEON, TRACKER }
 
 /**
  * One scored action and exactly what it changed, so it can be undone to the cent.
@@ -262,6 +267,37 @@ data class Moment(
 data class JournalEntry(@PrimaryKey val day: Long, val mood: Int, val note: String = "", val good: String = "")
 
 /** A friend's hero card ([code] is their "DQH1:" hero code), shown in the tavern. */
+/**
+ * A tracker (#7): something to note every day apart from the tasks. [kind] 0 is a number in [unit] with a daily
+ * [target] (sleep 7.5 h, 8 glasses of water) and a [step] for the quick button; 1 is yes or no (a vitamin taken).
+ */
+@Entity(tableName = "trackers")
+data class Tracker(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val kind: Int = 0,
+    val unit: String = "",
+    val target: Double = 1.0,
+    val step: Double = 1.0,
+    val position: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(),
+) {
+    val yesNo get() = kind == 1
+    fun met(v: Double) = if (yesNo) v >= 1.0 else target > 0 && v + 1e-9 >= target
+}
+
+/** A tracker's value on one logical day. [logId] is the reward it paid when the target was met, 0 when none. */
+@Entity(
+    tableName = "tracker_days",
+    primaryKeys = ["trackerId", "day"],
+    foreignKeys = [ForeignKey(entity = Tracker::class, parentColumns = ["id"], childColumns = ["trackerId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("trackerId")],
+)
+data class TrackerDay(val trackerId: Long, val day: Long, val value: Double, val logId: Long = 0)
+
+/** A habit's tick on a day, for its goal. */
+data class TaskDay(val taskId: Long, val day: Long)
+
 @Entity(tableName = "friends")
 data class Friend(@PrimaryKey val uid: String, val code: String, val addedAt: Long = System.currentTimeMillis())
 
@@ -275,6 +311,8 @@ data class Snapshot(
     val journal: List<JournalEntry> = emptyList(),
     val friends: List<Friend> = emptyList(),
     val moments: List<Moment> = emptyList(),
+    val trackers: List<Tracker> = emptyList(),
+    val trackerDays: List<TrackerDay> = emptyList(),
 )
 
 @Dao
@@ -358,6 +396,65 @@ abstract class GameDao {
 
     @Query("SELECT COUNT(*) FROM log WHERE undone = 0 AND day = :day AND kind IN ('UP', 'DAILY', 'TODO')")
     abstract fun observeDoneOn(day: Long): Flow<Int>
+
+    /** Habit ticks since [from], for the goals' progress (#6). */
+    @Query("SELECT taskId, day FROM log WHERE undone = 0 AND kind = 'UP' AND day >= :from")
+    abstract fun observeUps(from: Long): Flow<List<TaskDay>>
+
+    @Query("SELECT COUNT(*) FROM log WHERE undone = 0 AND kind = 'UP' AND taskId = :taskId AND day >= :from AND day <= :to")
+    abstract suspend fun upsBetween(taskId: Long, from: Long, to: Long): Int
+
+    // Trackers (#7)
+    @Query("SELECT * FROM trackers ORDER BY position, id")
+    abstract fun observeTrackers(): Flow<List<Tracker>>
+
+    @Query("SELECT * FROM trackers WHERE id = :id")
+    abstract suspend fun tracker(id: Long): Tracker?
+
+    @Query("SELECT * FROM trackers WHERE id = :id")
+    abstract fun observeTracker(id: Long): Flow<Tracker?>
+
+    @Insert
+    abstract suspend fun insertTracker(t: Tracker): Long
+
+    @Update
+    abstract suspend fun updateTracker(t: Tracker)
+
+    @Query("DELETE FROM trackers WHERE id = :id")
+    abstract suspend fun deleteTracker(id: Long)
+
+    @Query("SELECT COALESCE(MAX(position), 0) + 1 FROM trackers")
+    abstract suspend fun nextTrackerPosition(): Int
+
+    @Query("SELECT * FROM tracker_days WHERE day >= :from")
+    abstract fun observeTrackerDays(from: Long): Flow<List<TrackerDay>>
+
+    @Query("SELECT * FROM tracker_days WHERE trackerId = :id ORDER BY day")
+    abstract fun observeTrackerHistory(id: Long): Flow<List<TrackerDay>>
+
+    @Query("SELECT * FROM tracker_days WHERE trackerId = :id AND day = :day")
+    abstract suspend fun trackerDay(id: Long, day: Long): TrackerDay?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun putTrackerDay(d: TrackerDay)
+
+    @Query("DELETE FROM tracker_days WHERE trackerId = :id AND day = :day")
+    abstract suspend fun clearTrackerDay(id: Long, day: Long)
+
+    @Query("SELECT * FROM trackers")
+    protected abstract suspend fun allTrackers(): List<Tracker>
+
+    @Query("SELECT * FROM tracker_days")
+    protected abstract suspend fun allTrackerDays(): List<TrackerDay>
+
+    @Query("DELETE FROM trackers")
+    protected abstract suspend fun clearTrackers()
+
+    @Insert
+    protected abstract suspend fun insertTrackers(items: List<Tracker>)
+
+    @Insert
+    protected abstract suspend fun insertTrackerDays(items: List<TrackerDay>)
 
     @Query("SELECT COUNT(DISTINCT day) FROM log WHERE undone = 0 AND kind IN ('UP', 'DAILY', 'TODO')")
     abstract suspend fun activeDays(): Int
@@ -522,12 +619,12 @@ abstract class GameDao {
     protected abstract suspend fun insertPets(items: List<Pet>)
 
     @Transaction
-    open suspend fun snapshot() = Snapshot(hero(), tasks(), allChecklist(), allLog(), allItems(), allPets(), allJournal(), friends(), allMoments())
+    open suspend fun snapshot() = Snapshot(hero(), tasks(), allChecklist(), allLog(), allItems(), allPets(), allJournal(), friends(), allMoments(), allTrackers(), allTrackerDays())
 
     /** Replaces everything with a backup (checklists cascade away with their tasks). */
     @Transaction
     open suspend fun replaceAll(s: Snapshot) {
-        clearTasks(); clearLog(); clearItems(); clearPets(); clearHero(); clearJournal(); clearFriends(); clearMoments()
+        clearTasks(); clearLog(); clearItems(); clearPets(); clearHero(); clearJournal(); clearFriends(); clearMoments(); clearTrackers()
         s.hero?.let { saveHero(it) }
         insertTasks(s.tasks)
         insertChecklist(s.checklist)
@@ -537,14 +634,16 @@ abstract class GameDao {
         insertJournal(s.journal)
         insertFriends(s.friends)
         insertMoments(s.moments)
+        insertTrackers(s.trackers)
+        insertTrackerDays(s.trackerDays.filter { d -> s.trackers.any { it.id == d.trackerId } })
     }
 }
 
 data class DayKind(val day: Long, val kind: LogKind)
 
 @Database(
-    entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class, JournalEntry::class, Friend::class, Moment::class],
-    version = 6,
+    entities = [Task::class, CheckItem::class, LogEntry::class, Hero::class, Item::class, Pet::class, JournalEntry::class, Friend::class, Moment::class, Tracker::class, TrackerDay::class],
+    version = 7,
 )
 abstract class GameDatabase : RoomDatabase() {
     abstract fun game(): GameDao
@@ -552,7 +651,7 @@ abstract class GameDatabase : RoomDatabase() {
     companion object {
         fun create(context: Context): GameDatabase =
             Room.databaseBuilder(context.applicationContext, GameDatabase::class.java, "dayquest.db")
-                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS, CLASSES_AND_FRIENDS, PET_FRIENDS, GOOD_THINGS)
+                .addMigrations(ACHIEVEMENTS_AND_HOME, CHESTS_AND_EVENTS, CLASSES_AND_FRIENDS, PET_FRIENDS, GOOD_THINGS, GOALS_AND_TRACKERS)
                 .build()
 
         private val ACHIEVEMENTS_AND_HOME = object : Migration(1, 2) {
@@ -595,6 +694,17 @@ abstract class GameDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE journal ADD COLUMN good TEXT NOT NULL DEFAULT ''")
                 db.execSQL("ALTER TABLE tasks ADD COLUMN tags TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        private val GOALS_AND_TRACKERS = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN goal INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE tasks ADD COLUMN goalPer INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE tasks ADD COLUMN goalPaid INTEGER NOT NULL DEFAULT -1")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `trackers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `kind` INTEGER NOT NULL, `unit` TEXT NOT NULL, `target` REAL NOT NULL, `step` REAL NOT NULL, `position` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `tracker_days` (`trackerId` INTEGER NOT NULL, `day` INTEGER NOT NULL, `value` REAL NOT NULL, `logId` INTEGER NOT NULL, PRIMARY KEY(`trackerId`, `day`), FOREIGN KEY(`trackerId`) REFERENCES `trackers`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_tracker_days_trackerId` ON `tracker_days` (`trackerId`)")
             }
         }
 
